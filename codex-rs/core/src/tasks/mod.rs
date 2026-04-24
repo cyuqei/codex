@@ -374,6 +374,7 @@ impl Session {
             thread.id = %self.conversation_id,
             turn.id = %turn_context.sub_id,
             model = %turn_context.model_info.slug,
+            codex.turn.reasoning_effort = field::Empty,
             codex.turn.token_usage.input_tokens = field::Empty,
             codex.turn.token_usage.cached_input_tokens = field::Empty,
             codex.turn.token_usage.non_cached_input_tokens = field::Empty,
@@ -661,6 +662,11 @@ impl Session {
             };
             if records_turn_token_usage_on_span {
                 let current_span = Span::current();
+                let reasoning_effort = turn_context.effective_reasoning_effort_for_tracing();
+                current_span.record(
+                    "codex.turn.reasoning_effort",
+                    field::display(reasoning_effort.as_str()),
+                );
                 current_span.record(
                     "codex.turn.token_usage.input_tokens",
                     turn_token_usage.input_tokens,
