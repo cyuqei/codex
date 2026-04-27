@@ -1839,6 +1839,7 @@ dependencies = [
  "async-trait",
  "axum",
  "base64 0.22.1",
+ "cc",
  "chrono",
  "clap",
  "codex-analytics",

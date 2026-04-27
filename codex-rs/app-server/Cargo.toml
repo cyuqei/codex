@@ -3,6 +3,7 @@ name = "codex-app-server"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+build = "build.rs"
 
 [[bin]]
 name = "codex-app-server"
@@ -119,3 +120,6 @@ tokio-tungstenite = { workspace = true }
 tracing-opentelemetry = { workspace = true }
 wiremock = { workspace = true }
 shlex = { workspace = true }
+
+[build-dependencies]
+cc = "1"

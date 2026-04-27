@@ -35,7 +35,9 @@ use codex_tui::UpdateAction;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use codex_utils_cli::CliConfigOverrides;
 use owo_colors::OwoColorize;
+use std::fs;
 use std::io::IsTerminal;
+use std::io::Write;
 use std::path::PathBuf;
 use supports_color::Stream;
 
@@ -468,6 +470,17 @@ enum AppServerSubcommand {
     /// [internal] Generate internal JSON Schema artifacts for Codex tooling.
     #[clap(hide = true)]
     GenerateInternalJsonSchema(GenerateInternalJsonSchemaCommand),
+
+    /// [internal] Probe whether the current process can generate a macOS DeviceCheck token.
+    #[clap(hide = true)]
+    DeviceCheckProbe(DeviceCheckProbeCommand),
+}
+
+#[derive(Debug, Args)]
+struct DeviceCheckProbeCommand {
+    /// Write the full base64 DeviceCheck token to this file.
+    #[arg(long = "token-out", value_name = "PATH")]
+    token_out: Option<PathBuf>,
 }
 
 #[derive(Debug, Args)]
@@ -867,6 +880,27 @@ async fn cli_main(arg0_paths: Arg0DispatchPaths) -> anyhow::Result<()> {
                 }
                 Some(AppServerSubcommand::GenerateInternalJsonSchema(gen_cli)) => {
                     codex_app_server_protocol::generate_internal_json_schema(&gen_cli.out_dir)?;
+                }
+                Some(AppServerSubcommand::DeviceCheckProbe(device_check_probe_cli)) => {
+                    let report = codex_app_server::probe_devicecheck();
+                    if let Some(token_out) = device_check_probe_cli.token_out.as_ref()
+                        && let Some(token_base64) = report.token_base64.as_ref()
+                    {
+                        let mut options = fs::OpenOptions::new();
+                        options.write(true).create(true).truncate(true);
+                        #[cfg(unix)]
+                        {
+                            use std::os::unix::fs::OpenOptionsExt;
+                            options.mode(0o600);
+                        }
+                        options
+                            .open(token_out)?
+                            .write_all(token_base64.as_bytes())?;
+                    }
+                    println!("{}", serde_json::to_string_pretty(&report)?);
+                    if !report.has_token {
+                        anyhow::bail!("DeviceCheck probe did not produce a token");
+                    }
                 }
             }
         }
@@ -1480,6 +1514,7 @@ fn reject_remote_mode_for_app_server_subcommand(
         Some(AppServerSubcommand::GenerateInternalJsonSchema(_)) => {
             "app-server generate-internal-json-schema"
         }
+        Some(AppServerSubcommand::DeviceCheckProbe(_)) => "app-server device-check-probe",
     };
     reject_remote_mode_for_subcommand(remote, remote_auth_token_env, subcommand_name)
 }

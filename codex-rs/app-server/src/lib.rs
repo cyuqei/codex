@@ -76,6 +76,7 @@ mod config_api;
 mod config_manager;
 mod config_manager_service;
 mod device_key_api;
+mod devicecheck_probe;
 mod dynamic_tools;
 mod error_code;
 mod external_agent_config_api;
@@ -99,6 +100,8 @@ pub use crate::transport::app_server_control_socket_path;
 pub use crate::transport::auth::AppServerWebsocketAuthArgs;
 pub use crate::transport::auth::AppServerWebsocketAuthSettings;
 pub use crate::transport::auth::WebsocketAuthCliMode;
+pub use devicecheck_probe::DeviceCheckProbeReport;
+pub use devicecheck_probe::probe_devicecheck;
 
 const LOG_FORMAT_ENV_VAR: &str = "LOG_FORMAT";
 
