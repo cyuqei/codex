@@ -108,11 +108,6 @@ impl ConfigLayerEntry {
         }
     }
 
-    pub fn with_ignored_project_config_keys(mut self, ignored_keys: Vec<String>) -> Self {
-        self.ignored_project_config_keys = ignored_keys;
-        self
-    }
-
     pub fn is_disabled(&self) -> bool {
         self.disabled_reason.is_some()
     }

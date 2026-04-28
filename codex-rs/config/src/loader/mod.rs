@@ -710,12 +710,13 @@ fn project_layer_entry(
         dot_codex_folder: dot_codex_folder.clone(),
     };
 
-    let entry = if let Some(reason) = disabled_reason {
+    let mut entry = if let Some(reason) = disabled_reason {
         ConfigLayerEntry::new_disabled(source, config, reason)
     } else {
         ConfigLayerEntry::new(source, config)
     };
-    entry.with_ignored_project_config_keys(ignored_project_config_keys)
+    entry.ignored_project_config_keys = ignored_project_config_keys;
+    entry
 }
 
 fn sanitize_project_config(config: TomlValue) -> (TomlValue, Vec<String>) {
