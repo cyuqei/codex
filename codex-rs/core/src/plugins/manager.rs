@@ -1110,11 +1110,13 @@ impl PluginsManager {
             ),
         )
         .await;
-        let hooks = summarize_plugin_hooks(&load_plugin_hooks(
+        let (hook_sources, _hook_load_warnings) = load_plugin_hooks(
             &source_path,
             &plugin_id,
+            &self.store.plugin_data_root(&plugin_id),
             &manifest.paths,
-        ));
+        );
+        let hooks = summarize_plugin_hooks(&hook_sources);
         let apps = load_plugin_apps(source_path.as_path()).await;
         let mut mcp_server_names = load_plugin_mcp_servers(source_path.as_path())
             .await
