@@ -387,7 +387,11 @@ use crate::status_indicator_widget::STATUS_DETAILS_DEFAULT_MAX_LINES;
 use crate::status_indicator_widget::StatusDetailsCapitalization;
 use crate::text_formatting::truncate_text;
 use crate::tui::FrameRequester;
+mod current_usage_limit_nudge;
 mod goal_status;
+use self::current_usage_limit_nudge::CURRENT_USAGE_LIMIT_NUDGE_URL;
+use self::current_usage_limit_nudge::CurrentUsageLimitNudgePromptState;
+use self::current_usage_limit_nudge::prompt_subtitle as current_usage_limit_nudge_prompt_subtitle;
 use self::goal_status::GoalStatusState;
 #[cfg(test)]
 use self::goal_status::goal_status_indicator_from_app_goal;
@@ -526,6 +530,7 @@ impl RateLimitWarningState {
         secondary_window_minutes: Option<i64>,
         primary_used_percent: Option<f64>,
         primary_window_minutes: Option<i64>,
+        suppressed_threshold: Option<codex_protocol::protocol::UsageLimitNudgeThreshold>,
     ) -> Vec<String> {
         let reached_secondary_cap =
             matches!(secondary_used_percent, Some(percent) if percent == 100.0);
@@ -544,7 +549,10 @@ impl RateLimitWarningState {
                 highest_secondary = Some(RATE_LIMIT_WARNING_THRESHOLDS[self.secondary_index]);
                 self.secondary_index += 1;
             }
-            if let Some(threshold) = highest_secondary {
+            if let Some(threshold) = highest_secondary
+                && suppressed_threshold.map(|value| f64::from(value.as_percent()))
+                    != Some(threshold)
+            {
                 let limit_label = secondary_window_minutes
                     .map(get_limits_duration)
                     .unwrap_or_else(|| "weekly".to_string());
@@ -563,7 +571,10 @@ impl RateLimitWarningState {
                 highest_primary = Some(RATE_LIMIT_WARNING_THRESHOLDS[self.primary_index]);
                 self.primary_index += 1;
             }
-            if let Some(threshold) = highest_primary {
+            if let Some(threshold) = highest_primary
+                && suppressed_threshold.map(|value| f64::from(value.as_percent()))
+                    != Some(threshold)
+            {
                 let limit_label = primary_window_minutes
                     .map(get_limits_duration)
                     .unwrap_or_else(|| "5h".to_string());
@@ -836,6 +847,7 @@ pub(crate) struct ChatWidget {
     plan_type: Option<PlanType>,
     codex_rate_limit_reached_type: Option<RateLimitReachedType>,
     rate_limit_warnings: RateLimitWarningState,
+    current_usage_limit_nudge_prompt: CurrentUsageLimitNudgePromptState,
     rate_limit_switch_prompt: RateLimitSwitchPromptState,
     add_credits_nudge_email_in_flight: Option<AddCreditsNudgeCreditType>,
     adaptive_chunking: AdaptiveChunkingPolicy,
@@ -3234,6 +3246,10 @@ impl ChatWidget {
             self.plan_type = snapshot.plan_type.or(self.plan_type);
 
             let is_codex_limit = limit_id.eq_ignore_ascii_case("codex");
+            if is_codex_limit {
+                self.current_usage_limit_nudge_prompt
+                    .update(snapshot.current_usage_limit_nudge_state());
+            }
             if is_codex_limit
                 && let Some(rate_limit_reached_type) = snapshot.rate_limit_reached_type
             {
@@ -3254,6 +3270,7 @@ impl ChatWidget {
                         .primary
                         .as_ref()
                         .and_then(|window| window.window_minutes),
+                    self.current_usage_limit_nudge_prompt.active_threshold(),
                 )
             } else {
                 vec![]
@@ -5561,6 +5578,7 @@ impl ChatWidget {
             plan_type: initial_plan_type,
             codex_rate_limit_reached_type: None,
             rate_limit_warnings: RateLimitWarningState::default(),
+            current_usage_limit_nudge_prompt: CurrentUsageLimitNudgePromptState::default(),
             rate_limit_switch_prompt: RateLimitSwitchPromptState::default(),
             add_credits_nudge_email_in_flight: None,
             adaptive_chunking: AdaptiveChunkingPolicy::default(),
@@ -8538,6 +8556,9 @@ impl ChatWidget {
     }
 
     fn maybe_show_pending_rate_limit_prompt(&mut self) {
+        if self.maybe_show_pending_current_usage_limit_nudge_prompt() {
+            return;
+        }
         if self.rate_limit_switch_prompt_hidden() {
             self.rate_limit_switch_prompt = RateLimitSwitchPromptState::Idle;
             return;
@@ -8554,6 +8575,50 @@ impl ChatWidget {
         } else {
             self.rate_limit_switch_prompt = RateLimitSwitchPromptState::Idle;
         }
+    }
+
+    fn maybe_show_pending_current_usage_limit_nudge_prompt(&mut self) -> bool {
+        let Some(nudge) = self.current_usage_limit_nudge_prompt.take_pending() else {
+            return false;
+        };
+        self.open_current_usage_limit_nudge_prompt(nudge);
+        true
+    }
+
+    fn open_current_usage_limit_nudge_prompt(
+        &mut self,
+        nudge: codex_protocol::protocol::UsageLimitNudge,
+    ) {
+        let yes_actions: Vec<SelectionAction> = vec![Box::new(|tx| {
+            tx.send(AppEvent::OpenUrlInBrowser {
+                url: CURRENT_USAGE_LIMIT_NUDGE_URL.to_string(),
+            });
+        })];
+        let items = vec![
+            SelectionItem {
+                name: "Yes".to_string(),
+                display_shortcut: Some(key_hint::plain(KeyCode::Char('y'))),
+                actions: yes_actions,
+                dismiss_on_select: true,
+                ..Default::default()
+            },
+            SelectionItem {
+                name: "No".to_string(),
+                display_shortcut: Some(key_hint::plain(KeyCode::Char('n'))),
+                is_default: true,
+                dismiss_on_select: true,
+                ..Default::default()
+            },
+        ];
+
+        self.bottom_pane.show_selection_view(SelectionViewParams {
+            title: Some("Approaching usage limit".to_string()),
+            subtitle: Some(current_usage_limit_nudge_prompt_subtitle(&nudge)),
+            footer_hint: Some(standard_popup_hint_line()),
+            items,
+            initial_selected_idx: Some(1),
+            ..Default::default()
+        });
     }
 
     fn open_rate_limit_switch_prompt(&mut self, preset: ModelPreset) {
