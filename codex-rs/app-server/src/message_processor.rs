@@ -728,7 +728,7 @@ impl MessageProcessor {
         self.analytics_events_client.track_request(
             connection_id.0,
             connection_request_id.request_id.clone(),
-            codex_request.clone(),
+            &codex_request,
         );
 
         let serialization_scope = codex_request.serialization_scope();
