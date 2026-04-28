@@ -1,9 +1,11 @@
+use codex_protocol::account::PlanType;
 use codex_protocol::protocol::CurrentUsageLimitNudgeState;
 use codex_protocol::protocol::UsageLimitNudge;
 use codex_protocol::protocol::UsageLimitNudgeCopyVariant;
 use codex_protocol::protocol::UsageLimitNudgeThreshold;
 
 pub(super) const CURRENT_USAGE_LIMIT_NUDGE_URL: &str = "https://chatgpt.com/codex/settings/usage";
+pub(super) const WORKSPACE_OWNER_USAGE_LIMIT_NUDGE_URL: &str = "https://chatgpt.com/admin/billing";
 
 #[derive(Default)]
 pub(super) struct CurrentUsageLimitNudgePromptState {
@@ -49,4 +51,12 @@ pub(super) fn prompt_subtitle(nudge: &UsageLimitNudge) -> String {
         "You're at {}% of your Codex usage limit. {action} now to keep going?",
         nudge.threshold.as_percent()
     )
+}
+
+pub(super) fn prompt_url(plan_type: Option<PlanType>) -> &'static str {
+    if plan_type.is_some_and(PlanType::is_workspace_account) {
+        WORKSPACE_OWNER_USAGE_LIMIT_NUDGE_URL
+    } else {
+        CURRENT_USAGE_LIMIT_NUDGE_URL
+    }
 }

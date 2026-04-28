@@ -389,9 +389,13 @@ use crate::text_formatting::truncate_text;
 use crate::tui::FrameRequester;
 mod current_usage_limit_nudge;
 mod goal_status;
+#[cfg(test)]
 use self::current_usage_limit_nudge::CURRENT_USAGE_LIMIT_NUDGE_URL;
 use self::current_usage_limit_nudge::CurrentUsageLimitNudgePromptState;
+#[cfg(test)]
+use self::current_usage_limit_nudge::WORKSPACE_OWNER_USAGE_LIMIT_NUDGE_URL;
 use self::current_usage_limit_nudge::prompt_subtitle as current_usage_limit_nudge_prompt_subtitle;
+use self::current_usage_limit_nudge::prompt_url as current_usage_limit_nudge_prompt_url;
 use self::goal_status::GoalStatusState;
 #[cfg(test)]
 use self::goal_status::goal_status_indicator_from_app_goal;
@@ -8589,9 +8593,10 @@ impl ChatWidget {
         &mut self,
         nudge: codex_protocol::protocol::UsageLimitNudge,
     ) {
-        let yes_actions: Vec<SelectionAction> = vec![Box::new(|tx| {
+        let prompt_url = current_usage_limit_nudge_prompt_url(self.plan_type).to_string();
+        let yes_actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
             tx.send(AppEvent::OpenUrlInBrowser {
-                url: CURRENT_USAGE_LIMIT_NUDGE_URL.to_string(),
+                url: prompt_url.clone(),
             });
         })];
         let items = vec![

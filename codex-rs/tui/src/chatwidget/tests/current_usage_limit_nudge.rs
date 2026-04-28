@@ -156,6 +156,25 @@ async fn proactive_usage_prompt_yes_opens_browser_destination() {
 }
 
 #[tokio::test]
+async fn proactive_usage_prompt_yes_opens_workspace_owner_billing_destination() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+    chat.plan_type = Some(PlanType::SelfServeBusinessUsageBased);
+
+    chat.on_rate_limit_snapshot(Some(snapshot_with_nudge(
+        "workspace-browser-key",
+        /*threshold*/ 90,
+        UsageLimitNudgeCopyVariant::AddCredits,
+    )));
+    chat.maybe_show_pending_rate_limit_prompt();
+    chat.handle_key_event(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
+
+    assert_eq!(
+        next_open_url_event(&mut rx),
+        Some(WORKSPACE_OWNER_USAGE_LIMIT_NUDGE_URL.to_string())
+    );
+}
+
+#[tokio::test]
 async fn proactive_usage_prompt_no_dismisses_without_opening_browser() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
 
