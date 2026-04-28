@@ -2,6 +2,7 @@ use codex_protocol::account::PlanType;
 use codex_protocol::protocol::CreditsSnapshot;
 use codex_protocol::protocol::RateLimitSnapshot;
 use codex_protocol::protocol::RateLimitWindow;
+use codex_protocol::protocol::UsageLimitNudgePayload;
 use http::HeaderMap;
 use serde::Deserialize;
 use std::collections::BTreeSet;
@@ -94,6 +95,7 @@ pub fn parse_rate_limit_for_limit(
         credits,
         plan_type: None,
         rate_limit_reached_type: None,
+        current_usage_limit_nudge: None,
     })
 }
 
@@ -126,6 +128,8 @@ struct RateLimitEvent {
     credits: Option<RateLimitEventCredits>,
     metered_limit_name: Option<String>,
     limit_name: Option<String>,
+    #[serde(default, deserialize_with = "deserialize_double_option")]
+    current_usage_limit_nudge: Option<Option<UsageLimitNudgePayload>>,
 }
 
 pub fn parse_rate_limit_event(payload: &str) -> Option<RateLimitSnapshot> {
@@ -158,6 +162,7 @@ pub fn parse_rate_limit_event(payload: &str) -> Option<RateLimitSnapshot> {
         credits,
         plan_type: event.plan_type,
         rate_limit_reached_type: None,
+        current_usage_limit_nudge: event.current_usage_limit_nudge,
     })
 }
 
@@ -168,6 +173,14 @@ fn map_event_window(window: Option<&RateLimitEventWindow>) -> Option<RateLimitWi
         window_minutes: window.window_minutes,
         resets_at: window.reset_at,
     })
+}
+
+fn deserialize_double_option<'de, D, T>(deserializer: D) -> Result<Option<Option<T>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Option::<T>::deserialize(deserializer).map(Some)
 }
 
 /// Parses the bespoke Codex rate-limit headers into a `RateLimitSnapshot`.
@@ -364,5 +377,50 @@ mod tests {
         assert_eq!(updates[0].primary, None);
         assert_eq!(updates[0].secondary, None);
         assert_eq!(updates[0].credits, None);
+    }
+
+    #[test]
+    fn parse_rate_limit_event_preserves_active_current_usage_limit_nudge() {
+        let snapshot = parse_rate_limit_event(
+            r#"{
+                "type": "codex.rate_limits",
+                "current_usage_limit_nudge": {
+                    "key": "near_limit_90_upgrade",
+                    "threshold": 90,
+                    "copy_variant": "upgrade"
+                }
+            }"#,
+        )
+        .expect("snapshot");
+
+        assert_eq!(
+            snapshot.current_usage_limit_nudge,
+            Some(Some(UsageLimitNudgePayload {
+                key: "near_limit_90_upgrade".to_string(),
+                threshold: 90,
+                copy_variant: codex_protocol::protocol::UsageLimitNudgeCopyVariant::Upgrade,
+            }))
+        );
+    }
+
+    #[test]
+    fn parse_rate_limit_event_preserves_explicitly_inactive_current_usage_limit_nudge() {
+        let snapshot = parse_rate_limit_event(
+            r#"{
+                "type": "codex.rate_limits",
+                "current_usage_limit_nudge": null
+            }"#,
+        )
+        .expect("snapshot");
+
+        assert_eq!(snapshot.current_usage_limit_nudge, Some(None));
+    }
+
+    #[test]
+    fn parse_rate_limit_event_preserves_missing_current_usage_limit_nudge() {
+        let snapshot =
+            parse_rate_limit_event(r#"{ "type": "codex.rate_limits" }"#).expect("snapshot");
+
+        assert_eq!(snapshot.current_usage_limit_nudge, None);
     }
 }

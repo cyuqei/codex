@@ -751,6 +751,7 @@ mod tests {
                     credits: None,
                     plan_type: Some(PlanType::Plus),
                     rate_limit_reached_type: None,
+                    current_usage_limit_nudge: None,
                 },
             });
 

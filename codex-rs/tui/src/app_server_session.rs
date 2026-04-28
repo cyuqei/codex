@@ -1464,6 +1464,9 @@ pub(crate) fn app_server_rate_limit_snapshot_to_core(
         credits: snapshot.credits.map(app_server_credits_snapshot_to_core),
         plan_type: snapshot.plan_type,
         rate_limit_reached_type: snapshot.rate_limit_reached_type.map(Into::into),
+        current_usage_limit_nudge: snapshot
+            .current_usage_limit_nudge
+            .map(|nudge| nudge.map(Into::into)),
     }
 }
 

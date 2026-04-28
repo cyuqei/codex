@@ -403,6 +403,8 @@ export type { TurnStartedNotification } from "./TurnStartedNotification";
 export type { TurnStatus } from "./TurnStatus";
 export type { TurnSteerParams } from "./TurnSteerParams";
 export type { TurnSteerResponse } from "./TurnSteerResponse";
+export type { UsageLimitNudge } from "./UsageLimitNudge";
+export type { UsageLimitNudgeCopyVariant } from "./UsageLimitNudgeCopyVariant";
 export type { UserInput } from "./UserInput";
 export type { WarningNotification } from "./WarningNotification";
 export type { WebSearchAction } from "./WebSearchAction";
