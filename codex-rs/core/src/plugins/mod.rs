@@ -5,7 +5,6 @@ mod injection;
 mod manager;
 mod mentions;
 mod render;
-mod startup_sync;
 #[cfg(test)]
 pub(crate) mod test_support;
 
