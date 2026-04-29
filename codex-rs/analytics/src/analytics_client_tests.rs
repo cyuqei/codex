@@ -3,12 +3,17 @@ use crate::events::AppServerRpcTransport;
 use crate::events::CodexAppMentionedEventRequest;
 use crate::events::CodexAppServerClientMetadata;
 use crate::events::CodexAppUsedEventRequest;
+use crate::events::CodexCommandExecutionEventParams;
+use crate::events::CodexCommandExecutionEventRequest;
 use crate::events::CodexCompactionEventRequest;
 use crate::events::CodexHookRunEventRequest;
 use crate::events::CodexPluginEventRequest;
 use crate::events::CodexPluginUsedEventRequest;
 use crate::events::CodexRuntimeMetadata;
+use crate::events::CodexToolItemEventBase;
 use crate::events::CodexTurnEventRequest;
+use crate::events::CommandExecutionFamily;
+use crate::events::CommandExecutionSourceKind;
 use crate::events::GuardianApprovalRequestSource;
 use crate::events::GuardianReviewDecision;
 use crate::events::GuardianReviewEventParams;
@@ -17,6 +22,8 @@ use crate::events::GuardianReviewTerminalStatus;
 use crate::events::GuardianReviewedAction;
 use crate::events::ThreadInitializedEvent;
 use crate::events::ThreadInitializedEventParams;
+use crate::events::ToolItemFinalApprovalOutcome;
+use crate::events::ToolItemTerminalStatus;
 use crate::events::TrackEventRequest;
 use crate::events::codex_app_metadata;
 use crate::events::codex_hook_run_metadata;
@@ -61,8 +68,12 @@ use codex_app_server_protocol::ClientInfo;
 use codex_app_server_protocol::ClientRequest;
 use codex_app_server_protocol::ClientResponse;
 use codex_app_server_protocol::CodexErrorInfo;
+use codex_app_server_protocol::CommandExecutionSource;
+use codex_app_server_protocol::CommandExecutionStatus;
 use codex_app_server_protocol::InitializeCapabilities;
 use codex_app_server_protocol::InitializeParams;
+use codex_app_server_protocol::ItemCompletedNotification;
+use codex_app_server_protocol::ItemStartedNotification;
 use codex_app_server_protocol::JSONRPCErrorError;
 use codex_app_server_protocol::NonSteerableTurnKind;
 use codex_app_server_protocol::PermissionProfile as AppServerPermissionProfile;
@@ -71,6 +82,7 @@ use codex_app_server_protocol::SandboxPolicy as AppServerSandboxPolicy;
 use codex_app_server_protocol::ServerNotification;
 use codex_app_server_protocol::SessionSource as AppServerSessionSource;
 use codex_app_server_protocol::Thread;
+use codex_app_server_protocol::ThreadItem;
 use codex_app_server_protocol::ThreadResumeResponse;
 use codex_app_server_protocol::ThreadStartResponse;
 use codex_app_server_protocol::ThreadStatus as AppServerThreadStatus;
@@ -180,6 +192,25 @@ fn sample_runtime_metadata() -> CodexRuntimeMetadata {
         runtime_os: "macos".to_string(),
         runtime_os_version: "15.3.1".to_string(),
         runtime_arch: "aarch64".to_string(),
+    }
+}
+
+fn sample_command_execution_item(
+    status: CommandExecutionStatus,
+    exit_code: Option<i32>,
+    duration_ms: Option<i64>,
+) -> ThreadItem {
+    ThreadItem::CommandExecution {
+        id: "item-1".to_string(),
+        command: "echo hi".to_string(),
+        cwd: test_path_buf("/tmp").abs(),
+        process_id: None,
+        source: CommandExecutionSource::Agent,
+        status,
+        command_actions: Vec::new(),
+        aggregated_output: None,
+        exit_code,
+        duration_ms,
     }
 }
 
@@ -853,6 +884,143 @@ fn thread_initialized_event_serializes_expected_shape() {
             }
         })
     );
+}
+
+#[test]
+fn command_execution_event_serializes_expected_shape() {
+    let event = TrackEventRequest::CommandExecution(CodexCommandExecutionEventRequest {
+        event_type: "codex_command_execution_event",
+        event_params: CodexCommandExecutionEventParams {
+            base: CodexToolItemEventBase {
+                thread_id: "thread-1".to_string(),
+                turn_id: "turn-1".to_string(),
+                item_id: "item-1".to_string(),
+                app_server_client: CodexAppServerClientMetadata {
+                    product_client_id: "codex_tui".to_string(),
+                    client_name: Some("codex-tui".to_string()),
+                    client_version: Some("1.2.3".to_string()),
+                    rpc_transport: AppServerRpcTransport::Websocket,
+                    experimental_api_enabled: Some(true),
+                },
+                runtime: CodexRuntimeMetadata {
+                    codex_rs_version: "0.99.0".to_string(),
+                    runtime_os: "macos".to_string(),
+                    runtime_os_version: "15.3.1".to_string(),
+                    runtime_arch: "aarch64".to_string(),
+                },
+                thread_source: Some("user"),
+                subagent_source: None,
+                parent_thread_id: None,
+                tool_name: "shell".to_string(),
+                started_at: 123,
+                completed_at: Some(125),
+                duration_ms: Some(2000),
+                execution_started: true,
+                review_count: 0,
+                guardian_review_count: 0,
+                user_review_count: 0,
+                final_approval_outcome: ToolItemFinalApprovalOutcome::NotNeeded,
+                terminal_status: ToolItemTerminalStatus::Completed,
+                failure_kind: None,
+                requested_additional_permissions: false,
+                requested_network_access: false,
+                retry_count: 0,
+            },
+            command_execution_source: CommandExecutionSourceKind::Agent,
+            command_execution_family: CommandExecutionFamily::Shell,
+            exit_code: Some(0),
+            command_action_count: Some(1),
+        },
+    });
+
+    let payload = serde_json::to_value(&event).expect("serialize command execution event");
+    assert_eq!(
+        payload,
+        json!({
+            "event_type": "codex_command_execution_event",
+            "event_params": {
+                "thread_id": "thread-1",
+                "turn_id": "turn-1",
+                "item_id": "item-1",
+                "app_server_client": {
+                    "product_client_id": "codex_tui",
+                    "client_name": "codex-tui",
+                    "client_version": "1.2.3",
+                    "rpc_transport": "websocket",
+                    "experimental_api_enabled": true
+                },
+                "runtime": {
+                    "codex_rs_version": "0.99.0",
+                    "runtime_os": "macos",
+                    "runtime_os_version": "15.3.1",
+                    "runtime_arch": "aarch64"
+                },
+                "thread_source": "user",
+                "subagent_source": null,
+                "parent_thread_id": null,
+                "tool_name": "shell",
+                "started_at": 123,
+                "completed_at": 125,
+                "duration_ms": 2000,
+                "execution_started": true,
+                "review_count": 0,
+                "guardian_review_count": 0,
+                "user_review_count": 0,
+                "final_approval_outcome": "not_needed",
+                "terminal_status": "completed",
+                "failure_kind": null,
+                "requested_additional_permissions": false,
+                "requested_network_access": false,
+                "retry_count": 0,
+                "command_execution_source": "agent",
+                "command_execution_family": "shell",
+                "exit_code": 0,
+                "command_action_count": 1
+            }
+        })
+    );
+}
+
+#[tokio::test]
+async fn item_lifecycle_without_thread_metadata_does_not_emit_tool_event() {
+    let mut reducer = AnalyticsReducer::default();
+    let mut events = Vec::new();
+
+    ingest_initialize(&mut reducer, &mut events).await;
+    reducer
+        .ingest(
+            AnalyticsFact::Notification(Box::new(ServerNotification::ItemStarted(
+                ItemStartedNotification {
+                    thread_id: "thread-1".to_string(),
+                    turn_id: "turn-1".to_string(),
+                    item: sample_command_execution_item(
+                        CommandExecutionStatus::InProgress,
+                        /*exit_code*/ None,
+                        /*duration_ms*/ None,
+                    ),
+                },
+            ))),
+            &mut events,
+        )
+        .await;
+    reducer
+        .ingest(
+            AnalyticsFact::Notification(Box::new(ServerNotification::ItemCompleted(
+                ItemCompletedNotification {
+                    thread_id: "thread-1".to_string(),
+                    turn_id: "turn-1".to_string(),
+                    item: sample_command_execution_item(
+                        CommandExecutionStatus::Completed,
+                        Some(0),
+                        Some(42),
+                    ),
+                },
+            ))),
+            &mut events,
+        )
+        .await;
+
+    assert!(events.is_empty());
 }
 
 #[tokio::test]

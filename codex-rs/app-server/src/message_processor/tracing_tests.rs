@@ -1,8 +1,8 @@
 use super::ConnectionSessionState;
 use super::MessageProcessor;
 use super::MessageProcessorArgs;
-use crate::config_manager::ConfigManager;
 use crate::analytics_events::analytics_events_client_from_config;
+use crate::config_manager::ConfigManager;
 use crate::outgoing_message::ConnectionId;
 use crate::outgoing_message::OutgoingMessageSender;
 use crate::transport::AppServerTransport;

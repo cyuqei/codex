@@ -19,8 +19,8 @@ use std::sync::Arc;
 use std::sync::RwLock;
 use std::sync::atomic::AtomicBool;
 
-use crate::config_manager::ConfigManager;
 use crate::analytics_events::analytics_events_client_from_config;
+use crate::config_manager::ConfigManager;
 use crate::message_processor::MessageProcessor;
 use crate::message_processor::MessageProcessorArgs;
 use crate::outgoing_message::ConnectionId;
