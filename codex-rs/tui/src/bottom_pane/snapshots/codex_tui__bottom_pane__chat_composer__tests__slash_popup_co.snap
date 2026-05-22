@@ -1,0 +1,10 @@
+---
+source: tui/src/bottom_pane/chat_composer.rs
+expression: terminal.backend()
+---
+"                                                            "
+"› /co                                                       "
+"                                                            "
+"  /commit   draft a commit message from the current git     "
+"            status and diff                                 "
+"  /compact  summarize conversation to prevent hitting the   "

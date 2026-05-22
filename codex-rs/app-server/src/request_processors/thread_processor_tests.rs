@@ -59,6 +59,7 @@ mod thread_processor_behavior_tests {
     use codex_config::SessionThreadConfig;
     use codex_config::StaticThreadConfigLoader;
     use codex_config::ThreadConfigSource;
+    use codex_model_provider_info::AuthStyle;
     use codex_model_provider_info::ModelProviderInfo;
     use codex_model_provider_info::WireApi;
     use codex_protocol::ThreadId;
@@ -569,6 +570,7 @@ mod thread_processor_behavior_tests {
             auth: None,
             aws: None,
             wire_api: WireApi::Responses,
+            auth_style: AuthStyle::Bearer,
             query_params: None,
             http_headers: None,
             env_http_headers: None,

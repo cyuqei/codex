@@ -533,6 +533,1107 @@
         }
       ]
     },
+    "DevflowAgentCapabilitiesReadParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowAgentDetectParams": {
+      "properties": {
+        "claudeRoot": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "codexRoot": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hermesRoot": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "DevflowAgentDiagnoseParams": {
+      "properties": {
+        "cwd": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowAgentListParams": {
+      "properties": {
+        "runtimes": {
+          "items": {
+            "$ref": "#/definitions/DevflowAgentRuntime"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "DevflowAgentReadParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowAgentRestartParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowAgentRuntime": {
+      "enum": [
+        "codex",
+        "claude",
+        "hermes"
+      ],
+      "type": "string"
+    },
+    "DevflowAgentStartParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowAgentStopParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowApprovalDecision": {
+      "enum": [
+        "accept",
+        "accept_for_session",
+        "accept_for_task",
+        "accept_for_project",
+        "decline",
+        "cancel"
+      ],
+      "type": "string"
+    },
+    "DevflowApprovalListParams": {
+      "properties": {
+        "runId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevflowApprovalStatus"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "taskId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "DevflowApprovalPolicy": {
+      "properties": {
+        "approvalsReviewer": {
+          "$ref": "#/definitions/ApprovalsReviewer"
+        },
+        "highRiskApprovalPolicy": {
+          "$ref": "#/definitions/AskForApproval"
+        },
+        "lowRiskApprovalPolicy": {
+          "$ref": "#/definitions/AskForApproval"
+        },
+        "mediumRiskApprovalPolicy": {
+          "$ref": "#/definitions/AskForApproval"
+        }
+      },
+      "required": [
+        "approvalsReviewer",
+        "highRiskApprovalPolicy",
+        "lowRiskApprovalPolicy",
+        "mediumRiskApprovalPolicy"
+      ],
+      "type": "object"
+    },
+    "DevflowApprovalPolicyReadParams": {
+      "type": "object"
+    },
+    "DevflowApprovalPolicyUpdateParams": {
+      "properties": {
+        "policy": {
+          "$ref": "#/definitions/DevflowApprovalPolicy"
+        }
+      },
+      "required": [
+        "policy"
+      ],
+      "type": "object"
+    },
+    "DevflowApprovalRespondParams": {
+      "properties": {
+        "decision": {
+          "$ref": "#/definitions/DevflowApprovalDecision"
+        },
+        "id": {
+          "type": "string"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PermissionGrantScope"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "decision",
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowApprovalStatus": {
+      "enum": [
+        "pending",
+        "responded"
+      ],
+      "type": "string"
+    },
+    "DevflowArtifactDeliverParams": {
+      "properties": {
+        "destination": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "message": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "targetAgentId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "destination",
+        "id",
+        "targetAgentId"
+      ],
+      "type": "object"
+    },
+    "DevflowArtifactExportParams": {
+      "properties": {
+        "destinationPath": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "destinationPath",
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowArtifactKind": {
+      "enum": [
+        "context_pack",
+        "diff",
+        "delivery_receipt",
+        "output_archive",
+        "quality_gate_output",
+        "report",
+        "review_report",
+        "run_summary"
+      ],
+      "type": "string"
+    },
+    "DevflowArtifactListParams": {
+      "properties": {
+        "cursor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevflowArtifactKind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "limit": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "runId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "taskId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "DevflowArtifactOpenParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowArtifactReadParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowCapabilityPackListParams": {
+      "properties": {
+        "includeDisabled": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "DevflowCapabilityPackReadParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowCapabilityPackRunParams": {
+      "properties": {
+        "capability": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "projectRoot": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "taskId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowPolicyPackApplyParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "riskLevel": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevflowTaskRiskLevel"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "taskId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowPolicyPackListParams": {
+      "properties": {
+        "includeDisabled": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "DevflowPolicyPackReadParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowProjectDiagnoseParams": {
+      "properties": {
+        "projectRoot": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "projectRoot"
+      ],
+      "type": "object"
+    },
+    "DevflowProjectListParams": {
+      "properties": {
+        "projectRoots": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "DevflowProjectMemoryReadParams": {
+      "properties": {
+        "projectRoot": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "projectRoot"
+      ],
+      "type": "object"
+    },
+    "DevflowProjectMemoryWriteParams": {
+      "properties": {
+        "projectRoot": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "projectRoot",
+        "summary"
+      ],
+      "type": "object"
+    },
+    "DevflowProjectOpenParams": {
+      "properties": {
+        "projectRoot": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "projectRoot"
+      ],
+      "type": "object"
+    },
+    "DevflowProjectReadParams": {
+      "properties": {
+        "projectRoot": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "projectRoot"
+      ],
+      "type": "object"
+    },
+    "DevflowProjectTestCommandsListParams": {
+      "properties": {
+        "projectRoot": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "projectRoot"
+      ],
+      "type": "object"
+    },
+    "DevflowProjectTrustParams": {
+      "properties": {
+        "projectRoot": {
+          "type": "string"
+        },
+        "trusted": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "projectRoot",
+        "trusted"
+      ],
+      "type": "object"
+    },
+    "DevflowQualityGateKind": {
+      "enum": [
+        "format",
+        "lint",
+        "typecheck",
+        "targeted_test",
+        "integration_test",
+        "snapshot",
+        "build",
+        "review",
+        "gstack_health",
+        "gstack_browser_qa",
+        "gstack_benchmark",
+        "gstack_canary",
+        "gstack_watchdog"
+      ],
+      "type": "string"
+    },
+    "DevflowQualityGateListParams": {
+      "properties": {
+        "runId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "taskId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "DevflowQualityGateReadParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowQualityGateRerunParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowQualityGateRunParams": {
+      "properties": {
+        "commandOverride": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevflowQualityGateKind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "taskId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "taskId"
+      ],
+      "type": "object"
+    },
+    "DevflowQualityGateWaiveParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "DevflowReleasePrepCreateParams": {
+      "properties": {
+        "projectRoot": {
+          "type": "string"
+        },
+        "taskId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "projectRoot"
+      ],
+      "type": "object"
+    },
+    "DevflowSupportBundleCreateParams": {
+      "properties": {
+        "projectRoot": {
+          "type": "string"
+        },
+        "taskId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "projectRoot"
+      ],
+      "type": "object"
+    },
+    "DevflowTaskAssignParams": {
+      "properties": {
+        "assignedAgentId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowTaskCancelParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowTaskCreateParams": {
+      "properties": {
+        "assignedAgentId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dependencies": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "kind": {
+          "$ref": "#/definitions/DevflowTaskKind"
+        },
+        "objective": {
+          "type": "string"
+        },
+        "projectRoot": {
+          "type": "string"
+        },
+        "riskLevel": {
+          "$ref": "#/definitions/DevflowTaskRiskLevel"
+        },
+        "title": {
+          "type": "string"
+        },
+        "triggerSource": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "objective",
+        "projectRoot",
+        "riskLevel",
+        "title"
+      ],
+      "type": "object"
+    },
+    "DevflowTaskDependenciesUpdateParams": {
+      "properties": {
+        "dependencies": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "dependencies",
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowTaskDispatchParams": {
+      "properties": {
+        "limit": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "projectId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "taskIds": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "DevflowTaskKind": {
+      "enum": [
+        "implementation",
+        "review",
+        "report",
+        "diagnostic",
+        "automation"
+      ],
+      "type": "string"
+    },
+    "DevflowTaskListParams": {
+      "properties": {
+        "assignedAgentId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cursor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "limit": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "projectId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevflowTaskStatus"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "DevflowTaskPauseParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowTaskPlanParams": {
+      "properties": {
+        "maxTasks": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "objective": {
+          "type": "string"
+        },
+        "projectRoot": {
+          "type": "string"
+        },
+        "riskLevel": {
+          "$ref": "#/definitions/DevflowTaskRiskLevel"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "objective",
+        "projectRoot",
+        "riskLevel",
+        "title"
+      ],
+      "type": "object"
+    },
+    "DevflowTaskReadParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowTaskResumeParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowTaskRiskLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "type": "string"
+    },
+    "DevflowTaskStartParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowTaskStatus": {
+      "enum": [
+        "planned",
+        "running",
+        "paused",
+        "ready_for_review",
+        "ready_to_merge",
+        "failed",
+        "blocked",
+        "cancelled"
+      ],
+      "type": "string"
+    },
+    "DevflowWatchdogAlertSeverity": {
+      "enum": [
+        "info",
+        "warning",
+        "critical"
+      ],
+      "type": "string"
+    },
+    "DevflowWatchdogAlertsParams": {
+      "properties": {
+        "cursor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "limit": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "severity": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevflowWatchdogAlertSeverity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevflowWatchdogStatus"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "DevflowWatchdogReadParams": {
+      "type": "object"
+    },
+    "DevflowWatchdogStatus": {
+      "enum": [
+        "idle",
+        "running",
+        "no_progress",
+        "timed_out",
+        "recovering",
+        "quarantined"
+      ],
+      "type": "string"
+    },
+    "DevflowWorktreeCleanupParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowWorktreeCreateParams": {
+      "properties": {
+        "taskId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "taskId"
+      ],
+      "type": "object"
+    },
+    "DevflowWorktreeDiffParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowWorktreeListParams": {
+      "properties": {
+        "cursor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "limit": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "projectId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevflowWorktreeStatus"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "taskId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "DevflowWorktreeMergeParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowWorktreeReadParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "DevflowWorktreeStatus": {
+      "enum": [
+        "active",
+        "dirty",
+        "cleaned",
+        "missing"
+      ],
+      "type": "string"
+    },
     "DeviceKeyCreateParams": {
       "description": "Create a controller-local device key with a random key id.",
       "properties": {
@@ -1907,6 +3008,13 @@
             "integer",
             "null"
           ]
+        },
+        "providerId": {
+          "description": "When set, list models for the specified provider id instead of the currently selected one.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "type": "object"
@@ -1918,6 +3026,13 @@
       "enum": [
         "restricted",
         "enabled"
+      ],
+      "type": "string"
+    },
+    "PermissionGrantScope": {
+      "enum": [
+        "turn",
+        "session"
       ],
       "type": "string"
     },
@@ -2354,6 +3469,364 @@
         "rows"
       ],
       "type": "object"
+    },
+    "ProviderAuthStyle": {
+      "enum": [
+        "bearer",
+        "x_api_key"
+      ],
+      "type": "string"
+    },
+    "ProviderConfigParams": {
+      "properties": {
+        "apiKey": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "authStyle": {
+          "$ref": "#/definitions/ProviderAuthStyle"
+        },
+        "baseUrl": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "envHeaders": {
+          "items": {
+            "$ref": "#/definitions/ProviderEnvHeaderInput"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "envKey": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "headers": {
+          "items": {
+            "$ref": "#/definitions/ProviderHeaderInput"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "requestMaxRetries": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "requiresOpenaiAuth": {
+          "default": false,
+          "type": "boolean"
+        },
+        "streamIdleTimeoutMs": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "streamMaxRetries": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "supportsWebsockets": {
+          "default": false,
+          "type": "boolean"
+        },
+        "websocketConnectTimeoutMs": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "wireApi": {
+          "$ref": "#/definitions/ProviderWireApi"
+        }
+      },
+      "required": [
+        "authStyle",
+        "baseUrl",
+        "displayName",
+        "wireApi"
+      ],
+      "type": "object"
+    },
+    "ProviderCreateParams": {
+      "properties": {
+        "defaultModel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "provider": {
+          "$ref": "#/definitions/ProviderConfigParams"
+        },
+        "setDefault": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "provider"
+      ],
+      "type": "object"
+    },
+    "ProviderDeleteParams": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "ProviderEnvHeaderInput": {
+      "properties": {
+        "envVar": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "envVar",
+        "name"
+      ],
+      "type": "object"
+    },
+    "ProviderHeaderInput": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "type": "object"
+    },
+    "ProviderListParams": {
+      "properties": {
+        "cwd": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "ProviderPreferencesReadParams": {
+      "properties": {
+        "cwd": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "ProviderPreferencesScope": {
+      "enum": [
+        "global",
+        "project"
+      ],
+      "type": "string"
+    },
+    "ProviderPreferencesUpdateParams": {
+      "properties": {
+        "configScope": {
+          "$ref": "#/definitions/ProviderPreferencesScope"
+        },
+        "cwd": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "defaultModel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "defaultProvider": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "configScope",
+        "defaultProvider"
+      ],
+      "type": "object"
+    },
+    "ProviderReadParams": {
+      "properties": {
+        "cwd": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "ProviderTestConnectionChecks": {
+      "properties": {
+        "basic": {
+          "default": true,
+          "type": "boolean"
+        },
+        "streaming": {
+          "type": "boolean"
+        },
+        "toolCalling": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "ProviderTestConnectionParams": {
+      "properties": {
+        "checks": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ProviderTestConnectionChecks"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "model": {
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/definitions/ProviderTestConnectionTarget"
+        }
+      },
+      "required": [
+        "model",
+        "target"
+      ],
+      "type": "object"
+    },
+    "ProviderTestConnectionTarget": {
+      "oneOf": [
+        {
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "saved"
+              ],
+              "title": "SavedProviderTestConnectionTargetType",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "type"
+          ],
+          "title": "SavedProviderTestConnectionTarget",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "provider": {
+              "$ref": "#/definitions/ProviderConfigParams"
+            },
+            "type": {
+              "enum": [
+                "draft"
+              ],
+              "title": "DraftProviderTestConnectionTargetType",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "provider",
+            "type"
+          ],
+          "title": "DraftProviderTestConnectionTarget",
+          "type": "object"
+        }
+      ]
+    },
+    "ProviderUpdateParams": {
+      "properties": {
+        "defaultModel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "provider": {
+          "$ref": "#/definitions/ProviderConfigParams"
+        },
+        "setDefault": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "provider"
+      ],
+      "type": "object"
+    },
+    "ProviderWireApi": {
+      "enum": [
+        "responses",
+        "anthropic_messages",
+        "chat_completions"
+      ],
+      "type": "string"
     },
     "RealtimeOutputModality": {
       "enum": [
@@ -5804,6 +7277,1374 @@
         },
         "method": {
           "enum": [
+            "devflowAgent/detect"
+          ],
+          "title": "DevflowAgent/detectRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowAgentDetectParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowAgent/detectRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowAgent/list"
+          ],
+          "title": "DevflowAgent/listRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowAgentListParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowAgent/listRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowAgent/read"
+          ],
+          "title": "DevflowAgent/readRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowAgentReadParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowAgent/readRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowAgent/capabilities"
+          ],
+          "title": "DevflowAgent/capabilitiesRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowAgentCapabilitiesReadParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowAgent/capabilitiesRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowAgent/diagnose"
+          ],
+          "title": "DevflowAgent/diagnoseRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowAgentDiagnoseParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowAgent/diagnoseRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowAgent/start"
+          ],
+          "title": "DevflowAgent/startRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowAgentStartParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowAgent/startRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowAgent/stop"
+          ],
+          "title": "DevflowAgent/stopRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowAgentStopParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowAgent/stopRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowAgent/restart"
+          ],
+          "title": "DevflowAgent/restartRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowAgentRestartParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowAgent/restartRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowProject/list"
+          ],
+          "title": "DevflowProject/listRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowProjectListParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowProject/listRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowProject/read"
+          ],
+          "title": "DevflowProject/readRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowProjectReadParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowProject/readRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowProject/open"
+          ],
+          "title": "DevflowProject/openRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowProjectOpenParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowProject/openRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowProjectMemory/read"
+          ],
+          "title": "DevflowProjectMemory/readRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowProjectMemoryReadParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowProjectMemory/readRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowProjectMemory/write"
+          ],
+          "title": "DevflowProjectMemory/writeRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowProjectMemoryWriteParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowProjectMemory/writeRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowProject/diagnose"
+          ],
+          "title": "DevflowProject/diagnoseRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowProjectDiagnoseParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowProject/diagnoseRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowSupportBundle/create"
+          ],
+          "title": "DevflowSupportBundle/createRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowSupportBundleCreateParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowSupportBundle/createRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowReleasePrep/create"
+          ],
+          "title": "DevflowReleasePrep/createRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowReleasePrepCreateParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowReleasePrep/createRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowProject/testCommands/list"
+          ],
+          "title": "DevflowProject/testCommands/listRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowProjectTestCommandsListParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowProject/testCommands/listRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowProject/trust"
+          ],
+          "title": "DevflowProject/trustRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowProjectTrustParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowProject/trustRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowApproval/list"
+          ],
+          "title": "DevflowApproval/listRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowApprovalListParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowApproval/listRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowApproval/respond"
+          ],
+          "title": "DevflowApproval/respondRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowApprovalRespondParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowApproval/respondRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowApproval/policy/read"
+          ],
+          "title": "DevflowApproval/policy/readRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowApprovalPolicyReadParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowApproval/policy/readRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowApproval/policy/update"
+          ],
+          "title": "DevflowApproval/policy/updateRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowApprovalPolicyUpdateParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowApproval/policy/updateRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowTask/create"
+          ],
+          "title": "DevflowTask/createRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowTaskCreateParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowTask/createRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowTask/plan"
+          ],
+          "title": "DevflowTask/planRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowTaskPlanParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowTask/planRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowTask/dispatch"
+          ],
+          "title": "DevflowTask/dispatchRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowTaskDispatchParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowTask/dispatchRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowTask/start"
+          ],
+          "title": "DevflowTask/startRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowTaskStartParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowTask/startRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowTask/pause"
+          ],
+          "title": "DevflowTask/pauseRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowTaskPauseParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowTask/pauseRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowTask/resume"
+          ],
+          "title": "DevflowTask/resumeRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowTaskResumeParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowTask/resumeRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowTask/cancel"
+          ],
+          "title": "DevflowTask/cancelRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowTaskCancelParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowTask/cancelRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowTask/read"
+          ],
+          "title": "DevflowTask/readRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowTaskReadParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowTask/readRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowTask/list"
+          ],
+          "title": "DevflowTask/listRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowTaskListParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowTask/listRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowTask/assign"
+          ],
+          "title": "DevflowTask/assignRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowTaskAssignParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowTask/assignRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowTask/dependencies/update"
+          ],
+          "title": "DevflowTask/dependencies/updateRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowTaskDependenciesUpdateParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowTask/dependencies/updateRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowWorktree/create"
+          ],
+          "title": "DevflowWorktree/createRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowWorktreeCreateParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowWorktree/createRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowWorktree/list"
+          ],
+          "title": "DevflowWorktree/listRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowWorktreeListParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowWorktree/listRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowWorktree/read"
+          ],
+          "title": "DevflowWorktree/readRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowWorktreeReadParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowWorktree/readRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowWorktree/diff"
+          ],
+          "title": "DevflowWorktree/diffRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowWorktreeDiffParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowWorktree/diffRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowWorktree/merge"
+          ],
+          "title": "DevflowWorktree/mergeRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowWorktreeMergeParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowWorktree/mergeRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowWorktree/cleanup"
+          ],
+          "title": "DevflowWorktree/cleanupRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowWorktreeCleanupParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowWorktree/cleanupRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowQualityGate/list"
+          ],
+          "title": "DevflowQualityGate/listRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowQualityGateListParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowQualityGate/listRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowQualityGate/read"
+          ],
+          "title": "DevflowQualityGate/readRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowQualityGateReadParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowQualityGate/readRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowQualityGate/run"
+          ],
+          "title": "DevflowQualityGate/runRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowQualityGateRunParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowQualityGate/runRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowQualityGate/rerun"
+          ],
+          "title": "DevflowQualityGate/rerunRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowQualityGateRerunParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowQualityGate/rerunRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowQualityGate/waive"
+          ],
+          "title": "DevflowQualityGate/waiveRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowQualityGateWaiveParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowQualityGate/waiveRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowPolicyPack/list"
+          ],
+          "title": "DevflowPolicyPack/listRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowPolicyPackListParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowPolicyPack/listRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowPolicyPack/read"
+          ],
+          "title": "DevflowPolicyPack/readRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowPolicyPackReadParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowPolicyPack/readRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowPolicyPack/apply"
+          ],
+          "title": "DevflowPolicyPack/applyRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowPolicyPackApplyParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowPolicyPack/applyRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowCapabilityPack/list"
+          ],
+          "title": "DevflowCapabilityPack/listRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowCapabilityPackListParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowCapabilityPack/listRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowCapabilityPack/read"
+          ],
+          "title": "DevflowCapabilityPack/readRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowCapabilityPackReadParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowCapabilityPack/readRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowCapabilityPack/run"
+          ],
+          "title": "DevflowCapabilityPack/runRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowCapabilityPackRunParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowCapabilityPack/runRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowWatchdog/read"
+          ],
+          "title": "DevflowWatchdog/readRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowWatchdogReadParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowWatchdog/readRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowWatchdog/alerts"
+          ],
+          "title": "DevflowWatchdog/alertsRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowWatchdogAlertsParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowWatchdog/alertsRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowArtifact/list"
+          ],
+          "title": "DevflowArtifact/listRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowArtifactListParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowArtifact/listRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowArtifact/read"
+          ],
+          "title": "DevflowArtifact/readRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowArtifactReadParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowArtifact/readRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowArtifact/open"
+          ],
+          "title": "DevflowArtifact/openRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowArtifactOpenParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowArtifact/openRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowArtifact/export"
+          ],
+          "title": "DevflowArtifact/exportRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowArtifactExportParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowArtifact/exportRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowArtifact/deliver"
+          ],
+          "title": "DevflowArtifact/deliverRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowArtifactDeliverParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowArtifact/deliverRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
             "model/list"
           ],
           "title": "Model/listRequestMethod",
@@ -5843,6 +8684,198 @@
         "params"
       ],
       "title": "ModelProvider/capabilities/readRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "provider/list"
+          ],
+          "title": "Provider/listRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/ProviderListParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "Provider/listRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "provider/read"
+          ],
+          "title": "Provider/readRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/ProviderReadParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "Provider/readRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "provider/create"
+          ],
+          "title": "Provider/createRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/ProviderCreateParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "Provider/createRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "provider/update"
+          ],
+          "title": "Provider/updateRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/ProviderUpdateParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "Provider/updateRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "provider/delete"
+          ],
+          "title": "Provider/deleteRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/ProviderDeleteParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "Provider/deleteRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "provider/testConnection"
+          ],
+          "title": "Provider/testConnectionRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/ProviderTestConnectionParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "Provider/testConnectionRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "providerPreferences/read"
+          ],
+          "title": "ProviderPreferences/readRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/ProviderPreferencesReadParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "ProviderPreferences/readRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "providerPreferences/update"
+          ],
+          "title": "ProviderPreferences/updateRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/ProviderPreferencesUpdateParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "ProviderPreferences/updateRequest",
       "type": "object"
     },
     {

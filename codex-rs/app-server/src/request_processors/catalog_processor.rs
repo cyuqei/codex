@@ -1,4 +1,5 @@
 use super::*;
+use crate::models::supported_models_for_provider;
 
 #[derive(Clone)]
 pub(crate) struct CatalogRequestProcessor {
@@ -138,7 +139,7 @@ impl CatalogRequestProcessor {
         &self,
         params: ModelListParams,
     ) -> Result<Option<ClientResponsePayload>, JSONRPCErrorError> {
-        Self::list_models(self.thread_manager.clone(), params)
+        self.list_models_response(params)
             .await
             .map(|response| Some(response.into()))
     }
@@ -217,16 +218,30 @@ impl CatalogRequestProcessor {
         }
     }
 
-    async fn list_models(
-        thread_manager: Arc<ThreadManager>,
+    async fn list_models_response(
+        &self,
         params: ModelListParams,
     ) -> Result<ModelListResponse, JSONRPCErrorError> {
         let ModelListParams {
             limit,
             cursor,
             include_hidden,
+            provider_id,
         } = params;
-        let models = supported_models(thread_manager, include_hidden.unwrap_or(false)).await;
+        let include_hidden = include_hidden.unwrap_or(false);
+        let models = if let Some(provider_id) = provider_id {
+            let config = self.load_latest_config(/*fallback_cwd*/ None).await?;
+            supported_models_for_provider(
+                &config,
+                self.auth_manager.clone(),
+                &provider_id,
+                include_hidden,
+            )
+            .await
+            .map_err(invalid_request)?
+        } else {
+            supported_models(self.thread_manager.clone(), include_hidden).await
+        };
         let total = models.len();
 
         if total == 0 {

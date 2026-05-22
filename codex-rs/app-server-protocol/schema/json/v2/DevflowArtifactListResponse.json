@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowArtifact": {
+      "properties": {
+        "createdAt": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/DevflowArtifactKind"
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "runId": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "taskId": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "createdAt",
+        "id",
+        "kind",
+        "mimeType",
+        "path",
+        "runId",
+        "summary",
+        "taskId",
+        "title"
+      ],
+      "type": "object"
+    },
+    "DevflowArtifactKind": {
+      "enum": [
+        "context_pack",
+        "diff",
+        "delivery_receipt",
+        "output_archive",
+        "quality_gate_output",
+        "report",
+        "review_report",
+        "run_summary"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "data": {
+      "items": {
+        "$ref": "#/definitions/DevflowArtifact"
+      },
+      "type": "array"
+    },
+    "nextCursor": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "title": "DevflowArtifactListResponse",
+  "type": "object"
+}

@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ProviderConnectionCheck": {
+      "enum": [
+        "basic",
+        "streaming",
+        "toolCalling"
+      ],
+      "type": "string"
+    },
+    "ProviderTestConnectionCheckResult": {
+      "properties": {
+        "check": {
+          "$ref": "#/definitions/ProviderConnectionCheck"
+        },
+        "errorCode": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ProviderTestConnectionErrorCode"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "httpStatus": {
+          "format": "uint16",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "message": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ok": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "check",
+        "ok"
+      ],
+      "type": "object"
+    },
+    "ProviderTestConnectionErrorCode": {
+      "enum": [
+        "MISSING_API_KEY",
+        "INVALID_BASE_URL",
+        "FAIL_AUTH",
+        "FAIL_NETWORK",
+        "FAIL_DNS",
+        "FAIL_TLS",
+        "FAIL_ENDPOINT",
+        "FAIL_MODEL",
+        "FAIL_STREAM",
+        "FAIL_SCHEMA",
+        "FAIL_TOOL",
+        "UNSUPPORTED_WIRE_API"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "results": {
+      "items": {
+        "$ref": "#/definitions/ProviderTestConnectionCheckResult"
+      },
+      "type": "array"
+    },
+    "summary": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok",
+    "results",
+    "summary"
+  ],
+  "title": "ProviderTestConnectionResponse",
+  "type": "object"
+}

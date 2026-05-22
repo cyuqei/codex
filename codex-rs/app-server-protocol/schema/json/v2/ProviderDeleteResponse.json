@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "deleted": {
+      "type": "boolean"
+    },
+    "warning": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "deleted"
+  ],
+  "title": "ProviderDeleteResponse",
+  "type": "object"
+}

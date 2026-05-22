@@ -125,6 +125,7 @@ mod external_editor;
 mod file_search;
 mod frames;
 mod get_git_diff;
+mod get_git_status;
 mod goal_display;
 mod history_cell;
 mod ide_context;

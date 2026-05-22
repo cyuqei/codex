@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ProviderPreferencesScope": {
+      "enum": [
+        "global",
+        "project"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "configScope": {
+      "$ref": "#/definitions/ProviderPreferencesScope"
+    },
+    "cwd": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "defaultModel": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "defaultProvider": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "configScope",
+    "defaultProvider"
+  ],
+  "title": "ProviderPreferencesUpdateParams",
+  "type": "object"
+}

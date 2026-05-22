@@ -28,6 +28,16 @@ use codex_app_server_protocol::ModelProviderCapabilitiesReadResponse;
 use codex_app_server_protocol::NetworkDomainPermission;
 use codex_app_server_protocol::NetworkRequirements;
 use codex_app_server_protocol::NetworkUnixSocketPermission;
+use codex_app_server_protocol::Provider;
+use codex_app_server_protocol::ProviderAuthStyle;
+use codex_app_server_protocol::ProviderHeaderSummary;
+use codex_app_server_protocol::ProviderHeaderValueSource;
+use codex_app_server_protocol::ProviderListParams;
+use codex_app_server_protocol::ProviderListResponse;
+use codex_app_server_protocol::ProviderReadParams;
+use codex_app_server_protocol::ProviderReadResponse;
+use codex_app_server_protocol::ProviderSource;
+use codex_app_server_protocol::ProviderWireApi;
 use codex_app_server_protocol::SandboxMode;
 use codex_app_server_protocol::ServerNotification;
 use codex_chatgpt::connectors;
@@ -47,7 +57,9 @@ use codex_model_provider::create_model_provider;
 use codex_plugin::PluginId;
 use codex_protocol::config_types::WebSearchMode;
 use codex_protocol::protocol::Op;
+use serde::Serialize;
 use serde_json::json;
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 const SUPPORTED_EXPERIMENTAL_FEATURE_ENABLEMENT: &[&str] = &[
@@ -181,6 +193,175 @@ impl ConfigRequestProcessor {
             namespace_tools: capabilities.namespace_tools,
             image_generation: capabilities.image_generation,
             web_search: capabilities.web_search,
+        })
+    }
+
+    pub(crate) async fn provider_list(
+        &self,
+        params: ProviderListParams,
+    ) -> Result<ProviderListResponse, JSONRPCErrorError> {
+        let config = self
+            .load_latest_config(params.cwd.as_ref().map(PathBuf::from))
+            .await?;
+        let auth = self.auth_manager.auth().await;
+        let builtin_ids: BTreeSet<_> = ["openai", "amazon-bedrock", "ollama", "lmstudio"]
+            .into_iter()
+            .map(str::to_string)
+            .collect();
+
+        let mut data =
+            config
+                .model_providers
+                .iter()
+                .map(|(id, provider)| -> Result<Provider, JSONRPCErrorError> {
+                    let mut headers = Vec::new();
+                    if let Some(http_headers) = &provider.http_headers {
+                        let mut pairs: Vec<_> = http_headers.iter().collect();
+                        pairs.sort_by(|a, b| a.0.cmp(b.0));
+                        headers.extend(pairs.into_iter().map(|(name, value)| {
+                            ProviderHeaderSummary {
+                                name: name.clone(),
+                                value_source: ProviderHeaderValueSource::Literal,
+                                value: value.clone(),
+                            }
+                        }));
+                    }
+                    if let Some(env_http_headers) = &provider.env_http_headers {
+                        let mut pairs: Vec<_> = env_http_headers.iter().collect();
+                        pairs.sort_by(|a, b| a.0.cmp(b.0));
+                        headers.extend(pairs.into_iter().map(|(name, value)| {
+                            ProviderHeaderSummary {
+                                name: name.clone(),
+                                value_source: ProviderHeaderValueSource::Env,
+                                value: value.clone(),
+                            }
+                        }));
+                    }
+
+                    Ok(Provider {
+                        id: id.clone(),
+                        display_name: provider.name.clone(),
+                        source: if builtin_ids.contains(id) {
+                            ProviderSource::Builtin
+                        } else {
+                            ProviderSource::Custom
+                        },
+                        builtin_kind: codex_app_server_protocol::builtin_kind_for_provider_id(id),
+                        base_url: provider.base_url.clone(),
+                        wire_api: provider_wire_api(provider)?,
+                        auth_style: provider_auth_style(provider)?,
+                        env_key: provider.env_key.clone(),
+                        has_api_key: provider
+                            .env_key
+                            .as_ref()
+                            .and_then(|env_key| std::env::var(env_key).ok())
+                            .is_some_and(|value: String| !value.trim().is_empty())
+                            || provider
+                                .experimental_bearer_token
+                                .as_ref()
+                                .is_some_and(|value: &String| !value.trim().is_empty())
+                            || provider.auth.is_some()
+                            || provider.aws.is_some()
+                            || (provider.requires_openai_auth && auth.is_some()),
+                        supports_websockets: provider.supports_websockets,
+                        requires_openai_auth: provider.requires_openai_auth,
+                        request_max_retries: provider.request_max_retries,
+                        stream_max_retries: provider.stream_max_retries,
+                        stream_idle_timeout_ms: provider.stream_idle_timeout_ms,
+                        websocket_connect_timeout_ms: provider.websocket_connect_timeout_ms,
+                        headers,
+                        is_default: id == &config.model_provider_id,
+                    })
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+        data.sort_by(|a, b| a.id.cmp(&b.id));
+
+        Ok(ProviderListResponse {
+            data,
+            default_provider: config.model_provider_id,
+            default_model: config.model,
+        })
+    }
+
+    pub(crate) async fn provider_read(
+        &self,
+        params: ProviderReadParams,
+    ) -> Result<ProviderReadResponse, JSONRPCErrorError> {
+        let config = self
+            .load_latest_config(params.cwd.as_ref().map(PathBuf::from))
+            .await?;
+        let auth = self.auth_manager.auth().await;
+        let builtin_ids: BTreeSet<_> = ["openai", "amazon-bedrock", "ollama", "lmstudio"]
+            .into_iter()
+            .map(str::to_string)
+            .collect();
+        let provider = config
+            .model_providers
+            .get(&params.id)
+            .ok_or_else(|| invalid_request(format!("unknown provider id: {}", params.id)))?;
+
+        let mut headers = Vec::new();
+        if let Some(http_headers) = &provider.http_headers {
+            let mut pairs: Vec<_> = http_headers.iter().collect();
+            pairs.sort_by(|a, b| a.0.cmp(b.0));
+            headers.extend(
+                pairs
+                    .into_iter()
+                    .map(|(name, value)| ProviderHeaderSummary {
+                        name: name.clone(),
+                        value_source: ProviderHeaderValueSource::Literal,
+                        value: value.clone(),
+                    }),
+            );
+        }
+        if let Some(env_http_headers) = &provider.env_http_headers {
+            let mut pairs: Vec<_> = env_http_headers.iter().collect();
+            pairs.sort_by(|a, b| a.0.cmp(b.0));
+            headers.extend(
+                pairs
+                    .into_iter()
+                    .map(|(name, value)| ProviderHeaderSummary {
+                        name: name.clone(),
+                        value_source: ProviderHeaderValueSource::Env,
+                        value: value.clone(),
+                    }),
+            );
+        }
+        Ok(ProviderReadResponse {
+            provider: Provider {
+                id: params.id.clone(),
+                display_name: provider.name.clone(),
+                source: if builtin_ids.contains(&params.id) {
+                    ProviderSource::Builtin
+                } else {
+                    ProviderSource::Custom
+                },
+                builtin_kind: codex_app_server_protocol::builtin_kind_for_provider_id(&params.id),
+                base_url: provider.base_url.clone(),
+                wire_api: provider_wire_api(provider)?,
+                auth_style: provider_auth_style(provider)?,
+                env_key: provider.env_key.clone(),
+                has_api_key: provider
+                    .env_key
+                    .as_ref()
+                    .and_then(|env_key| std::env::var(env_key).ok())
+                    .is_some_and(|value: String| !value.trim().is_empty())
+                    || provider
+                        .experimental_bearer_token
+                        .as_ref()
+                        .is_some_and(|value: &String| !value.trim().is_empty())
+                    || provider.auth.is_some()
+                    || provider.aws.is_some()
+                    || (provider.requires_openai_auth && auth.is_some()),
+                supports_websockets: provider.supports_websockets,
+                requires_openai_auth: provider.requires_openai_auth,
+                request_max_retries: provider.request_max_retries,
+                stream_max_retries: provider.stream_max_retries,
+                stream_idle_timeout_ms: provider.stream_idle_timeout_ms,
+                websocket_connect_timeout_ms: provider.websocket_connect_timeout_ms,
+                headers,
+                is_default: params.id == config.model_provider_id,
+            },
         })
     }
 
@@ -409,6 +590,46 @@ impl ConfigRequestProcessor {
             }
         }
     }
+}
+
+fn provider_wire_api(provider: &impl Serialize) -> Result<ProviderWireApi, JSONRPCErrorError> {
+    let wire_api = serialized_provider_string_field(provider, "wire_api")?;
+    match wire_api.as_str() {
+        "responses" => Ok(ProviderWireApi::Responses),
+        "anthropic_messages" => Ok(ProviderWireApi::AnthropicMessages),
+        "chat_completions" => Ok(ProviderWireApi::ChatCompletions),
+        _ => Err(internal_error(format!(
+            "unexpected provider wire_api serialization: {wire_api}"
+        ))),
+    }
+}
+
+fn provider_auth_style(provider: &impl Serialize) -> Result<ProviderAuthStyle, JSONRPCErrorError> {
+    let auth_style = serialized_provider_string_field(provider, "auth_style")?;
+    match auth_style.as_str() {
+        "bearer" => Ok(ProviderAuthStyle::Bearer),
+        "x_api_key" => Ok(ProviderAuthStyle::XApiKey),
+        _ => Err(internal_error(format!(
+            "unexpected provider auth_style serialization: {auth_style}"
+        ))),
+    }
+}
+
+fn serialized_provider_string_field(
+    provider: &impl Serialize,
+    field_name: &str,
+) -> Result<String, JSONRPCErrorError> {
+    let provider_value = serde_json::to_value(provider)
+        .map_err(|err| internal_error(format!("failed to serialize provider info: {err}")))?;
+    provider_value
+        .get(field_name)
+        .and_then(serde_json::Value::as_str)
+        .map(str::to_string)
+        .ok_or_else(|| {
+            internal_error(format!(
+                "provider serialization omitted required field `{field_name}`"
+            ))
+        })
 }
 
 fn map_requirements_toml_to_api(requirements: ConfigRequirementsToml) -> ConfigRequirements {

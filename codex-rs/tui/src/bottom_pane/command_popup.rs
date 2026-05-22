@@ -298,6 +298,39 @@ mod tests {
     }
 
     #[test]
+    fn providers_is_first_suggestion_for_pro() {
+        let mut popup = CommandPopup::new(CommandPopupFlags::default());
+        popup.on_composer_text_change("/pro".to_string());
+        let matches = popup.filtered_items();
+        match matches.first() {
+            Some(CommandItem::Builtin(cmd)) => assert_eq!(cmd.command(), "providers"),
+            None => panic!("expected at least one match for '/pro'"),
+        }
+    }
+
+    #[test]
+    fn commit_is_first_suggestion_for_co() {
+        let mut popup = CommandPopup::new(CommandPopupFlags::default());
+        popup.on_composer_text_change("/co".to_string());
+        let matches = popup.filtered_items();
+        match matches.first() {
+            Some(CommandItem::Builtin(cmd)) => assert_eq!(cmd.command(), "commit"),
+            None => panic!("expected at least one match for '/co'"),
+        }
+    }
+
+    #[test]
+    fn context_is_first_suggestion_for_con() {
+        let mut popup = CommandPopup::new(CommandPopupFlags::default());
+        popup.on_composer_text_change("/con".to_string());
+        let matches = popup.filtered_items();
+        match matches.first() {
+            Some(CommandItem::Builtin(cmd)) => assert_eq!(cmd.command(), "context"),
+            None => panic!("expected at least one match for '/con'"),
+        }
+    }
+
+    #[test]
     fn filtered_commands_keep_presentation_order_for_prefix() {
         let mut popup = CommandPopup::new(CommandPopupFlags::default());
         popup.on_composer_text_change("/m".to_string());

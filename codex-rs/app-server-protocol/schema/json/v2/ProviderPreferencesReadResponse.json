@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ProviderPreferencesScope": {
+      "enum": [
+        "global",
+        "project"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "configScope": {
+      "$ref": "#/definitions/ProviderPreferencesScope"
+    },
+    "defaultModel": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "defaultProvider": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "configScope",
+    "defaultProvider"
+  ],
+  "title": "ProviderPreferencesReadResponse",
+  "type": "object"
+}

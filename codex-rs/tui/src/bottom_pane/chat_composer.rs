@@ -7595,6 +7595,159 @@ mod tests {
         }
     }
 
+    #[test]
+    fn slash_popup_providers_for_pro_ui() {
+        use ratatui::Terminal;
+        use ratatui::backend::TestBackend;
+
+        let (tx, _rx) = unbounded_channel::<AppEvent>();
+        let sender = AppEventSender::new(tx);
+
+        let mut composer = ChatComposer::new(
+            /*has_input_focus*/ true,
+            sender,
+            /*enhanced_keys_supported*/ false,
+            "Ask Codex to do anything".to_string(),
+            /*disable_paste_burst*/ false,
+        );
+
+        type_chars_humanlike(&mut composer, &['/', 'p', 'r', 'o']);
+
+        let mut terminal = Terminal::new(TestBackend::new(60, 6)).expect("terminal");
+        terminal
+            .draw(|f| composer.render(f.area(), f.buffer_mut()))
+            .expect("draw composer");
+
+        insta::assert_snapshot!("slash_popup_pro", terminal.backend());
+    }
+
+    #[test]
+    fn slash_popup_providers_for_pro_logic() {
+        use super::super::command_popup::CommandItem;
+        let (tx, _rx) = unbounded_channel::<AppEvent>();
+        let sender = AppEventSender::new(tx);
+        let mut composer = ChatComposer::new(
+            /*has_input_focus*/ true,
+            sender,
+            /*enhanced_keys_supported*/ false,
+            "Ask Codex to do anything".to_string(),
+            /*disable_paste_burst*/ false,
+        );
+        type_chars_humanlike(&mut composer, &['/', 'p', 'r', 'o']);
+
+        match &composer.active_popup {
+            ActivePopup::Command(popup) => match popup.selected_item() {
+                Some(CommandItem::Builtin(cmd)) => {
+                    assert_eq!(cmd.command(), "providers")
+                }
+                None => panic!("no selected command for '/pro'"),
+            },
+            _ => panic!("slash popup not active after typing '/pro'"),
+        }
+    }
+
+    #[test]
+    fn slash_popup_commit_for_co_ui() {
+        use ratatui::Terminal;
+        use ratatui::backend::TestBackend;
+
+        let (tx, _rx) = unbounded_channel::<AppEvent>();
+        let sender = AppEventSender::new(tx);
+
+        let mut composer = ChatComposer::new(
+            /*has_input_focus*/ true,
+            sender,
+            /*enhanced_keys_supported*/ false,
+            "Ask Codex to do anything".to_string(),
+            /*disable_paste_burst*/ false,
+        );
+
+        type_chars_humanlike(&mut composer, &['/', 'c', 'o']);
+
+        let mut terminal = Terminal::new(TestBackend::new(60, 6)).expect("terminal");
+        terminal
+            .draw(|f| composer.render(f.area(), f.buffer_mut()))
+            .expect("draw composer");
+
+        insta::assert_snapshot!("slash_popup_co", terminal.backend());
+    }
+
+    #[test]
+    fn slash_popup_commit_for_co_logic() {
+        use super::super::command_popup::CommandItem;
+        let (tx, _rx) = unbounded_channel::<AppEvent>();
+        let sender = AppEventSender::new(tx);
+        let mut composer = ChatComposer::new(
+            /*has_input_focus*/ true,
+            sender,
+            /*enhanced_keys_supported*/ false,
+            "Ask Codex to do anything".to_string(),
+            /*disable_paste_burst*/ false,
+        );
+        type_chars_humanlike(&mut composer, &['/', 'c', 'o']);
+
+        match &composer.active_popup {
+            ActivePopup::Command(popup) => match popup.selected_item() {
+                Some(CommandItem::Builtin(cmd)) => {
+                    assert_eq!(cmd.command(), "commit")
+                }
+                None => panic!("no selected command for '/co'"),
+            },
+            _ => panic!("slash popup not active after typing '/co'"),
+        }
+    }
+
+    #[test]
+    fn slash_popup_context_for_con_ui() {
+        use ratatui::Terminal;
+        use ratatui::backend::TestBackend;
+
+        let (tx, _rx) = unbounded_channel::<AppEvent>();
+        let sender = AppEventSender::new(tx);
+
+        let mut composer = ChatComposer::new(
+            /*has_input_focus*/ true,
+            sender,
+            /*enhanced_keys_supported*/ false,
+            "Ask Codex to do anything".to_string(),
+            /*disable_paste_burst*/ false,
+        );
+
+        type_chars_humanlike(&mut composer, &['/', 'c', 'o', 'n']);
+
+        let mut terminal = Terminal::new(TestBackend::new(60, 6)).expect("terminal");
+        terminal
+            .draw(|f| composer.render(f.area(), f.buffer_mut()))
+            .expect("draw composer");
+
+        insta::assert_snapshot!("slash_popup_con", terminal.backend());
+    }
+
+    #[test]
+    fn slash_popup_context_for_con_logic() {
+        use super::super::command_popup::CommandItem;
+        let (tx, _rx) = unbounded_channel::<AppEvent>();
+        let sender = AppEventSender::new(tx);
+        let mut composer = ChatComposer::new(
+            /*has_input_focus*/ true,
+            sender,
+            /*enhanced_keys_supported*/ false,
+            "Ask Codex to do anything".to_string(),
+            /*disable_paste_burst*/ false,
+        );
+        type_chars_humanlike(&mut composer, &['/', 'c', 'o', 'n']);
+
+        match &composer.active_popup {
+            ActivePopup::Command(popup) => match popup.selected_item() {
+                Some(CommandItem::Builtin(cmd)) => {
+                    assert_eq!(cmd.command(), "context")
+                }
+                None => panic!("no selected command for '/con'"),
+            },
+            _ => panic!("slash popup not active after typing '/con'"),
+        }
+    }
+
     fn flush_after_paste_burst(composer: &mut ChatComposer) -> bool {
         std::thread::sleep(PasteBurst::recommended_active_flush_delay());
         composer.flush_paste_burst_if_due()

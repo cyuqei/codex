@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowAgent": {
+      "properties": {
+        "capabilities": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "diagnostics": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "lastError": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "launchCommand": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "roles": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "rootPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "runtime": {
+          "$ref": "#/definitions/DevflowAgentRuntime"
+        },
+        "status": {
+          "$ref": "#/definitions/DevflowAgentStatus"
+        }
+      },
+      "required": [
+        "capabilities",
+        "diagnostics",
+        "id",
+        "name",
+        "roles",
+        "runtime",
+        "status"
+      ],
+      "type": "object"
+    },
+    "DevflowAgentRuntime": {
+      "enum": [
+        "codex",
+        "claude",
+        "hermes"
+      ],
+      "type": "string"
+    },
+    "DevflowAgentStatus": {
+      "enum": [
+        "available",
+        "missing"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "data": {
+      "items": {
+        "$ref": "#/definitions/DevflowAgent"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "title": "DevflowAgentListResponse",
+  "type": "object"
+}

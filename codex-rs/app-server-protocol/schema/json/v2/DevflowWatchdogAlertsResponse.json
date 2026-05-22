@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowWatchdogAlert": {
+      "properties": {
+        "createdAt": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "id": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "runId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "severity": {
+          "$ref": "#/definitions/DevflowWatchdogAlertSeverity"
+        },
+        "status": {
+          "$ref": "#/definitions/DevflowWatchdogStatus"
+        },
+        "taskId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "createdAt",
+        "id",
+        "message",
+        "severity",
+        "status"
+      ],
+      "type": "object"
+    },
+    "DevflowWatchdogAlertSeverity": {
+      "enum": [
+        "info",
+        "warning",
+        "critical"
+      ],
+      "type": "string"
+    },
+    "DevflowWatchdogStatus": {
+      "enum": [
+        "idle",
+        "running",
+        "no_progress",
+        "timed_out",
+        "recovering",
+        "quarantined"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "data": {
+      "items": {
+        "$ref": "#/definitions/DevflowWatchdogAlert"
+      },
+      "type": "array"
+    },
+    "nextCursor": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "title": "DevflowWatchdogAlertsResponse",
+  "type": "object"
+}

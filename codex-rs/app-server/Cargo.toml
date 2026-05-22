@@ -30,6 +30,7 @@ axum = { workspace = true, default-features = false, features = [
     "ws",
 ] }
 codex-analytics = { workspace = true }
+codex-api = { workspace = true }
 codex-arg0 = { workspace = true }
 codex-cloud-requirements = { workspace = true }
 codex-config = { workspace = true }
@@ -70,6 +71,7 @@ codex-utils-json-to-toml = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 futures = { workspace = true }
+reqwest = { workspace = true, features = ["rustls-tls"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 sha2 = { workspace = true }

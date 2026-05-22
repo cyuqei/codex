@@ -156,6 +156,7 @@ pub(super) use codex_protocol::models::NetworkPermissions;
 pub(super) use codex_protocol::models::PermissionProfile;
 pub(super) use codex_protocol::openai_models::ModelInfo;
 pub(super) use codex_protocol::openai_models::ModelPreset;
+pub(super) use codex_protocol::openai_models::ModelServiceTier;
 pub(super) use codex_protocol::openai_models::ModelsResponse;
 pub(super) use codex_protocol::openai_models::ReasoningEffortPreset;
 pub(super) use codex_protocol::openai_models::default_input_modalities;

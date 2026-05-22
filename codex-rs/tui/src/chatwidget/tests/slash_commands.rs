@@ -1,5 +1,69 @@
 use super::*;
+use crate::workspace_command::WorkspaceCommand;
+use crate::workspace_command::WorkspaceCommandError;
+use crate::workspace_command::WorkspaceCommandExecutor;
+use crate::workspace_command::WorkspaceCommandOutput;
 use pretty_assertions::assert_eq;
+use std::collections::HashMap;
+use std::collections::VecDeque;
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::Arc;
+use std::sync::Mutex;
+
+#[derive(Default)]
+struct FakeWorkspaceRunner {
+    outputs: Mutex<HashMap<Vec<String>, VecDeque<WorkspaceCommandOutput>>>,
+}
+
+impl FakeWorkspaceRunner {
+    fn with_output(mut self, argv: &[&str], exit_code: i32, stdout: &str) -> Self {
+        self.outputs
+            .get_mut()
+            .expect("runner outputs lock")
+            .entry(argv.iter().map(|arg| (*arg).to_string()).collect())
+            .or_default()
+            .push_back(WorkspaceCommandOutput {
+                exit_code,
+                stdout: stdout.to_string(),
+                stderr: String::new(),
+            });
+        self
+    }
+}
+
+impl WorkspaceCommandExecutor for FakeWorkspaceRunner {
+    fn run(
+        &self,
+        command: WorkspaceCommand,
+    ) -> Pin<
+        Box<dyn Future<Output = Result<WorkspaceCommandOutput, WorkspaceCommandError>> + Send + '_>,
+    > {
+        Box::pin(async move {
+            let mut outputs = self.outputs.lock().expect("runner outputs lock");
+            let queue = outputs
+                .get_mut(&command.argv)
+                .unwrap_or_else(|| panic!("unexpected argv: {:?}", command.argv));
+            Ok(queue
+                .pop_front()
+                .unwrap_or_else(|| panic!("no output left for argv: {:?}", command.argv)))
+        })
+    }
+}
+
+async fn recv_commit_workflow_prepared(
+    rx: &mut tokio::sync::mpsc::UnboundedReceiver<AppEvent>,
+) -> Result<String, String> {
+    loop {
+        let event = tokio::time::timeout(std::time::Duration::from_secs(1), rx.recv())
+            .await
+            .expect("commit workflow event should arrive")
+            .expect("event channel should remain open");
+        if let AppEvent::CommitWorkflowPrepared(result) = event {
+            return result;
+        }
+    }
+}
 
 fn complete_turn_with_message(chat: &mut ChatWidget, turn_id: &str, message: Option<&str>) {
     if let Some(message) = message {
@@ -1697,6 +1761,234 @@ async fn slash_memories_opens_memory_menu() {
     assert!(render_bottom_popup(&chat, /*width*/ 80).contains("Use memories"));
     assert_matches!(rx.try_recv(), Err(TryRecvError::Empty));
     assert!(op_rx.try_recv().is_err(), "expected no core op to be sent");
+}
+
+#[tokio::test]
+async fn slash_providers_opens_provider_menu() {
+    let (mut chat, mut rx, mut op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    chat.dispatch_command(SlashCommand::Providers);
+
+    assert_matches!(rx.try_recv(), Ok(AppEvent::OpenProviderPreferencesPopup));
+    assert!(op_rx.try_recv().is_err(), "expected no core op to be sent");
+}
+
+#[tokio::test]
+async fn slash_providers_new_opens_create_prompt() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    chat.dispatch_command_with_args(SlashCommand::Providers, "new".to_string(), Vec::new());
+
+    assert_matches!(rx.try_recv(), Ok(AppEvent::OpenProviderCreatePrompt));
+}
+
+#[tokio::test]
+async fn slash_providers_current_opens_current_provider_detail() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+    chat.config.model_provider_id = "deepseek".to_string();
+
+    chat.dispatch_command_with_args(SlashCommand::Providers, "current".to_string(), Vec::new());
+
+    assert_matches!(
+        rx.try_recv(),
+        Ok(AppEvent::OpenProviderDetailPopup { provider_id }) if provider_id == "deepseek"
+    );
+}
+
+#[tokio::test]
+async fn slash_providers_models_opens_provider_catalog() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    chat.dispatch_command_with_args(
+        SlashCommand::Providers,
+        "models openai".to_string(),
+        Vec::new(),
+    );
+
+    assert_matches!(
+        rx.try_recv(),
+        Ok(AppEvent::OpenProviderModelsPopup { provider_id }) if provider_id == "openai"
+    );
+}
+
+#[tokio::test]
+async fn slash_providers_test_opens_provider_probe() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    chat.dispatch_command_with_args(
+        SlashCommand::Providers,
+        "test openai".to_string(),
+        Vec::new(),
+    );
+
+    assert_matches!(
+        rx.try_recv(),
+        Ok(AppEvent::TestProviderConnection { provider_id }) if provider_id == "openai"
+    );
+}
+
+#[tokio::test]
+async fn slash_providers_invalid_args_show_usage() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    submit_composer_text(&mut chat, "/providers missing-provider");
+
+    let cells = drain_insert_history(&mut rx);
+    let rendered = cells
+        .iter()
+        .map(|cell| lines_to_single_string(cell))
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(
+        rendered.contains("Usage: /providers [new|current|<provider-id>|models <provider-id|current>|test <provider-id|current>]"),
+        "expected usage message, got: {rendered:?}"
+    );
+    assert_eq!(
+        recall_latest_after_clearing(&mut chat),
+        "/providers missing-provider"
+    );
+}
+
+#[tokio::test]
+async fn slash_context_opens_context_workflow_popup() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    chat.dispatch_command(SlashCommand::Context);
+
+    assert_matches!(rx.try_recv(), Ok(AppEvent::OpenContextWorkflowPopup));
+}
+
+#[tokio::test]
+async fn slash_context_save_emits_summary_event() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    chat.dispatch_command_with_args(SlashCommand::Context, "save".to_string(), Vec::new());
+
+    assert_matches!(rx.try_recv(), Ok(AppEvent::ShowContextSaveSummary));
+}
+
+#[tokio::test]
+async fn slash_context_restore_opens_picker() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    chat.dispatch_command_with_args(SlashCommand::Context, "restore".to_string(), Vec::new());
+
+    assert_matches!(rx.try_recv(), Ok(AppEvent::OpenResumePicker));
+}
+
+#[tokio::test]
+async fn slash_context_restore_with_arg_requests_named_session() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    chat.dispatch_command_with_args(
+        SlashCommand::Context,
+        "restore my-saved-thread".to_string(),
+        Vec::new(),
+    );
+
+    assert_matches!(
+        rx.try_recv(),
+        Ok(AppEvent::ResumeSessionByIdOrName(id_or_name)) if id_or_name == "my-saved-thread"
+    );
+}
+
+#[tokio::test]
+async fn slash_context_invalid_args_show_usage() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+
+    submit_composer_text(&mut chat, "/context nope");
+
+    let cells = drain_insert_history(&mut rx);
+    let rendered = cells
+        .iter()
+        .map(|cell| lines_to_single_string(cell))
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(
+        rendered.contains("Usage: /context [save|restore|restore <thread-id-or-name>]"),
+        "expected usage message, got: {rendered:?}"
+    );
+    assert_eq!(recall_latest_after_clearing(&mut chat), "/context nope");
+}
+
+#[tokio::test]
+async fn slash_commit_prepares_commit_workflow_prompt() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+    chat.workspace_command_runner = Some(Arc::new(
+        FakeWorkspaceRunner::default()
+            .with_output(&["git", "rev-parse", "--is-inside-work-tree"], 0, "true\n")
+            .with_output(&["git", "rev-parse", "--is-inside-work-tree"], 0, "true\n")
+            .with_output(
+                &[
+                    "git",
+                    "status",
+                    "--short",
+                    "--branch",
+                    "--untracked-files=all",
+                ],
+                0,
+                "## main\n M src/lib.rs\n",
+            )
+            .with_output(
+                &["git", "diff", "--color"],
+                1,
+                "diff --git a/src/lib.rs b/src/lib.rs\n",
+            )
+            .with_output(
+                &["git", "ls-files", "--others", "--exclude-standard"],
+                0,
+                "",
+            ),
+    ));
+
+    chat.dispatch_command(SlashCommand::Commit);
+
+    let prompt = recv_commit_workflow_prepared(&mut rx)
+        .await
+        .expect("commit workflow should succeed");
+    assert!(prompt.contains("Draft a git commit message for the current changes."));
+    assert!(prompt.contains("## Git status"));
+    assert!(prompt.contains("## main"));
+    assert!(prompt.contains("## Git diff"));
+    assert!(prompt.contains("diff --git a/src/lib.rs b/src/lib.rs"));
+}
+
+#[tokio::test]
+async fn slash_commit_inline_args_are_added_to_prompt() {
+    let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+    chat.workspace_command_runner = Some(Arc::new(
+        FakeWorkspaceRunner::default()
+            .with_output(&["git", "rev-parse", "--is-inside-work-tree"], 0, "true\n")
+            .with_output(&["git", "rev-parse", "--is-inside-work-tree"], 0, "true\n")
+            .with_output(
+                &[
+                    "git",
+                    "status",
+                    "--short",
+                    "--branch",
+                    "--untracked-files=all",
+                ],
+                0,
+                "## main\n",
+            )
+            .with_output(&["git", "diff", "--color"], 1, "tracked diff\n")
+            .with_output(
+                &["git", "ls-files", "--others", "--exclude-standard"],
+                0,
+                "",
+            ),
+    ));
+
+    chat.dispatch_command_with_args(
+        SlashCommand::Commit,
+        "focus on the migration risk".to_string(),
+        Vec::new(),
+    );
+
+    let prompt = recv_commit_workflow_prepared(&mut rx)
+        .await
+        .expect("commit workflow should succeed");
+    assert!(prompt.contains("Additional instructions: focus on the migration risk"));
 }
 
 #[tokio::test]

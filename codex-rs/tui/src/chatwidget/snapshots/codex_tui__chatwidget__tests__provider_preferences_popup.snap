@@ -1,0 +1,18 @@
+---
+source: tui/src/chatwidget/tests/popups_and_settings.rs
+assertion_line: 2353
+expression: popup
+---
+  Providers
+  Select a provider to inspect or manage.
+
+  1. Add custom provider  Create a new provider configuration.
+  2. Amazon Bedrock       amazon-bedrock - https://bedrock-mantle.us-east-
+                          1.api.aws/openai/v1
+› 3. DeepSeek (current)   deepseek - https://api.deepseek.com/v1
+  4. gpt-oss              lmstudio - http://localhost:1234/v1
+  5. gpt-oss              ollama - http://localhost:11434/v1
+  6. OpenAI
+  7. OpenRouter           openrouter - https://openrouter.ai/api/v1
+
+  Press enter to confirm or esc to go back

@@ -13,10 +13,21 @@ use codex_app_server_protocol::ModelServiceTier;
 use codex_app_server_protocol::ModelUpgradeInfo;
 use codex_app_server_protocol::ReasoningEffortOption;
 use codex_app_server_protocol::RequestId;
+use codex_protocol::config_types::ReasoningSummary;
+use codex_protocol::openai_models::ConfigShellToolType;
+use codex_protocol::openai_models::ModelInfo;
 use codex_protocol::openai_models::ModelPreset;
+use codex_protocol::openai_models::ModelVisibility;
+use codex_protocol::openai_models::TruncationPolicyConfig;
+use codex_protocol::openai_models::default_input_modalities;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
 use tokio::time::timeout;
+use wiremock::Mock;
+use wiremock::MockServer;
+use wiremock::ResponseTemplate;
+use wiremock::matchers::method;
+use wiremock::matchers::path;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(10);
 const INVALID_REQUEST_ERROR_CODE: i64 = -32600;
@@ -82,6 +93,46 @@ fn expected_visible_models() -> Vec<Model> {
         .collect()
 }
 
+fn custom_model_info(slug: &str, display_name: &str) -> ModelInfo {
+    ModelInfo {
+        slug: slug.to_string(),
+        display_name: display_name.to_string(),
+        description: Some(format!("{display_name} description")),
+        default_reasoning_level: Some(codex_protocol::openai_models::ReasoningEffort::Medium),
+        supported_reasoning_levels: vec![codex_protocol::openai_models::ReasoningEffortPreset {
+            effort: codex_protocol::openai_models::ReasoningEffort::Medium,
+            description: "medium".to_string(),
+        }],
+        shell_type: ConfigShellToolType::ShellCommand,
+        visibility: ModelVisibility::List,
+        supported_in_api: true,
+        priority: 1,
+        additional_speed_tiers: Vec::new(),
+        service_tiers: Vec::new(),
+        availability_nux: None,
+        upgrade: None,
+        base_instructions: "base instructions".to_string(),
+        model_messages: None,
+        supports_reasoning_summaries: false,
+        default_reasoning_summary: ReasoningSummary::Auto,
+        support_verbosity: false,
+        default_verbosity: None,
+        apply_patch_tool_type: None,
+        web_search_tool_type: Default::default(),
+        truncation_policy: TruncationPolicyConfig::bytes(10_000),
+        supports_parallel_tool_calls: false,
+        supports_image_detail_original: false,
+        context_window: Some(272_000),
+        max_context_window: None,
+        auto_compact_token_limit: None,
+        effective_context_window_percent: 95,
+        experimental_supported_tools: Vec::new(),
+        input_modalities: default_input_modalities(),
+        used_fallback_model_metadata: false,
+        supports_search_tool: false,
+    }
+}
+
 #[tokio::test]
 async fn list_models_returns_all_models_with_large_limit() -> Result<()> {
     let codex_home = TempDir::new()?;
@@ -95,6 +146,7 @@ async fn list_models_returns_all_models_with_large_limit() -> Result<()> {
             limit: Some(100),
             cursor: None,
             include_hidden: None,
+            provider_id: None,
         })
         .await?;
 
@@ -129,6 +181,7 @@ async fn list_models_includes_hidden_models() -> Result<()> {
             limit: Some(100),
             cursor: None,
             include_hidden: Some(true),
+            provider_id: None,
         })
         .await?;
 
@@ -166,6 +219,7 @@ async fn list_models_pagination_works() -> Result<()> {
                 limit: Some(1),
                 cursor: cursor.clone(),
                 include_hidden: None,
+                provider_id: None,
             })
             .await?;
 
@@ -210,6 +264,7 @@ async fn list_models_rejects_invalid_cursor() -> Result<()> {
             limit: None,
             cursor: Some("invalid".to_string()),
             include_hidden: None,
+            provider_id: None,
         })
         .await?;
 
@@ -222,5 +277,64 @@ async fn list_models_rejects_invalid_cursor() -> Result<()> {
     assert_eq!(error.id, RequestId::Integer(request_id));
     assert_eq!(error.error.code, INVALID_REQUEST_ERROR_CODE);
     assert_eq!(error.error.message, "invalid cursor: invalid");
+    Ok(())
+}
+
+#[tokio::test]
+async fn list_models_can_target_specific_provider() -> Result<()> {
+    let codex_home = TempDir::new()?;
+    let server = MockServer::start().await;
+    std::fs::write(
+        codex_home.path().join("config.toml"),
+        format!(
+            r#"
+model = "gpt-5.4"
+approval_policy = "never"
+sandbox_mode = "read-only"
+model_provider = "openai"
+
+[model_providers.custom]
+name = "Custom Provider"
+base_url = "{}/v1"
+wire_api = "responses"
+experimental_bearer_token = "test-token"
+supports_websockets = false
+"#,
+            server.uri()
+        ),
+    )?;
+
+    Mock::given(method("GET"))
+        .and(path("/v1/models"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(
+            codex_protocol::openai_models::ModelsResponse {
+                models: vec![custom_model_info("custom-model", "Custom Model")],
+            },
+        ))
+        .mount(&server)
+        .await;
+
+    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
+
+    let request_id = mcp
+        .send_list_models_request(ModelListParams {
+            limit: Some(100),
+            cursor: None,
+            include_hidden: None,
+            provider_id: Some("custom".to_string()),
+        })
+        .await?;
+    let response: JSONRPCResponse = timeout(
+        DEFAULT_TIMEOUT,
+        mcp.read_stream_until_response_message(RequestId::Integer(request_id)),
+    )
+    .await??;
+
+    let ModelListResponse { data, next_cursor } = to_response::<ModelListResponse>(response)?;
+    assert_eq!(next_cursor, None);
+    assert_eq!(data.len(), 1);
+    assert_eq!(data[0].model, "custom-model");
+    assert_eq!(data[0].display_name, "Custom Model");
     Ok(())
 }

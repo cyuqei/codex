@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowProject": {
+      "properties": {
+        "currentBranch": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "defaultBranch": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "detectedDocs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "diagnostics": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "gitRemote": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "isTrusted": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "rootPath": {
+          "type": "string"
+        },
+        "testCommands": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "detectedDocs",
+        "diagnostics",
+        "id",
+        "isTrusted",
+        "name",
+        "rootPath",
+        "testCommands"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "project": {
+      "$ref": "#/definitions/DevflowProject"
+    }
+  },
+  "required": [
+    "project"
+  ],
+  "title": "DevflowProjectDiagnoseResponse",
+  "type": "object"
+}

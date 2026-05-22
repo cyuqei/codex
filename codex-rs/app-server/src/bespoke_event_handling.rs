@@ -48,6 +48,7 @@ use codex_app_server_protocol::PermissionsRequestApprovalParams;
 use codex_app_server_protocol::PermissionsRequestApprovalResponse;
 use codex_app_server_protocol::RawResponseItemCompletedNotification;
 use codex_app_server_protocol::RequestId;
+use codex_app_server_protocol::ReviewOutput;
 use codex_app_server_protocol::ServerNotification;
 use codex_app_server_protocol::ServerRequestPayload;
 use codex_app_server_protocol::SkillsChangedNotification;
@@ -1018,13 +1019,15 @@ pub(crate) async fn apply_bespoke_event_handling(
                 .await;
         }
         EventMsg::ExitedReviewMode(review_event) => {
-            let review = match review_event.review_output {
-                Some(output) => render_review_output_text(&output),
+            let review_output = review_event.review_output.as_ref().map(ReviewOutput::from);
+            let review = match review_event.review_output.as_ref() {
+                Some(output) => render_review_output_text(output),
                 None => REVIEW_FALLBACK_MESSAGE.to_string(),
             };
             let item = ThreadItem::ExitedReviewMode {
                 id: event_turn_id.clone(),
                 review,
+                review_output,
             };
             let started = ItemStartedNotification {
                 thread_id: conversation_id.to_string(),

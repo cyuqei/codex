@@ -137,6 +137,9 @@ use codex_git_utils::current_branch_name;
 use codex_git_utils::get_git_repo_root;
 use codex_git_utils::local_git_branches;
 use codex_git_utils::recent_commits;
+use codex_model_provider_info::AuthStyle as ProviderAuthStyle;
+use codex_model_provider_info::ModelProviderInfo;
+use codex_model_provider_info::WireApi as ProviderWireApi;
 use codex_otel::RuntimeMetricsSummary;
 use codex_otel::SessionTelemetry;
 use codex_plugin::PluginCapabilitySummary;
@@ -202,6 +205,7 @@ const MEMORIES_ENABLE_NOTICE: &str = "Memories will be enabled in the next sessi
 const PLAN_MODE_REASONING_SCOPE_TITLE: &str = "Apply reasoning change";
 const PLAN_MODE_REASONING_SCOPE_PLAN_ONLY: &str = "Apply to Plan mode override";
 const PLAN_MODE_REASONING_SCOPE_ALL_MODES: &str = "Apply to global default and Plan mode override";
+const BUILTIN_PROVIDER_IDS: &[&str] = &["openai", "amazon-bedrock", "ollama", "lmstudio"];
 const CONNECTORS_SELECTION_VIEW_ID: &str = "connectors-selection";
 const TUI_STUB_MESSAGE: &str = "Not available in TUI yet.";
 
@@ -275,6 +279,8 @@ use crate::bottom_pane::LocalImageAttachment;
 use crate::bottom_pane::McpServerElicitationFormRequest;
 use crate::bottom_pane::MemoriesSettingsView;
 use crate::bottom_pane::MentionBinding;
+use crate::bottom_pane::ProviderFormSubmission;
+use crate::bottom_pane::ProviderFormView;
 use crate::bottom_pane::QUIT_SHORTCUT_TIMEOUT;
 use crate::bottom_pane::QueuedInputAction;
 use crate::bottom_pane::SelectionAction;
@@ -290,7 +296,6 @@ use crate::exec_cell::ExecCell;
 use crate::exec_cell::new_active_exec_command;
 use crate::exec_command::split_command_string;
 use crate::exec_command::strip_bash_lc_and_escape;
-use crate::get_git_diff::get_git_diff;
 use crate::history_cell;
 use crate::history_cell::HistoryCell;
 use crate::history_cell::HistoryRenderMode;
@@ -6410,6 +6415,19 @@ impl ChatWidget {
             ServerNotification::ServerRequestResolved(_)
             | ServerNotification::AccountUpdated(_)
             | ServerNotification::AccountRateLimitsUpdated(_)
+            | ServerNotification::DevflowAgentStatusChanged(_)
+            | ServerNotification::DevflowTaskStatusChanged(_)
+            | ServerNotification::DevflowRunStatusChanged(_)
+            | ServerNotification::DevflowRunOutputDelta(_)
+            | ServerNotification::DevflowRunCommandStarted(_)
+            | ServerNotification::DevflowRunCommandCompleted(_)
+            | ServerNotification::DevflowRunDiffUpdated(_)
+            | ServerNotification::DevflowWorktreeDiffUpdated(_)
+            | ServerNotification::DevflowArtifactCreated(_)
+            | ServerNotification::DevflowWorktreeStatusChanged(_)
+            | ServerNotification::DevflowQualityGateCompleted(_)
+            | ServerNotification::DevflowWatchdogAlertCreated(_)
+            | ServerNotification::DevflowApprovalRequested(_)
             | ServerNotification::ThreadStarted(_)
             | ServerNotification::ThreadStatusChanged(_)
             | ServerNotification::ThreadArchived(_)
@@ -7488,35 +7506,425 @@ impl ChatWidget {
         });
     }
 
-    pub(crate) fn open_realtime_audio_popup(&mut self) {
-        let items = [
-            RealtimeAudioDeviceKind::Microphone,
-            RealtimeAudioDeviceKind::Speaker,
-        ]
-        .into_iter()
-        .map(|kind| {
-            let description = Some(format!(
-                "Current: {}",
-                self.current_realtime_audio_selection_label(kind)
-            ));
-            let actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
-                tx.send(AppEvent::OpenRealtimeAudioDeviceSelection { kind });
-            })];
-            SelectionItem {
-                name: kind.title().to_string(),
-                description,
-                actions,
-                dismiss_on_select: true,
-                ..Default::default()
-            }
-        })
-        .collect();
+    pub(crate) fn open_settings_popup(&mut self, current_provider_id: &str) {
+        let mut items = vec![SelectionItem {
+            name: "Providers".to_string(),
+            description: Some(format!("Default: {current_provider_id}")),
+            actions: vec![Box::new(|tx| {
+                tx.send(AppEvent::OpenProviderPreferencesPopup);
+            })],
+            dismiss_on_select: true,
+            ..Default::default()
+        }];
+        items.extend(
+            [
+                RealtimeAudioDeviceKind::Microphone,
+                RealtimeAudioDeviceKind::Speaker,
+            ]
+            .into_iter()
+            .map(|kind| {
+                let description = Some(format!(
+                    "Current: {}",
+                    self.current_realtime_audio_selection_label(kind)
+                ));
+                let actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
+                    tx.send(AppEvent::OpenRealtimeAudioDeviceSelection { kind });
+                })];
+                SelectionItem {
+                    name: kind.title().to_string(),
+                    description,
+                    actions,
+                    dismiss_on_select: true,
+                    ..Default::default()
+                }
+            }),
+        );
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
             title: Some("Settings".to_string()),
             subtitle: Some("Configure settings for Codex.".to_string()),
             footer_hint: Some(standard_popup_hint_line()),
             items,
+            ..Default::default()
+        });
+    }
+
+    pub(crate) fn open_provider_preferences_popup(
+        &mut self,
+        current_provider_id: &str,
+        providers: &HashMap<String, ModelProviderInfo>,
+    ) {
+        let mut provider_entries = providers
+            .iter()
+            .map(|(id, provider)| {
+                let label = if provider.name.trim().is_empty() {
+                    id.clone()
+                } else {
+                    provider.name.clone()
+                };
+                let description = provider
+                    .base_url
+                    .as_ref()
+                    .map(|base_url| format!("{id} - {base_url}"));
+                (id.clone(), label, description)
+            })
+            .collect::<Vec<_>>();
+        provider_entries.sort_by(|a, b| a.0.cmp(&b.0));
+
+        let mut items = vec![SelectionItem {
+            name: "Add custom provider".to_string(),
+            description: Some("Create a new provider configuration.".to_string()),
+            actions: vec![Box::new(|tx| {
+                tx.send(AppEvent::OpenProviderCreatePrompt);
+            })],
+            dismiss_on_select: true,
+            ..Default::default()
+        }];
+        items.extend(
+            provider_entries
+                .into_iter()
+                .map(|(id, label, description)| SelectionItem {
+                    name: label,
+                    description,
+                    is_current: id == current_provider_id,
+                    actions: vec![Box::new(move |tx| {
+                        tx.send(AppEvent::OpenProviderDetailPopup {
+                            provider_id: id.clone(),
+                        });
+                    })],
+                    dismiss_on_select: true,
+                    ..Default::default()
+                }),
+        );
+
+        self.bottom_pane.show_selection_view(SelectionViewParams {
+            title: Some("Providers".to_string()),
+            subtitle: Some("Select a provider to inspect or manage.".to_string()),
+            footer_hint: Some(standard_popup_hint_line()),
+            items,
+            ..Default::default()
+        });
+    }
+
+    pub(crate) fn open_provider_detail_popup(
+        &mut self,
+        provider_id: &str,
+        provider: &ModelProviderInfo,
+        current_provider_id: &str,
+        current_model: &str,
+    ) {
+        let mut header = ColumnRenderable::new();
+        header.push(Line::from(provider.name.clone().bold()));
+        header.push(Line::from(provider_id.to_string().dim()));
+        if let Some(base_url) = provider.base_url.as_deref() {
+            header.push(Line::from(base_url.to_string().dim()));
+        }
+        header.push(Line::from(
+            format!(
+                "wire: {}  auth: {}",
+                match provider.wire_api {
+                    ProviderWireApi::Responses => "responses",
+                    ProviderWireApi::AnthropicMessages => "anthropic_messages",
+                    ProviderWireApi::ChatCompletions => "chat_completions",
+                },
+                match provider.auth_style {
+                    ProviderAuthStyle::Bearer => "bearer",
+                    ProviderAuthStyle::XApiKey => "x_api_key",
+                }
+            )
+            .dim(),
+        ));
+
+        let current = provider_id == current_provider_id;
+        let set_default_id = provider_id.to_string();
+        let browse_models_id = provider_id.to_string();
+        let test_connection_id = provider_id.to_string();
+        let test_model = current_model.to_string();
+        let mut items = vec![
+            SelectionItem {
+                name: "Set as default".to_string(),
+                description: Some("Use this provider for future sessions.".to_string()),
+                is_current: current,
+                is_disabled: current,
+                disabled_reason: current
+                    .then_some("This provider is already the default.".to_string()),
+                actions: vec![Box::new(move |tx| {
+                    tx.send(AppEvent::PersistProviderPreferenceSelection {
+                        provider_id: set_default_id.clone(),
+                    });
+                })],
+                dismiss_on_select: true,
+                ..Default::default()
+            },
+            SelectionItem {
+                name: if current {
+                    "Choose model".to_string()
+                } else {
+                    "Choose default model".to_string()
+                },
+                description: Some(if current {
+                    "Open this provider's model picker.".to_string()
+                } else {
+                    "Set this provider and model for future sessions.".to_string()
+                }),
+                actions: vec![Box::new(move |tx| {
+                    tx.send(AppEvent::OpenProviderModelsPopup {
+                        provider_id: browse_models_id.clone(),
+                    });
+                })],
+                dismiss_on_select: true,
+                ..Default::default()
+            },
+            SelectionItem {
+                name: "Test connection".to_string(),
+                description: Some(format!(
+                    "Run basic, streaming, and tool-calling checks with model {test_model}."
+                )),
+                actions: vec![Box::new(move |tx| {
+                    tx.send(AppEvent::TestProviderConnection {
+                        provider_id: test_connection_id.clone(),
+                    });
+                })],
+                dismiss_on_select: true,
+                ..Default::default()
+            },
+        ];
+        if !BUILTIN_PROVIDER_IDS.contains(&provider_id) {
+            let edit_provider_id = provider_id.to_string();
+            let delete_provider_id = provider_id.to_string();
+            items.push(SelectionItem {
+                name: "Edit provider".to_string(),
+                description: Some("Edit this custom provider.".to_string()),
+                actions: vec![Box::new(move |tx| {
+                    tx.send(AppEvent::OpenProviderEditPrompt {
+                        provider_id: edit_provider_id.clone(),
+                    });
+                })],
+                dismiss_on_select: true,
+                ..Default::default()
+            });
+            items.push(SelectionItem {
+                name: "Delete provider".to_string(),
+                description: Some("Remove this custom provider.".to_string()),
+                actions: vec![Box::new(move |tx| {
+                    tx.send(AppEvent::OpenProviderDeleteConfirm {
+                        provider_id: delete_provider_id.clone(),
+                    });
+                })],
+                dismiss_on_select: true,
+                ..Default::default()
+            });
+        }
+
+        self.bottom_pane.show_selection_view(SelectionViewParams {
+            footer_hint: Some(standard_popup_hint_line()),
+            header: Box::new(header),
+            items,
+            ..Default::default()
+        });
+    }
+
+    pub(crate) fn open_provider_model_catalog_popup(
+        &mut self,
+        provider_id: &str,
+        presets: Vec<ModelPreset>,
+    ) {
+        let mut items: Vec<SelectionItem> = Vec::new();
+        for (section, section_presets) in grouped_model_catalog_presets(
+            presets.into_iter().filter(|preset| preset.show_in_picker),
+        ) {
+            items.push(SelectionItem {
+                name: model_catalog_section_title(section).to_string(),
+                is_disabled: true,
+                ..Default::default()
+            });
+            for preset in section_presets {
+                let selected_description = model_picker_selected_description(&preset);
+                let provider_id = provider_id.to_string();
+                let model = preset.model.clone();
+                let single_supported_effort = preset.supported_reasoning_efforts.len() <= 1;
+                let default_effort = preset
+                    .supported_reasoning_efforts
+                    .first()
+                    .map(|option| option.effort)
+                    .or(Some(preset.default_reasoning_effort));
+                let preset_for_action = preset.clone();
+                let supports_fast_mode = preset.supports_fast_mode();
+                items.push(SelectionItem {
+                    name: preset.model.clone(),
+                    description: (!preset.description.is_empty()).then_some(preset.description),
+                    selected_description,
+                    is_default: preset.is_default,
+                    actions: if single_supported_effort {
+                        vec![Box::new(move |tx| {
+                            if supports_fast_mode {
+                                tx.send(AppEvent::OpenProviderServiceTierPopup {
+                                    provider_id: provider_id.clone(),
+                                    model: model.clone(),
+                                    effort: default_effort,
+                                });
+                            } else {
+                                tx.send(AppEvent::PersistProviderModelPreferenceSelection {
+                                    provider_id: provider_id.clone(),
+                                    model: model.clone(),
+                                    effort: default_effort,
+                                    service_tier: None,
+                                });
+                            }
+                        })]
+                    } else {
+                        vec![Box::new(move |tx| {
+                            tx.send(AppEvent::OpenProviderReasoningPopup {
+                                provider_id: provider_id.clone(),
+                                model: preset_for_action.clone(),
+                            });
+                        })]
+                    },
+                    dismiss_on_select: true,
+                    ..Default::default()
+                });
+            }
+        }
+        if items.is_empty() {
+            self.add_info_message(
+                format!("No visible models are available for provider `{provider_id}`."),
+                /*hint*/ None,
+            );
+            return;
+        }
+
+        let mut header = ColumnRenderable::new();
+        header.push(Line::from(format!("Models for {provider_id}").bold()));
+        header.push(Line::from(
+            "Choose a model to use with this provider in future sessions.".dim(),
+        ));
+
+        self.bottom_pane.show_selection_view(SelectionViewParams {
+            header: Box::new(header),
+            footer_hint: Some(standard_popup_hint_line()),
+            items,
+            ..Default::default()
+        });
+    }
+
+    pub(crate) fn open_provider_reasoning_popup(&mut self, provider_id: &str, preset: ModelPreset) {
+        self.open_reasoning_popup_for_target(
+            ReasoningSelectionTarget::ProviderPreference {
+                provider_id: provider_id.to_string(),
+            },
+            preset,
+        );
+    }
+
+    pub(crate) fn open_provider_service_tier_popup(
+        &mut self,
+        provider_id: &str,
+        model: &str,
+        effort: Option<ReasoningEffortConfig>,
+    ) {
+        let provider_id = provider_id.to_string();
+        let model = model.to_string();
+        let standard_provider_id = provider_id.clone();
+        let standard_model = model.clone();
+        let fast_provider_id = provider_id;
+        let fast_model = model.clone();
+        let initial_fast = matches!(self.config.service_tier, Some(ServiceTier::Fast));
+        self.bottom_pane.show_selection_view(SelectionViewParams {
+            title: Some(format!("Select Service Tier for {model}")),
+            subtitle: Some("Choose the default speed tier for future sessions.".to_string()),
+            footer_hint: Some(standard_popup_hint_line()),
+            initial_selected_idx: initial_fast.then_some(1),
+            items: vec![
+                SelectionItem {
+                    name: "Standard".to_string(),
+                    description: Some("Use the standard service tier.".to_string()),
+                    is_current: !initial_fast,
+                    actions: vec![Box::new(move |tx| {
+                        tx.send(AppEvent::PersistProviderModelPreferenceSelection {
+                            provider_id: standard_provider_id.clone(),
+                            model: standard_model.clone(),
+                            effort,
+                            service_tier: None,
+                        });
+                    })],
+                    dismiss_on_select: true,
+                    ..Default::default()
+                },
+                SelectionItem {
+                    name: "Fast".to_string(),
+                    description: Some("Use the Fast service tier when available.".to_string()),
+                    is_current: initial_fast,
+                    actions: vec![Box::new(move |tx| {
+                        tx.send(AppEvent::PersistProviderModelPreferenceSelection {
+                            provider_id: fast_provider_id.clone(),
+                            model: fast_model.clone(),
+                            effort,
+                            service_tier: Some(ServiceTier::Fast),
+                        });
+                    })],
+                    dismiss_on_select: true,
+                    ..Default::default()
+                },
+            ],
+            ..Default::default()
+        });
+    }
+
+    pub(crate) fn open_provider_create_prompt(&mut self) {
+        let tx = self.app_event_tx.clone();
+        let view = ProviderFormView::new_create(Box::new(move |submission| {
+            if let ProviderFormSubmission::Create(params) = submission {
+                tx.send(AppEvent::SubmitProviderCreatePrompt { params });
+            }
+        }));
+        self.bottom_pane.show_view(Box::new(view));
+    }
+
+    pub(crate) fn open_provider_edit_prompt(
+        &mut self,
+        provider_id: &str,
+        provider: &ModelProviderInfo,
+    ) {
+        let tx = self.app_event_tx.clone();
+        let view = ProviderFormView::new_edit(
+            provider_id.to_string(),
+            provider,
+            Box::new(move |submission| {
+                if let ProviderFormSubmission::Update(params) = submission {
+                    tx.send(AppEvent::SubmitProviderEditPrompt { params });
+                }
+            }),
+        );
+        self.bottom_pane.show_view(Box::new(view));
+    }
+
+    pub(crate) fn open_provider_delete_confirmation(&mut self, provider_id: &str) {
+        let provider_id_owned = provider_id.to_string();
+        self.bottom_pane.show_selection_view(SelectionViewParams {
+            title: Some("Delete provider".to_string()),
+            subtitle: Some(format!(
+                "Remove `{provider_id}` from your custom providers?"
+            )),
+            footer_hint: Some(standard_popup_hint_line()),
+            items: vec![
+                SelectionItem {
+                    name: "Delete provider".to_string(),
+                    description: Some("This removes the custom provider config.".to_string()),
+                    actions: vec![Box::new(move |tx| {
+                        tx.send(AppEvent::DeleteProvider {
+                            provider_id: provider_id_owned.clone(),
+                        });
+                    })],
+                    dismiss_on_select: true,
+                    ..Default::default()
+                },
+                SelectionItem {
+                    name: "Cancel".to_string(),
+                    description: Some("Keep the provider unchanged.".to_string()),
+                    dismiss_on_select: true,
+                    ..Default::default()
+                },
+            ],
             ..Default::default()
         });
     }
@@ -7710,6 +8118,7 @@ impl ChatWidget {
             .map(|preset| {
                 let description =
                     (!preset.description.is_empty()).then_some(preset.description.clone());
+                let selected_description = model_picker_selected_description(&preset);
                 let model = preset.model.clone();
                 let should_prompt_plan_mode_scope = self.should_prompt_plan_mode_reasoning_scope(
                     model.as_str(),
@@ -7723,6 +8132,7 @@ impl ChatWidget {
                 SelectionItem {
                     name: model.clone(),
                     description,
+                    selected_description,
                     is_current: model.as_str() == current_model,
                     is_default: preset.is_default,
                     actions,
@@ -7790,28 +8200,37 @@ impl ChatWidget {
         }
 
         let mut items: Vec<SelectionItem> = Vec::new();
-        for preset in presets.into_iter() {
-            let description =
-                (!preset.description.is_empty()).then_some(preset.description.to_string());
-            let is_current = preset.model.as_str() == self.current_model();
-            let single_supported_effort = preset.supported_reasoning_efforts.len() == 1;
-            let preset_for_action = preset.clone();
-            let actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
-                let preset_for_event = preset_for_action.clone();
-                tx.send(AppEvent::OpenReasoningPopup {
-                    model: preset_for_event,
-                });
-            })];
+        for (section, section_presets) in grouped_model_catalog_presets(presets) {
             items.push(SelectionItem {
-                name: preset.model.clone(),
-                description,
-                is_current,
-                is_default: preset.is_default,
-                actions,
-                dismiss_on_select: single_supported_effort,
-                dismiss_parent_on_child_accept: !single_supported_effort,
+                name: model_catalog_section_title(section).to_string(),
+                is_disabled: true,
                 ..Default::default()
             });
+            for preset in section_presets {
+                let description =
+                    (!preset.description.is_empty()).then_some(preset.description.to_string());
+                let selected_description = model_picker_selected_description(&preset);
+                let is_current = preset.model.as_str() == self.current_model();
+                let single_supported_effort = preset.supported_reasoning_efforts.len() == 1;
+                let preset_for_action = preset.clone();
+                let actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
+                    let preset_for_event = preset_for_action.clone();
+                    tx.send(AppEvent::OpenReasoningPopup {
+                        model: preset_for_event,
+                    });
+                })];
+                items.push(SelectionItem {
+                    name: preset.model.clone(),
+                    description,
+                    selected_description,
+                    is_current,
+                    is_default: preset.is_default,
+                    actions,
+                    dismiss_on_select: single_supported_effort,
+                    dismiss_parent_on_child_accept: !single_supported_effort,
+                    ..Default::default()
+                });
+            }
         }
 
         let header = self.model_menu_header(
@@ -8002,10 +8421,20 @@ impl ChatWidget {
 
     /// Open a popup to choose the reasoning effort (stage 2) for the given model.
     pub(crate) fn open_reasoning_popup(&mut self, preset: ModelPreset) {
+        self.open_reasoning_popup_for_target(ReasoningSelectionTarget::CurrentSession, preset);
+    }
+
+    fn open_reasoning_popup_for_target(
+        &mut self,
+        target: ReasoningSelectionTarget,
+        preset: ModelPreset,
+    ) {
+        let supports_fast_mode = preset.supports_fast_mode();
         let default_effort: ReasoningEffortConfig = preset.default_reasoning_effort;
         let supported = preset.supported_reasoning_efforts;
-        let in_plan_mode =
-            self.collaboration_modes_enabled() && self.active_mode_kind() == ModeKind::Plan;
+        let in_plan_mode = matches!(target, ReasoningSelectionTarget::CurrentSession)
+            && self.collaboration_modes_enabled()
+            && self.active_mode_kind() == ModeKind::Plan;
 
         let warn_effort = if supported
             .iter()
@@ -8051,14 +8480,21 @@ impl ChatWidget {
         if choices.len() == 1 {
             let selected_effort = choices.first().and_then(|c| c.stored);
             let selected_model = preset.model;
-            if self.should_prompt_plan_mode_reasoning_scope(&selected_model, selected_effort) {
+            if matches!(target, ReasoningSelectionTarget::CurrentSession)
+                && self.should_prompt_plan_mode_reasoning_scope(&selected_model, selected_effort)
+            {
                 self.app_event_tx
                     .send(AppEvent::OpenPlanReasoningScopePrompt {
                         model: selected_model,
                         effort: selected_effort,
                     });
             } else {
-                self.apply_model_and_effort(selected_model, selected_effort);
+                self.apply_model_selection_target(
+                    &target,
+                    selected_model,
+                    selected_effort,
+                    supports_fast_mode,
+                );
             }
             return;
         }
@@ -8072,7 +8508,8 @@ impl ChatWidget {
             .or(Some(default_effort));
 
         let model_slug = preset.model.to_string();
-        let is_current_model = self.current_model() == preset.model.as_str();
+        let is_current_model = matches!(target, ReasoningSelectionTarget::CurrentSession)
+            && self.current_model() == preset.model.as_str();
         let highlight_choice = if is_current_model {
             if in_plan_mode {
                 self.config
@@ -8125,7 +8562,13 @@ impl ChatWidget {
             let model_for_action = model_slug.clone();
             let choice_effort = choice.stored;
             let should_prompt_plan_mode_scope =
-                self.should_prompt_plan_mode_reasoning_scope(model_slug.as_str(), choice_effort);
+                matches!(target, ReasoningSelectionTarget::CurrentSession)
+                    && self.should_prompt_plan_mode_reasoning_scope(
+                        model_slug.as_str(),
+                        choice_effort,
+                    );
+            let selection_target = target.clone();
+            let choice_supports_fast_mode = supports_fast_mode;
             let actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
                 if should_prompt_plan_mode_scope {
                     tx.send(AppEvent::OpenPlanReasoningScopePrompt {
@@ -8133,12 +8576,32 @@ impl ChatWidget {
                         effort: choice_effort,
                     });
                 } else {
-                    tx.send(AppEvent::UpdateModel(model_for_action.clone()));
-                    tx.send(AppEvent::UpdateReasoningEffort(choice_effort));
-                    tx.send(AppEvent::PersistModelSelection {
-                        model: model_for_action.clone(),
-                        effort: choice_effort,
-                    });
+                    match &selection_target {
+                        ReasoningSelectionTarget::CurrentSession => {
+                            tx.send(AppEvent::UpdateModel(model_for_action.clone()));
+                            tx.send(AppEvent::UpdateReasoningEffort(choice_effort));
+                            tx.send(AppEvent::PersistModelSelection {
+                                model: model_for_action.clone(),
+                                effort: choice_effort,
+                            });
+                        }
+                        ReasoningSelectionTarget::ProviderPreference { provider_id } => {
+                            if choice_supports_fast_mode {
+                                tx.send(AppEvent::OpenProviderServiceTierPopup {
+                                    provider_id: provider_id.clone(),
+                                    model: model_for_action.clone(),
+                                    effort: choice_effort,
+                                });
+                            } else {
+                                tx.send(AppEvent::PersistProviderModelPreferenceSelection {
+                                    provider_id: provider_id.clone(),
+                                    model: model_for_action.clone(),
+                                    effort: choice_effort,
+                                    service_tier: None,
+                                });
+                            }
+                        }
+                    }
                 }
             })];
 
@@ -8192,6 +8655,36 @@ impl ChatWidget {
         self.apply_model_and_effort_without_persist(model.clone(), effort);
         self.app_event_tx
             .send(AppEvent::PersistModelSelection { model, effort });
+    }
+
+    fn apply_model_selection_target(
+        &self,
+        target: &ReasoningSelectionTarget,
+        model: String,
+        effort: Option<ReasoningEffortConfig>,
+        supports_fast_mode: bool,
+    ) {
+        match target {
+            ReasoningSelectionTarget::CurrentSession => self.apply_model_and_effort(model, effort),
+            ReasoningSelectionTarget::ProviderPreference { provider_id } => {
+                if supports_fast_mode {
+                    self.app_event_tx
+                        .send(AppEvent::OpenProviderServiceTierPopup {
+                            provider_id: provider_id.clone(),
+                            model,
+                            effort,
+                        });
+                } else {
+                    self.app_event_tx
+                        .send(AppEvent::PersistProviderModelPreferenceSelection {
+                            provider_id: provider_id.clone(),
+                            model,
+                            effort,
+                            service_tier: None,
+                        });
+                }
+            }
+        }
     }
 
     /// Open the permissions popup.
@@ -10821,6 +11314,116 @@ impl ChatWidget {
         self.bottom_pane.show_view(Box::new(view));
     }
 
+    pub(crate) fn open_context_workflow_popup(&mut self) {
+        self.bottom_pane.show_selection_view(SelectionViewParams {
+            title: Some("Context workflow".to_string()),
+            subtitle: Some("Save the current context or restore a previous session.".to_string()),
+            footer_hint: Some(standard_popup_hint_line()),
+            items: vec![
+                SelectionItem {
+                    name: "Save current context".to_string(),
+                    description: Some(
+                        "Show the current rollout path, thread, model, and resume command."
+                            .to_string(),
+                    ),
+                    actions: vec![Box::new(|tx| {
+                        tx.send(AppEvent::ShowContextSaveSummary);
+                    })],
+                    dismiss_on_select: true,
+                    ..Default::default()
+                },
+                SelectionItem {
+                    name: "Restore saved context".to_string(),
+                    description: Some("Open the saved-session picker.".to_string()),
+                    actions: vec![Box::new(|tx| {
+                        tx.send(AppEvent::OpenResumePicker);
+                    })],
+                    dismiss_on_select: true,
+                    ..Default::default()
+                },
+            ],
+            ..Default::default()
+        });
+    }
+
+    pub(crate) fn open_commit_workflow_prompt(&mut self, draft: String) {
+        let tx = self.app_event_tx.clone();
+        let view = CustomPromptView::new(
+            "Commit workflow".to_string(),
+            "Edit the request, then press Enter to send".to_string(),
+            draft,
+            Some("This drafts a commit message only; it does not run git commit.".to_string()),
+            Box::new(move |prompt: String| {
+                tx.send(AppEvent::SubmitCommitWorkflowPrompt { draft: prompt });
+            }),
+        );
+        self.bottom_pane.show_view(Box::new(view));
+    }
+
+    pub(crate) fn submit_workflow_prompt(&mut self, prompt: String) {
+        let trimmed = prompt.trim();
+        if trimmed.is_empty() {
+            self.add_error_message("Workflow prompt cannot be empty.".to_string());
+            return;
+        }
+        let user_message: UserMessage = trimmed.to_string().into();
+        if self.is_session_configured() {
+            self.reasoning_buffer.clear();
+            self.full_reasoning_buffer.clear();
+            self.set_status_header(String::from("Working"));
+            self.submit_user_message(user_message);
+        } else {
+            self.queue_user_message(user_message);
+        }
+    }
+
+    pub(crate) fn show_context_save_summary(&mut self) {
+        let Some(thread_id) = self.thread_id() else {
+            self.add_info_message(
+                "Context is not available until the session starts.".to_string(),
+                Some("Start or resume a session before saving context.".to_string()),
+            );
+            return;
+        };
+
+        let thread_name = self.thread_name();
+        let resume_command =
+            crate::legacy_core::util::resume_command(thread_name.as_deref(), Some(thread_id))
+                .unwrap_or_else(|| format!("codex resume {thread_id}"));
+        let cwd = self
+            .current_cwd
+            .clone()
+            .unwrap_or_else(|| self.config.cwd.to_path_buf());
+        let rollout_path = self.rollout_path();
+        let thread_label = thread_name.unwrap_or_else(|| thread_id.to_string());
+
+        let mut lines = vec![
+            Line::from(vec!["• ".dim(), "Context saved".into()]),
+            Line::from(vec!["  Thread: ".dim(), thread_label.into()]),
+            Line::from(vec![
+                "  Model: ".dim(),
+                self.current_model().to_string().into(),
+            ]),
+            Line::from(vec![
+                "  Directory: ".dim(),
+                cwd.display().to_string().into(),
+            ]),
+        ];
+        if let Some(path) = rollout_path {
+            lines.push(Line::from(vec![
+                "  Rollout: ".dim(),
+                path.display().to_string().into(),
+            ]));
+        } else {
+            lines.push(Line::from(vec![
+                "  Rollout: ".dim(),
+                "not available yet".into(),
+            ]));
+        }
+        lines.push(Line::from(vec!["  Restore: ".dim(), resume_command.cyan()]));
+        self.add_plain_history_lines(lines);
+    }
+
     pub(crate) fn token_usage(&self) -> TokenUsage {
         self.token_info
             .as_ref()
@@ -10939,6 +11542,66 @@ impl ChatWidget {
     }
 }
 
+#[derive(Clone)]
+enum ReasoningSelectionTarget {
+    CurrentSession,
+    ProviderPreference { provider_id: String },
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ModelCatalogSection {
+    Default,
+    Fast,
+    StrongReasoning,
+    Other,
+}
+
+fn model_picker_selected_description(preset: &ModelPreset) -> Option<String> {
+    let mut lines = Vec::new();
+    if !preset.description.is_empty() {
+        lines.push(preset.description.clone());
+    }
+
+    let mut capabilities = Vec::new();
+    if preset.input_modalities.contains(&InputModality::Image) {
+        capabilities.push("vision");
+    }
+    if preset.supports_personality {
+        capabilities.push("personality");
+    }
+    if preset.supports_fast_mode() {
+        capabilities.push("fast");
+    }
+    if !preset.supported_reasoning_efforts.is_empty() {
+        capabilities.push("reasoning");
+    }
+    if !capabilities.is_empty() {
+        lines.push(format!("Capabilities: {}", capabilities.join(", ")));
+    }
+
+    if !preset.supported_reasoning_efforts.is_empty() {
+        let reasoning = preset
+            .supported_reasoning_efforts
+            .iter()
+            .map(|preset| preset.effort.to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+        lines.push(format!("Reasoning levels: {reasoning}"));
+    }
+
+    if !preset.service_tiers.is_empty() {
+        let tiers = preset
+            .service_tiers
+            .iter()
+            .map(|tier| tier.name.clone())
+            .collect::<Vec<_>>()
+            .join(", ");
+        lines.push(format!("Service tiers: {tiers}"));
+    }
+
+    (!lines.is_empty()).then(|| lines.join("\n"))
+}
+
 #[cfg(not(target_os = "linux"))]
 impl ChatWidget {
     pub(crate) fn update_recording_meter_in_place(&mut self, id: &str, text: &str) -> bool {
@@ -10954,6 +11617,59 @@ impl ChatWidget {
         // Ensure the UI redraws to reflect placeholder removal.
         self.request_redraw();
     }
+}
+
+fn model_catalog_section(preset: &ModelPreset) -> ModelCatalogSection {
+    if preset.is_default {
+        ModelCatalogSection::Default
+    } else if preset.supports_fast_mode() {
+        ModelCatalogSection::Fast
+    } else if preset.supported_reasoning_efforts.iter().any(|option| {
+        matches!(
+            option.effort,
+            ReasoningEffortConfig::High | ReasoningEffortConfig::XHigh
+        )
+    }) {
+        ModelCatalogSection::StrongReasoning
+    } else {
+        ModelCatalogSection::Other
+    }
+}
+
+fn model_catalog_section_title(section: ModelCatalogSection) -> &'static str {
+    match section {
+        ModelCatalogSection::Default => "Default",
+        ModelCatalogSection::Fast => "Fast",
+        ModelCatalogSection::StrongReasoning => "Strong reasoning",
+        ModelCatalogSection::Other => "Other",
+    }
+}
+
+fn grouped_model_catalog_presets(
+    presets: impl IntoIterator<Item = ModelPreset>,
+) -> Vec<(ModelCatalogSection, Vec<ModelPreset>)> {
+    let mut default = Vec::new();
+    let mut fast = Vec::new();
+    let mut strong_reasoning = Vec::new();
+    let mut other = Vec::new();
+    for preset in presets {
+        match model_catalog_section(&preset) {
+            ModelCatalogSection::Default => default.push(preset),
+            ModelCatalogSection::Fast => fast.push(preset),
+            ModelCatalogSection::StrongReasoning => strong_reasoning.push(preset),
+            ModelCatalogSection::Other => other.push(preset),
+        }
+    }
+
+    [
+        (ModelCatalogSection::Default, default),
+        (ModelCatalogSection::Fast, fast),
+        (ModelCatalogSection::StrongReasoning, strong_reasoning),
+        (ModelCatalogSection::Other, other),
+    ]
+    .into_iter()
+    .filter(|(_, presets)| !presets.is_empty())
+    .collect()
 }
 
 fn has_websocket_timing_metrics(summary: RuntimeMetricsSummary) -> bool {

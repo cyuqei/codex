@@ -4,6 +4,7 @@ use std::num::NonZeroU64;
 use std::time::Duration;
 
 use async_trait::async_trait;
+use codex_model_provider_info::AuthStyle;
 use codex_model_provider_info::ModelProviderInfo;
 use codex_model_provider_info::WireApi;
 use codex_protocol::config_types::ModelProviderAuthInfo;
@@ -175,6 +176,7 @@ fn model_provider_from_proto(
             .transpose()?,
         aws: None,
         wire_api,
+        auth_style: AuthStyle::Bearer,
         query_params: provider.query_params.map(|map| map.values),
         http_headers: provider.http_headers.map(|map| map.values),
         env_http_headers: provider.env_http_headers.map(|map| map.values),

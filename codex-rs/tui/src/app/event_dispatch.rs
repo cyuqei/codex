@@ -5,6 +5,7 @@
 
 use super::resize_reflow::trailing_run_start;
 use super::*;
+use codex_protocol::config_types::ServiceTier;
 
 const SHUTDOWN_FIRST_EXIT_TIMEOUT: Duration = Duration::from_secs(/*secs*/ 2);
 
@@ -353,6 +354,17 @@ impl App {
                     self.keymap.pager.clone(),
                 ));
                 tui.frame_requester().schedule_frame();
+            }
+            AppEvent::CommitWorkflowPrepared(result) => match result {
+                Ok(draft) => {
+                    self.chat_widget.open_commit_workflow_prompt(draft);
+                }
+                Err(err) => {
+                    self.chat_widget.add_error_message(err);
+                }
+            },
+            AppEvent::ShowContextSaveSummary => {
+                self.chat_widget.show_context_save_summary();
             }
             AppEvent::OpenAppLink {
                 app_id,
@@ -728,6 +740,82 @@ impl App {
             }
             AppEvent::OpenRealtimeAudioDeviceSelection { kind } => {
                 self.chat_widget.open_realtime_audio_device_selection(kind);
+            }
+            AppEvent::OpenSettingsPopup => {
+                let current_provider_id = self.config.model_provider_id.clone();
+                self.chat_widget.open_settings_popup(&current_provider_id);
+            }
+            AppEvent::OpenProviderPreferencesPopup => {
+                let current_provider_id = self.config.model_provider_id.clone();
+                let providers = self.config.model_providers.clone();
+                self.chat_widget
+                    .open_provider_preferences_popup(&current_provider_id, &providers);
+            }
+            AppEvent::OpenProviderCreatePrompt => {
+                self.chat_widget.open_provider_create_prompt();
+            }
+            AppEvent::OpenProviderDetailPopup { provider_id } => {
+                let current_provider_id = self.config.model_provider_id.clone();
+                let current_model = self.chat_widget.current_model().to_string();
+                if let Some(provider) = self.config.model_providers.get(&provider_id).cloned() {
+                    self.chat_widget.open_provider_detail_popup(
+                        &provider_id,
+                        &provider,
+                        &current_provider_id,
+                        &current_model,
+                    );
+                } else {
+                    self.chat_widget.add_error_message(format!(
+                        "Provider `{provider_id}` is not available in the current config."
+                    ));
+                }
+            }
+            AppEvent::OpenProviderModelsPopup { provider_id } => {
+                match app_server
+                    .model_list(Some(provider_id.clone()), /*include_hidden*/ true)
+                    .await
+                {
+                    Ok(models) => {
+                        if provider_id == self.config.model_provider_id {
+                            self.chat_widget.open_model_popup_with_presets(models);
+                        } else {
+                            self.chat_widget
+                                .open_provider_model_catalog_popup(&provider_id, models);
+                        }
+                    }
+                    Err(err) => {
+                        tracing::error!(error = %err, "failed to load provider models");
+                        self.chat_widget.add_error_message(format!(
+                            "Failed to load models for provider `{provider_id}`: {err}"
+                        ));
+                    }
+                }
+            }
+            AppEvent::OpenProviderReasoningPopup { provider_id, model } => {
+                self.chat_widget
+                    .open_provider_reasoning_popup(&provider_id, model);
+            }
+            AppEvent::OpenProviderServiceTierPopup {
+                provider_id,
+                model,
+                effort,
+            } => {
+                self.chat_widget
+                    .open_provider_service_tier_popup(&provider_id, &model, effort);
+            }
+            AppEvent::OpenProviderEditPrompt { provider_id } => {
+                if let Some(provider) = self.config.model_providers.get(&provider_id).cloned() {
+                    self.chat_widget
+                        .open_provider_edit_prompt(&provider_id, &provider);
+                } else {
+                    self.chat_widget.add_error_message(format!(
+                        "Provider `{provider_id}` is not available in the current config."
+                    ));
+                }
+            }
+            AppEvent::OpenProviderDeleteConfirm { provider_id } => {
+                self.chat_widget
+                    .open_provider_delete_confirmation(&provider_id);
             }
             AppEvent::RealtimeWebrtcOfferCreated { result } => {
                 self.chat_widget.on_realtime_webrtc_offer_created(result);
@@ -1185,6 +1273,272 @@ impl App {
                             self.chat_widget
                                 .add_error_message(format!("Failed to save default model: {err}"));
                         }
+                    }
+                }
+            }
+            AppEvent::PersistProviderPreferenceSelection { provider_id } => {
+                let default_model = self.config.model.clone();
+                match app_server
+                    .provider_preferences_update(
+                        codex_app_server_protocol::ProviderPreferencesUpdateParams {
+                            default_provider: provider_id.clone(),
+                            default_model,
+                            config_scope:
+                                codex_app_server_protocol::ProviderPreferencesScope::Global,
+                            cwd: None,
+                        },
+                    )
+                    .await
+                {
+                    Ok(_) => {
+                        if let Some(provider) =
+                            self.config.model_providers.get(&provider_id).cloned()
+                        {
+                            self.config.model_provider_id = provider_id.clone();
+                            self.config.model_provider = provider;
+                            self.chat_widget.add_info_message(
+                                format!(
+                                    "Default provider set to {provider_id} for future sessions"
+                                ),
+                                /*hint*/ None,
+                            );
+                        } else {
+                            self.chat_widget.add_error_message(format!(
+                                "Saved default provider `{provider_id}`, but it is not available in the current config cache."
+                            ));
+                        }
+                    }
+                    Err(err) => {
+                        tracing::error!(error = %err, "failed to persist provider preference");
+                        self.chat_widget
+                            .add_error_message(format!("Failed to save default provider: {err}"));
+                    }
+                }
+            }
+            AppEvent::PersistProviderModelPreferenceSelection {
+                provider_id,
+                model,
+                effort,
+                service_tier,
+            } => {
+                match app_server
+                    .provider_preferences_update(
+                        codex_app_server_protocol::ProviderPreferencesUpdateParams {
+                            default_provider: provider_id.clone(),
+                            default_model: Some(model.clone()),
+                            config_scope:
+                                codex_app_server_protocol::ProviderPreferencesScope::Global,
+                            cwd: None,
+                        },
+                    )
+                    .await
+                {
+                    Ok(_) => {
+                        let provider = self.config.model_providers.get(&provider_id).cloned();
+                        let preference_result = ConfigEditsBuilder::new(&self.config.codex_home)
+                            .with_profile(None)
+                            .set_model(Some(model.as_str()), effort)
+                            .set_service_tier(service_tier)
+                            .apply()
+                            .await;
+                        match (provider, preference_result) {
+                            (Some(provider), Ok(())) => {
+                                self.config.model_provider_id = provider_id.clone();
+                                self.config.model_provider = provider;
+                                self.config.model = Some(model.clone());
+                                self.config.model_reasoning_effort = effort;
+                                self.config.service_tier = service_tier;
+                                let mut message = format!(
+                                    "Default provider set to {provider_id} with model {model}"
+                                );
+                                if let Some(label) = Self::reasoning_label_for(&model, effort) {
+                                    message.push(' ');
+                                    message.push_str(label);
+                                }
+                                if matches!(service_tier, Some(ServiceTier::Fast)) {
+                                    message.push_str(" with Fast mode");
+                                }
+                                message.push_str(" for future sessions");
+                                self.chat_widget.add_info_message(message, /*hint*/ None);
+                            }
+                            (Some(provider), Err(err)) => {
+                                self.config.model_provider_id = provider_id.clone();
+                                self.config.model_provider = provider;
+                                self.config.model = Some(model.clone());
+                                tracing::error!(
+                                    error = %err,
+                                    "failed to persist provider model preference details"
+                                );
+                                self.chat_widget.add_error_message(format!(
+                                    "Saved default provider `{provider_id}` with model `{model}`, but failed to save reasoning or service-tier defaults: {err}"
+                                ));
+                            }
+                            (None, Ok(())) => {
+                                self.chat_widget.add_error_message(format!(
+                                    "Saved default provider `{provider_id}` with model `{model}`, but the provider is not available in the current config cache."
+                                ));
+                            }
+                            (None, Err(err)) => {
+                                tracing::error!(
+                                    error = %err,
+                                    "failed to persist provider model preference details"
+                                );
+                                self.chat_widget.add_error_message(format!(
+                                    "Saved default provider `{provider_id}` with model `{model}`, but the provider is not available in the current config cache and reasoning/service-tier defaults failed to save: {err}"
+                                ));
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        tracing::error!(
+                            error = %err,
+                            "failed to persist provider model preference"
+                        );
+                        self.chat_widget.add_error_message(format!(
+                            "Failed to save default provider and model: {err}"
+                        ));
+                    }
+                }
+            }
+            AppEvent::SubmitProviderCreatePrompt { params } => {
+                match app_server.provider_create(params).await {
+                    Ok(response) => {
+                        if let Err(err) = self.refresh_in_memory_config_from_disk().await {
+                            tracing::warn!(
+                                error = %err,
+                                "failed to refresh config after provider create"
+                            );
+                        }
+                        self.chat_widget.submit_op(AppCommand::reload_user_config());
+                        self.chat_widget.add_info_message(
+                            format!("Created provider {}", response.provider.id),
+                            /*hint*/ None,
+                        );
+                        let current_provider_id = self.config.model_provider_id.clone();
+                        let providers = self.config.model_providers.clone();
+                        self.chat_widget
+                            .open_provider_preferences_popup(&current_provider_id, &providers);
+                    }
+                    Err(err) => {
+                        tracing::error!(error = %err, "failed to create provider");
+                        self.chat_widget
+                            .add_error_message(format!("Failed to create provider: {err}"));
+                    }
+                }
+            }
+            AppEvent::SubmitProviderEditPrompt { params } => {
+                let provider_id = params.id.clone();
+                match app_server.provider_update(params).await {
+                    Ok(response) => {
+                        if let Err(err) = self.refresh_in_memory_config_from_disk().await {
+                            tracing::warn!(
+                                error = %err,
+                                "failed to refresh config after provider update"
+                            );
+                        }
+                        self.chat_widget.submit_op(AppCommand::reload_user_config());
+                        self.chat_widget.add_info_message(
+                            format!("Updated provider {}", response.provider.id),
+                            /*hint*/ None,
+                        );
+                        let current_provider_id = self.config.model_provider_id.clone();
+                        let current_model = self.chat_widget.current_model().to_string();
+                        if let Some(provider) =
+                            self.config.model_providers.get(&provider_id).cloned()
+                        {
+                            self.chat_widget.open_provider_detail_popup(
+                                &provider_id,
+                                &provider,
+                                &current_provider_id,
+                                &current_model,
+                            );
+                        }
+                    }
+                    Err(err) => {
+                        tracing::error!(error = %err, "failed to update provider");
+                        self.chat_widget
+                            .add_error_message(format!("Failed to update provider: {err}"));
+                    }
+                }
+            }
+            AppEvent::DeleteProvider { provider_id } => match app_server
+                .provider_delete(codex_app_server_protocol::ProviderDeleteParams {
+                    id: provider_id.clone(),
+                })
+                .await
+            {
+                Ok(response) => {
+                    if let Err(err) = self.refresh_in_memory_config_from_disk().await {
+                        tracing::warn!(
+                            error = %err,
+                            "failed to refresh config after provider delete"
+                        );
+                    }
+                    self.chat_widget.submit_op(AppCommand::reload_user_config());
+                    let mut message = format!("Deleted provider {provider_id}");
+                    if let Some(warning) = response.warning {
+                        message.push_str(": ");
+                        message.push_str(&warning);
+                    }
+                    self.chat_widget.add_info_message(message, /*hint*/ None);
+                    let current_provider_id = self.config.model_provider_id.clone();
+                    let providers = self.config.model_providers.clone();
+                    self.chat_widget
+                        .open_provider_preferences_popup(&current_provider_id, &providers);
+                }
+                Err(err) => {
+                    tracing::error!(error = %err, "failed to delete provider");
+                    self.chat_widget
+                        .add_error_message(format!("Failed to delete provider: {err}"));
+                }
+            },
+            AppEvent::TestProviderConnection { provider_id } => {
+                let model = self.chat_widget.current_model().to_string();
+                match app_server
+                    .provider_test_connection(
+                        codex_app_server_protocol::ProviderTestConnectionParams {
+                            target:
+                                codex_app_server_protocol::ProviderTestConnectionTarget::Saved {
+                                    id: provider_id.clone(),
+                                },
+                            model: model.clone(),
+                            checks: Some(codex_app_server_protocol::ProviderTestConnectionChecks {
+                                basic: true,
+                                streaming: true,
+                                tool_calling: true,
+                            }),
+                        },
+                    )
+                    .await
+                {
+                    Ok(result) => {
+                        let prefix = if result.ok { "PASS" } else { "FAIL" };
+                        self.chat_widget.add_plain_history_lines(vec![
+                            Line::from(format!(
+                                "• Provider test {prefix}: {provider_id} (model {model})"
+                            )),
+                            Line::from(format!("  {}", result.summary)),
+                        ]);
+                        for entry in result.results {
+                            let status = if entry.ok { "ok" } else { "fail" };
+                            let mut detail =
+                                format!("  - {:?}: {status}", entry.check).to_lowercase();
+                            if let Some(error_code) = entry.error_code {
+                                detail.push_str(&format!(" ({error_code:?})"));
+                            }
+                            if let Some(message) = entry.message {
+                                detail.push_str(": ");
+                                detail.push_str(&message);
+                            }
+                            self.chat_widget
+                                .add_plain_history_lines(vec![Line::from(detail)]);
+                        }
+                    }
+                    Err(err) => {
+                        tracing::error!(error = %err, "failed to run provider connection test");
+                        self.chat_widget.add_error_message(format!(
+                            "Failed to test provider connection: {err}"
+                        ));
                     }
                 }
             }
@@ -1746,6 +2100,12 @@ impl App {
             }
             AppEvent::OpenReviewCustomPrompt => {
                 self.chat_widget.show_review_custom_prompt();
+            }
+            AppEvent::OpenContextWorkflowPopup => {
+                self.chat_widget.open_context_workflow_popup();
+            }
+            AppEvent::SubmitCommitWorkflowPrompt { draft } => {
+                self.chat_widget.submit_workflow_prompt(draft);
             }
             AppEvent::SubmitUserMessageWithMode {
                 text,

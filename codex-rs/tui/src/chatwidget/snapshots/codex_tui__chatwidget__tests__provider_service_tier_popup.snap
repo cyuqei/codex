@@ -1,0 +1,11 @@
+---
+source: tui/src/chatwidget/tests/popups_and_settings.rs
+expression: popup
+---
+  Select Service Tier for cap-model
+  Choose the default speed tier for future sessions.
+
+› 1. Standard (current)  Use the standard service tier.
+  2. Fast                Use the Fast service tier when available.
+
+  Press enter to confirm or esc to go back

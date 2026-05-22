@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowWorktree": {
+      "properties": {
+        "baseBranch": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "baseCommit": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "createdAt": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "cwdPath": {
+          "type": "string"
+        },
+        "headCommit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "managed": {
+          "type": "boolean"
+        },
+        "projectId": {
+          "type": "string"
+        },
+        "repoRoot": {
+          "type": "string"
+        },
+        "rootPath": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/DevflowWorktreeStatus"
+        },
+        "taskId": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "format": "int64",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "baseCommit",
+        "branch",
+        "createdAt",
+        "cwdPath",
+        "id",
+        "managed",
+        "projectId",
+        "repoRoot",
+        "rootPath",
+        "status",
+        "taskId",
+        "updatedAt"
+      ],
+      "type": "object"
+    },
+    "DevflowWorktreeStatus": {
+      "enum": [
+        "active",
+        "dirty",
+        "cleaned",
+        "missing"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "worktree": {
+      "$ref": "#/definitions/DevflowWorktree"
+    }
+  },
+  "required": [
+    "worktree"
+  ],
+  "title": "DevflowWorktreeReadResponse",
+  "type": "object"
+}

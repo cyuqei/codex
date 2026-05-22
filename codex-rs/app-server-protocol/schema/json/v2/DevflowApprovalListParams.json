@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowApprovalStatus": {
+      "enum": [
+        "pending",
+        "responded"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "runId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DevflowApprovalStatus"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "taskId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "title": "DevflowApprovalListParams",
+  "type": "object"
+}

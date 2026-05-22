@@ -1369,6 +1369,1374 @@
             },
             "method": {
               "enum": [
+                "devflowAgent/detect"
+              ],
+              "title": "DevflowAgent/detectRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowAgentDetectParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowAgent/detectRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowAgent/list"
+              ],
+              "title": "DevflowAgent/listRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowAgentListParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowAgent/listRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowAgent/read"
+              ],
+              "title": "DevflowAgent/readRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowAgentReadParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowAgent/readRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowAgent/capabilities"
+              ],
+              "title": "DevflowAgent/capabilitiesRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowAgentCapabilitiesReadParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowAgent/capabilitiesRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowAgent/diagnose"
+              ],
+              "title": "DevflowAgent/diagnoseRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowAgentDiagnoseParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowAgent/diagnoseRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowAgent/start"
+              ],
+              "title": "DevflowAgent/startRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowAgentStartParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowAgent/startRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowAgent/stop"
+              ],
+              "title": "DevflowAgent/stopRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowAgentStopParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowAgent/stopRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowAgent/restart"
+              ],
+              "title": "DevflowAgent/restartRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowAgentRestartParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowAgent/restartRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowProject/list"
+              ],
+              "title": "DevflowProject/listRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowProjectListParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowProject/listRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowProject/read"
+              ],
+              "title": "DevflowProject/readRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowProjectReadParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowProject/readRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowProject/open"
+              ],
+              "title": "DevflowProject/openRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowProjectOpenParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowProject/openRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowProjectMemory/read"
+              ],
+              "title": "DevflowProjectMemory/readRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowProjectMemoryReadParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowProjectMemory/readRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowProjectMemory/write"
+              ],
+              "title": "DevflowProjectMemory/writeRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowProjectMemoryWriteParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowProjectMemory/writeRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowProject/diagnose"
+              ],
+              "title": "DevflowProject/diagnoseRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowProjectDiagnoseParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowProject/diagnoseRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowSupportBundle/create"
+              ],
+              "title": "DevflowSupportBundle/createRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowSupportBundleCreateParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowSupportBundle/createRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowReleasePrep/create"
+              ],
+              "title": "DevflowReleasePrep/createRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowReleasePrepCreateParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowReleasePrep/createRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowProject/testCommands/list"
+              ],
+              "title": "DevflowProject/testCommands/listRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowProjectTestCommandsListParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowProject/testCommands/listRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowProject/trust"
+              ],
+              "title": "DevflowProject/trustRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowProjectTrustParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowProject/trustRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowApproval/list"
+              ],
+              "title": "DevflowApproval/listRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowApprovalListParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowApproval/listRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowApproval/respond"
+              ],
+              "title": "DevflowApproval/respondRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowApprovalRespondParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowApproval/respondRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowApproval/policy/read"
+              ],
+              "title": "DevflowApproval/policy/readRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowApprovalPolicyReadParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowApproval/policy/readRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowApproval/policy/update"
+              ],
+              "title": "DevflowApproval/policy/updateRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowApprovalPolicyUpdateParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowApproval/policy/updateRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowTask/create"
+              ],
+              "title": "DevflowTask/createRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowTaskCreateParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowTask/createRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowTask/plan"
+              ],
+              "title": "DevflowTask/planRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowTaskPlanParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowTask/planRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowTask/dispatch"
+              ],
+              "title": "DevflowTask/dispatchRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowTaskDispatchParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowTask/dispatchRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowTask/start"
+              ],
+              "title": "DevflowTask/startRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowTaskStartParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowTask/startRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowTask/pause"
+              ],
+              "title": "DevflowTask/pauseRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowTaskPauseParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowTask/pauseRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowTask/resume"
+              ],
+              "title": "DevflowTask/resumeRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowTaskResumeParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowTask/resumeRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowTask/cancel"
+              ],
+              "title": "DevflowTask/cancelRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowTaskCancelParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowTask/cancelRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowTask/read"
+              ],
+              "title": "DevflowTask/readRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowTaskReadParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowTask/readRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowTask/list"
+              ],
+              "title": "DevflowTask/listRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowTaskListParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowTask/listRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowTask/assign"
+              ],
+              "title": "DevflowTask/assignRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowTaskAssignParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowTask/assignRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowTask/dependencies/update"
+              ],
+              "title": "DevflowTask/dependencies/updateRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowTaskDependenciesUpdateParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowTask/dependencies/updateRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowWorktree/create"
+              ],
+              "title": "DevflowWorktree/createRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowWorktreeCreateParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowWorktree/createRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowWorktree/list"
+              ],
+              "title": "DevflowWorktree/listRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowWorktreeListParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowWorktree/listRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowWorktree/read"
+              ],
+              "title": "DevflowWorktree/readRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowWorktreeReadParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowWorktree/readRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowWorktree/diff"
+              ],
+              "title": "DevflowWorktree/diffRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowWorktreeDiffParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowWorktree/diffRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowWorktree/merge"
+              ],
+              "title": "DevflowWorktree/mergeRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowWorktreeMergeParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowWorktree/mergeRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowWorktree/cleanup"
+              ],
+              "title": "DevflowWorktree/cleanupRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowWorktreeCleanupParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowWorktree/cleanupRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowQualityGate/list"
+              ],
+              "title": "DevflowQualityGate/listRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowQualityGateListParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowQualityGate/listRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowQualityGate/read"
+              ],
+              "title": "DevflowQualityGate/readRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowQualityGateReadParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowQualityGate/readRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowQualityGate/run"
+              ],
+              "title": "DevflowQualityGate/runRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowQualityGateRunParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowQualityGate/runRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowQualityGate/rerun"
+              ],
+              "title": "DevflowQualityGate/rerunRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowQualityGateRerunParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowQualityGate/rerunRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowQualityGate/waive"
+              ],
+              "title": "DevflowQualityGate/waiveRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowQualityGateWaiveParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowQualityGate/waiveRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowPolicyPack/list"
+              ],
+              "title": "DevflowPolicyPack/listRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowPolicyPackListParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowPolicyPack/listRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowPolicyPack/read"
+              ],
+              "title": "DevflowPolicyPack/readRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowPolicyPackReadParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowPolicyPack/readRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowPolicyPack/apply"
+              ],
+              "title": "DevflowPolicyPack/applyRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowPolicyPackApplyParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowPolicyPack/applyRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowCapabilityPack/list"
+              ],
+              "title": "DevflowCapabilityPack/listRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowCapabilityPackListParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowCapabilityPack/listRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowCapabilityPack/read"
+              ],
+              "title": "DevflowCapabilityPack/readRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowCapabilityPackReadParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowCapabilityPack/readRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowCapabilityPack/run"
+              ],
+              "title": "DevflowCapabilityPack/runRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowCapabilityPackRunParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowCapabilityPack/runRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowWatchdog/read"
+              ],
+              "title": "DevflowWatchdog/readRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowWatchdogReadParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowWatchdog/readRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowWatchdog/alerts"
+              ],
+              "title": "DevflowWatchdog/alertsRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowWatchdogAlertsParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowWatchdog/alertsRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowArtifact/list"
+              ],
+              "title": "DevflowArtifact/listRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowArtifactListParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowArtifact/listRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowArtifact/read"
+              ],
+              "title": "DevflowArtifact/readRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowArtifactReadParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowArtifact/readRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowArtifact/open"
+              ],
+              "title": "DevflowArtifact/openRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowArtifactOpenParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowArtifact/openRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowArtifact/export"
+              ],
+              "title": "DevflowArtifact/exportRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowArtifactExportParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowArtifact/exportRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "devflowArtifact/deliver"
+              ],
+              "title": "DevflowArtifact/deliverRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowArtifactDeliverParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowArtifact/deliverRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
                 "model/list"
               ],
               "title": "Model/listRequestMethod",
@@ -1408,6 +2776,198 @@
             "params"
           ],
           "title": "ModelProvider/capabilities/readRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "provider/list"
+              ],
+              "title": "Provider/listRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/ProviderListParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "Provider/listRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "provider/read"
+              ],
+              "title": "Provider/readRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/ProviderReadParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "Provider/readRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "provider/create"
+              ],
+              "title": "Provider/createRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/ProviderCreateParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "Provider/createRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "provider/update"
+              ],
+              "title": "Provider/updateRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/ProviderUpdateParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "Provider/updateRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "provider/delete"
+              ],
+              "title": "Provider/deleteRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/ProviderDeleteParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "Provider/deleteRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "provider/testConnection"
+              ],
+              "title": "Provider/testConnectionRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/ProviderTestConnectionParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "Provider/testConnectionRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "providerPreferences/read"
+              ],
+              "title": "ProviderPreferences/readRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/ProviderPreferencesReadParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "ProviderPreferences/readRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
+                "providerPreferences/update"
+              ],
+              "title": "ProviderPreferences/updateRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/ProviderPreferencesUpdateParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "ProviderPreferences/updateRequest",
           "type": "object"
         },
         {
@@ -3638,13 +5198,6 @@
         }
       ]
     },
-    "PermissionGrantScope": {
-      "enum": [
-        "turn",
-        "session"
-      ],
-      "type": "string"
-    },
     "PermissionsRequestApprovalParams": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "properties": {
@@ -3689,7 +5242,7 @@
         "scope": {
           "allOf": [
             {
-              "$ref": "#/definitions/PermissionGrantScope"
+              "$ref": "#/definitions/v2/PermissionGrantScope"
             }
           ],
           "default": "turn"
@@ -3831,6 +5384,266 @@
             "params"
           ],
           "title": "ErrorNotification",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "method": {
+              "enum": [
+                "devflowAgent/statusChanged"
+              ],
+              "title": "DevflowAgent/statusChangedNotificationMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowAgentStatusChangedNotification"
+            }
+          },
+          "required": [
+            "method",
+            "params"
+          ],
+          "title": "DevflowAgent/statusChangedNotification",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "method": {
+              "enum": [
+                "devflowTask/statusChanged"
+              ],
+              "title": "DevflowTask/statusChangedNotificationMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowTaskStatusChangedNotification"
+            }
+          },
+          "required": [
+            "method",
+            "params"
+          ],
+          "title": "DevflowTask/statusChangedNotification",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "method": {
+              "enum": [
+                "devflowRun/statusChanged"
+              ],
+              "title": "DevflowRun/statusChangedNotificationMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowRunStatusChangedNotification"
+            }
+          },
+          "required": [
+            "method",
+            "params"
+          ],
+          "title": "DevflowRun/statusChangedNotification",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "method": {
+              "enum": [
+                "devflowRun/outputDelta"
+              ],
+              "title": "DevflowRun/outputDeltaNotificationMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowRunOutputDeltaNotification"
+            }
+          },
+          "required": [
+            "method",
+            "params"
+          ],
+          "title": "DevflowRun/outputDeltaNotification",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "method": {
+              "enum": [
+                "devflowRun/commandStarted"
+              ],
+              "title": "DevflowRun/commandStartedNotificationMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowRunCommandStartedNotification"
+            }
+          },
+          "required": [
+            "method",
+            "params"
+          ],
+          "title": "DevflowRun/commandStartedNotification",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "method": {
+              "enum": [
+                "devflowRun/commandCompleted"
+              ],
+              "title": "DevflowRun/commandCompletedNotificationMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowRunCommandCompletedNotification"
+            }
+          },
+          "required": [
+            "method",
+            "params"
+          ],
+          "title": "DevflowRun/commandCompletedNotification",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "method": {
+              "enum": [
+                "devflowRun/diffUpdated"
+              ],
+              "title": "DevflowRun/diffUpdatedNotificationMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowRunDiffUpdatedNotification"
+            }
+          },
+          "required": [
+            "method",
+            "params"
+          ],
+          "title": "DevflowRun/diffUpdatedNotification",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "method": {
+              "enum": [
+                "devflowWorktree/diffUpdated"
+              ],
+              "title": "DevflowWorktree/diffUpdatedNotificationMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowWorktreeDiffUpdatedNotification"
+            }
+          },
+          "required": [
+            "method",
+            "params"
+          ],
+          "title": "DevflowWorktree/diffUpdatedNotification",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "method": {
+              "enum": [
+                "devflowArtifact/created"
+              ],
+              "title": "DevflowArtifact/createdNotificationMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowArtifactCreatedNotification"
+            }
+          },
+          "required": [
+            "method",
+            "params"
+          ],
+          "title": "DevflowArtifact/createdNotification",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "method": {
+              "enum": [
+                "devflowWorktree/statusChanged"
+              ],
+              "title": "DevflowWorktree/statusChangedNotificationMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowWorktreeStatusChangedNotification"
+            }
+          },
+          "required": [
+            "method",
+            "params"
+          ],
+          "title": "DevflowWorktree/statusChangedNotification",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "method": {
+              "enum": [
+                "devflowQualityGate/completed"
+              ],
+              "title": "DevflowQualityGate/completedNotificationMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowQualityGateCompletedNotification"
+            }
+          },
+          "required": [
+            "method",
+            "params"
+          ],
+          "title": "DevflowQualityGate/completedNotification",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "method": {
+              "enum": [
+                "devflowWatchdog/alertCreated"
+              ],
+              "title": "DevflowWatchdog/alertCreatedNotificationMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowWatchdogAlertCreatedNotification"
+            }
+          },
+          "required": [
+            "method",
+            "params"
+          ],
+          "title": "DevflowWatchdog/alertCreatedNotification",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "method": {
+              "enum": [
+                "devflowApproval/requested"
+              ],
+              "title": "DevflowApproval/requestedNotificationMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowApprovalRequestedNotification"
+            }
+          },
+          "required": [
+            "method",
+            "params"
+          ],
+          "title": "DevflowApproval/requestedNotification",
           "type": "object"
         },
         {
@@ -7951,6 +9764,3530 @@
         "title": "DeprecationNoticeNotification",
         "type": "object"
       },
+      "DevflowAgent": {
+        "properties": {
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "diagnostics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "lastError": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "launchCommand": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "rootPath": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "runtime": {
+            "$ref": "#/definitions/v2/DevflowAgentRuntime"
+          },
+          "status": {
+            "$ref": "#/definitions/v2/DevflowAgentStatus"
+          }
+        },
+        "required": [
+          "capabilities",
+          "diagnostics",
+          "id",
+          "name",
+          "roles",
+          "runtime",
+          "status"
+        ],
+        "type": "object"
+      },
+      "DevflowAgentCapabilitiesReadParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowAgentCapabilitiesReadParams",
+        "type": "object"
+      },
+      "DevflowAgentCapabilitiesReadResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "capabilities",
+          "id"
+        ],
+        "title": "DevflowAgentCapabilitiesReadResponse",
+        "type": "object"
+      },
+      "DevflowAgentDetectParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "claudeRoot": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "codexRoot": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hermesRoot": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "title": "DevflowAgentDetectParams",
+        "type": "object"
+      },
+      "DevflowAgentDetectResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "agents": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowAgent"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "agents"
+        ],
+        "title": "DevflowAgentDetectResponse",
+        "type": "object"
+      },
+      "DevflowAgentDiagnoseParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "cwd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowAgentDiagnoseParams",
+        "type": "object"
+      },
+      "DevflowAgentDiagnoseResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "agent": {
+            "$ref": "#/definitions/v2/DevflowAgent"
+          },
+          "command": {
+            "type": "string"
+          },
+          "exitCode": {
+            "format": "int32",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "stderr": {
+            "type": "string"
+          },
+          "stdout": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "agent",
+          "command",
+          "ok",
+          "stderr",
+          "stdout"
+        ],
+        "title": "DevflowAgentDiagnoseResponse",
+        "type": "object"
+      },
+      "DevflowAgentListParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "runtimes": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowAgentRuntime"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "title": "DevflowAgentListParams",
+        "type": "object"
+      },
+      "DevflowAgentListResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowAgent"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DevflowAgentListResponse",
+        "type": "object"
+      },
+      "DevflowAgentReadParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowAgentReadParams",
+        "type": "object"
+      },
+      "DevflowAgentReadResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "agent": {
+            "$ref": "#/definitions/v2/DevflowAgent"
+          }
+        },
+        "required": [
+          "agent"
+        ],
+        "title": "DevflowAgentReadResponse",
+        "type": "object"
+      },
+      "DevflowAgentRestartParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowAgentRestartParams",
+        "type": "object"
+      },
+      "DevflowAgentRestartResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "agent": {
+            "$ref": "#/definitions/v2/DevflowAgent"
+          },
+          "message": {
+            "type": "string"
+          },
+          "restarted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "agent",
+          "message",
+          "restarted"
+        ],
+        "title": "DevflowAgentRestartResponse",
+        "type": "object"
+      },
+      "DevflowAgentRuntime": {
+        "enum": [
+          "codex",
+          "claude",
+          "hermes"
+        ],
+        "type": "string"
+      },
+      "DevflowAgentStartParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowAgentStartParams",
+        "type": "object"
+      },
+      "DevflowAgentStartResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "agent": {
+            "$ref": "#/definitions/v2/DevflowAgent"
+          },
+          "message": {
+            "type": "string"
+          },
+          "started": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "agent",
+          "message",
+          "started"
+        ],
+        "title": "DevflowAgentStartResponse",
+        "type": "object"
+      },
+      "DevflowAgentStatus": {
+        "enum": [
+          "available",
+          "missing"
+        ],
+        "type": "string"
+      },
+      "DevflowAgentStatusChangedNotification": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "agent": {
+            "$ref": "#/definitions/v2/DevflowAgent"
+          }
+        },
+        "required": [
+          "agent"
+        ],
+        "title": "DevflowAgentStatusChangedNotification",
+        "type": "object"
+      },
+      "DevflowAgentStopParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowAgentStopParams",
+        "type": "object"
+      },
+      "DevflowAgentStopResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "agent": {
+            "$ref": "#/definitions/v2/DevflowAgent"
+          },
+          "message": {
+            "type": "string"
+          },
+          "stopped": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "agent",
+          "message",
+          "stopped"
+        ],
+        "title": "DevflowAgentStopResponse",
+        "type": "object"
+      },
+      "DevflowApproval": {
+        "properties": {
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "cwd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowApprovalDecision"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "filePaths": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/definitions/v2/DevflowApprovalKind"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "qualityGateId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "requestedPermissions": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/RequestPermissionProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "respondedAt": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "runId": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/definitions/v2/DevflowApprovalStatus"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "threadId": {
+            "type": "string"
+          },
+          "turnId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "filePaths",
+          "id",
+          "itemId",
+          "kind",
+          "projectId",
+          "requestId",
+          "runId",
+          "status",
+          "taskId",
+          "threadId",
+          "turnId"
+        ],
+        "type": "object"
+      },
+      "DevflowApprovalDecision": {
+        "enum": [
+          "accept",
+          "accept_for_session",
+          "accept_for_task",
+          "accept_for_project",
+          "decline",
+          "cancel"
+        ],
+        "type": "string"
+      },
+      "DevflowApprovalKind": {
+        "enum": [
+          "command_execution",
+          "file_change",
+          "permissions",
+          "quality_gate_waive",
+          "artifact_delivery"
+        ],
+        "type": "string"
+      },
+      "DevflowApprovalListParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "runId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowApprovalStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "taskId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "title": "DevflowApprovalListParams",
+        "type": "object"
+      },
+      "DevflowApprovalListResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowApproval"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DevflowApprovalListResponse",
+        "type": "object"
+      },
+      "DevflowApprovalPolicy": {
+        "properties": {
+          "approvalsReviewer": {
+            "$ref": "#/definitions/v2/ApprovalsReviewer"
+          },
+          "highRiskApprovalPolicy": {
+            "$ref": "#/definitions/v2/AskForApproval"
+          },
+          "lowRiskApprovalPolicy": {
+            "$ref": "#/definitions/v2/AskForApproval"
+          },
+          "mediumRiskApprovalPolicy": {
+            "$ref": "#/definitions/v2/AskForApproval"
+          }
+        },
+        "required": [
+          "approvalsReviewer",
+          "highRiskApprovalPolicy",
+          "lowRiskApprovalPolicy",
+          "mediumRiskApprovalPolicy"
+        ],
+        "type": "object"
+      },
+      "DevflowApprovalPolicyReadParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "DevflowApprovalPolicyReadParams",
+        "type": "object"
+      },
+      "DevflowApprovalPolicyReadResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "policy": {
+            "$ref": "#/definitions/v2/DevflowApprovalPolicy"
+          }
+        },
+        "required": [
+          "policy"
+        ],
+        "title": "DevflowApprovalPolicyReadResponse",
+        "type": "object"
+      },
+      "DevflowApprovalPolicyUpdateParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "policy": {
+            "$ref": "#/definitions/v2/DevflowApprovalPolicy"
+          }
+        },
+        "required": [
+          "policy"
+        ],
+        "title": "DevflowApprovalPolicyUpdateParams",
+        "type": "object"
+      },
+      "DevflowApprovalPolicyUpdateResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "policy": {
+            "$ref": "#/definitions/v2/DevflowApprovalPolicy"
+          }
+        },
+        "required": [
+          "policy"
+        ],
+        "title": "DevflowApprovalPolicyUpdateResponse",
+        "type": "object"
+      },
+      "DevflowApprovalRequestedNotification": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "approval": {
+            "$ref": "#/definitions/v2/DevflowApproval"
+          }
+        },
+        "required": [
+          "approval"
+        ],
+        "title": "DevflowApprovalRequestedNotification",
+        "type": "object"
+      },
+      "DevflowApprovalRespondParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "decision": {
+            "$ref": "#/definitions/v2/DevflowApprovalDecision"
+          },
+          "id": {
+            "type": "string"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/PermissionGrantScope"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "decision",
+          "id"
+        ],
+        "title": "DevflowApprovalRespondParams",
+        "type": "object"
+      },
+      "DevflowApprovalRespondResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "approval": {
+            "$ref": "#/definitions/v2/DevflowApproval"
+          }
+        },
+        "required": [
+          "approval"
+        ],
+        "title": "DevflowApprovalRespondResponse",
+        "type": "object"
+      },
+      "DevflowApprovalStatus": {
+        "enum": [
+          "pending",
+          "responded"
+        ],
+        "type": "string"
+      },
+      "DevflowArtifact": {
+        "properties": {
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/definitions/v2/DevflowArtifactKind"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "kind",
+          "mimeType",
+          "path",
+          "runId",
+          "summary",
+          "taskId",
+          "title"
+        ],
+        "type": "object"
+      },
+      "DevflowArtifactCreatedNotification": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "artifact": {
+            "$ref": "#/definitions/v2/DevflowArtifact"
+          },
+          "projectId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact",
+          "projectId"
+        ],
+        "title": "DevflowArtifactCreatedNotification",
+        "type": "object"
+      },
+      "DevflowArtifactDeliverParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "destination": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "targetAgentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "destination",
+          "id",
+          "targetAgentId"
+        ],
+        "title": "DevflowArtifactDeliverParams",
+        "type": "object"
+      },
+      "DevflowArtifactDeliverResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "approval": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowApproval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "artifact": {
+            "$ref": "#/definitions/v2/DevflowArtifact"
+          },
+          "command": {
+            "type": "string"
+          },
+          "deliveredAt": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "destination": {
+            "type": "string"
+          },
+          "exitCode": {
+            "format": "int32",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "outputSummary": {
+            "type": "string"
+          },
+          "receiptArtifact": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowArtifact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/definitions/v2/DevflowArtifactDeliveryStatus"
+          },
+          "targetAgentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact",
+          "command",
+          "destination",
+          "outputSummary",
+          "status",
+          "targetAgentId"
+        ],
+        "title": "DevflowArtifactDeliverResponse",
+        "type": "object"
+      },
+      "DevflowArtifactDeliveryStatus": {
+        "enum": [
+          "pending_approval",
+          "delivered",
+          "failed"
+        ],
+        "type": "string"
+      },
+      "DevflowArtifactExportParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "destinationPath": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "destinationPath",
+          "id"
+        ],
+        "title": "DevflowArtifactExportParams",
+        "type": "object"
+      },
+      "DevflowArtifactExportResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "artifact": {
+            "$ref": "#/definitions/v2/DevflowArtifact"
+          },
+          "destinationPath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact",
+          "destinationPath"
+        ],
+        "title": "DevflowArtifactExportResponse",
+        "type": "object"
+      },
+      "DevflowArtifactKind": {
+        "enum": [
+          "context_pack",
+          "diff",
+          "delivery_receipt",
+          "output_archive",
+          "quality_gate_output",
+          "report",
+          "review_report",
+          "run_summary"
+        ],
+        "type": "string"
+      },
+      "DevflowArtifactListParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowArtifactKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limit": {
+            "format": "uint32",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "runId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taskId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "title": "DevflowArtifactListParams",
+        "type": "object"
+      },
+      "DevflowArtifactListResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowArtifact"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DevflowArtifactListResponse",
+        "type": "object"
+      },
+      "DevflowArtifactOpenParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowArtifactOpenParams",
+        "type": "object"
+      },
+      "DevflowArtifactOpenResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "artifact": {
+            "$ref": "#/definitions/v2/DevflowArtifact"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "title": "DevflowArtifactOpenResponse",
+        "type": "object"
+      },
+      "DevflowArtifactReadParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowArtifactReadParams",
+        "type": "object"
+      },
+      "DevflowArtifactReadResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "artifact": {
+            "$ref": "#/definitions/v2/DevflowArtifact"
+          },
+          "contents": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact",
+          "contents"
+        ],
+        "title": "DevflowArtifactReadResponse",
+        "type": "object"
+      },
+      "DevflowCapabilityPack": {
+        "properties": {
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "diagnostics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sourcePath": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "$ref": "#/definitions/v2/DevflowPackStatus"
+          }
+        },
+        "required": [
+          "capabilities",
+          "diagnostics",
+          "id",
+          "name",
+          "status"
+        ],
+        "type": "object"
+      },
+      "DevflowCapabilityPackListParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "includeDisabled": {
+            "type": "boolean"
+          }
+        },
+        "title": "DevflowCapabilityPackListParams",
+        "type": "object"
+      },
+      "DevflowCapabilityPackListResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowCapabilityPack"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DevflowCapabilityPackListResponse",
+        "type": "object"
+      },
+      "DevflowCapabilityPackReadParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowCapabilityPackReadParams",
+        "type": "object"
+      },
+      "DevflowCapabilityPackReadResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "pack": {
+            "$ref": "#/definitions/v2/DevflowCapabilityPack"
+          }
+        },
+        "required": [
+          "pack"
+        ],
+        "title": "DevflowCapabilityPackReadResponse",
+        "type": "object"
+      },
+      "DevflowCapabilityPackRunParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "capability": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "projectRoot": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taskId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowCapabilityPackRunParams",
+        "type": "object"
+      },
+      "DevflowCapabilityPackRunResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "artifact": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowArtifact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pack": {
+            "$ref": "#/definitions/v2/DevflowCapabilityPack"
+          },
+          "status": {
+            "$ref": "#/definitions/v2/DevflowCapabilityPackRunStatus"
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pack",
+          "status",
+          "summary"
+        ],
+        "title": "DevflowCapabilityPackRunResponse",
+        "type": "object"
+      },
+      "DevflowCapabilityPackRunStatus": {
+        "enum": [
+          "completed",
+          "failed",
+          "skipped"
+        ],
+        "type": "string"
+      },
+      "DevflowPackStatus": {
+        "enum": [
+          "available",
+          "missing",
+          "disabled"
+        ],
+        "type": "string"
+      },
+      "DevflowPolicyPack": {
+        "properties": {
+          "appliesToRiskLevels": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowTaskRiskLevel"
+            },
+            "type": "array"
+          },
+          "diagnostics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "policies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "sourcePath": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "$ref": "#/definitions/v2/DevflowPackStatus"
+          }
+        },
+        "required": [
+          "appliesToRiskLevels",
+          "diagnostics",
+          "id",
+          "name",
+          "policies",
+          "status"
+        ],
+        "type": "object"
+      },
+      "DevflowPolicyPackApplyParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "riskLevel": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowTaskRiskLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "taskId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowPolicyPackApplyParams",
+        "type": "object"
+      },
+      "DevflowPolicyPackApplyResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "applied": {
+            "type": "boolean"
+          },
+          "artifact": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowArtifact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "diagnostics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "pack": {
+            "$ref": "#/definitions/v2/DevflowPolicyPack"
+          },
+          "requiredArtifacts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "applied",
+          "diagnostics",
+          "pack",
+          "requiredArtifacts"
+        ],
+        "title": "DevflowPolicyPackApplyResponse",
+        "type": "object"
+      },
+      "DevflowPolicyPackListParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "includeDisabled": {
+            "type": "boolean"
+          }
+        },
+        "title": "DevflowPolicyPackListParams",
+        "type": "object"
+      },
+      "DevflowPolicyPackListResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowPolicyPack"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DevflowPolicyPackListResponse",
+        "type": "object"
+      },
+      "DevflowPolicyPackReadParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowPolicyPackReadParams",
+        "type": "object"
+      },
+      "DevflowPolicyPackReadResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "pack": {
+            "$ref": "#/definitions/v2/DevflowPolicyPack"
+          }
+        },
+        "required": [
+          "pack"
+        ],
+        "title": "DevflowPolicyPackReadResponse",
+        "type": "object"
+      },
+      "DevflowProject": {
+        "properties": {
+          "currentBranch": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "defaultBranch": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "detectedDocs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "diagnostics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "gitRemote": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "isTrusted": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rootPath": {
+            "type": "string"
+          },
+          "testCommands": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "detectedDocs",
+          "diagnostics",
+          "id",
+          "isTrusted",
+          "name",
+          "rootPath",
+          "testCommands"
+        ],
+        "type": "object"
+      },
+      "DevflowProjectDiagnoseParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "projectRoot": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "projectRoot"
+        ],
+        "title": "DevflowProjectDiagnoseParams",
+        "type": "object"
+      },
+      "DevflowProjectDiagnoseResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "project": {
+            "$ref": "#/definitions/v2/DevflowProject"
+          }
+        },
+        "required": [
+          "project"
+        ],
+        "title": "DevflowProjectDiagnoseResponse",
+        "type": "object"
+      },
+      "DevflowProjectListParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "projectRoots": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "title": "DevflowProjectListParams",
+        "type": "object"
+      },
+      "DevflowProjectListResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowProject"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DevflowProjectListResponse",
+        "type": "object"
+      },
+      "DevflowProjectMemoryReadParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "projectRoot": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "projectRoot"
+        ],
+        "title": "DevflowProjectMemoryReadParams",
+        "type": "object"
+      },
+      "DevflowProjectMemoryReadResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "summary": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "path",
+          "projectId"
+        ],
+        "title": "DevflowProjectMemoryReadResponse",
+        "type": "object"
+      },
+      "DevflowProjectMemoryWriteParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "projectRoot": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "projectRoot",
+          "summary"
+        ],
+        "title": "DevflowProjectMemoryWriteParams",
+        "type": "object"
+      },
+      "DevflowProjectMemoryWriteResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "projectId",
+          "summary"
+        ],
+        "title": "DevflowProjectMemoryWriteResponse",
+        "type": "object"
+      },
+      "DevflowProjectOpenParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "projectRoot": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "projectRoot"
+        ],
+        "title": "DevflowProjectOpenParams",
+        "type": "object"
+      },
+      "DevflowProjectOpenResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "project": {
+            "$ref": "#/definitions/v2/DevflowProject"
+          }
+        },
+        "required": [
+          "project"
+        ],
+        "title": "DevflowProjectOpenResponse",
+        "type": "object"
+      },
+      "DevflowProjectReadParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "projectRoot": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "projectRoot"
+        ],
+        "title": "DevflowProjectReadParams",
+        "type": "object"
+      },
+      "DevflowProjectReadResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "project": {
+            "$ref": "#/definitions/v2/DevflowProject"
+          }
+        },
+        "required": [
+          "project"
+        ],
+        "title": "DevflowProjectReadResponse",
+        "type": "object"
+      },
+      "DevflowProjectTestCommandsListParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "projectRoot": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "projectRoot"
+        ],
+        "title": "DevflowProjectTestCommandsListParams",
+        "type": "object"
+      },
+      "DevflowProjectTestCommandsListResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "commands": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "projectId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "commands",
+          "projectId"
+        ],
+        "title": "DevflowProjectTestCommandsListResponse",
+        "type": "object"
+      },
+      "DevflowProjectTrustParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "projectRoot": {
+            "type": "string"
+          },
+          "trusted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "projectRoot",
+          "trusted"
+        ],
+        "title": "DevflowProjectTrustParams",
+        "type": "object"
+      },
+      "DevflowProjectTrustResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "project": {
+            "$ref": "#/definitions/v2/DevflowProject"
+          }
+        },
+        "required": [
+          "project"
+        ],
+        "title": "DevflowProjectTrustResponse",
+        "type": "object"
+      },
+      "DevflowQualityGate": {
+        "properties": {
+          "artifactId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "command": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "cwd": {
+            "type": "string"
+          },
+          "durationMs": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "exitCode": {
+            "format": "int32",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/definitions/v2/DevflowQualityGateKind"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/definitions/v2/DevflowQualityGateStatus"
+          },
+          "summary": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "waivedReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "command",
+          "createdAt",
+          "cwd",
+          "id",
+          "kind",
+          "runId",
+          "status",
+          "taskId",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "DevflowQualityGateCompletedNotification": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "gate": {
+            "$ref": "#/definitions/v2/DevflowQualityGate"
+          },
+          "projectId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "gate",
+          "projectId"
+        ],
+        "title": "DevflowQualityGateCompletedNotification",
+        "type": "object"
+      },
+      "DevflowQualityGateKind": {
+        "enum": [
+          "format",
+          "lint",
+          "typecheck",
+          "targeted_test",
+          "integration_test",
+          "snapshot",
+          "build",
+          "review",
+          "gstack_health",
+          "gstack_browser_qa",
+          "gstack_benchmark",
+          "gstack_canary",
+          "gstack_watchdog"
+        ],
+        "type": "string"
+      },
+      "DevflowQualityGateListParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "runId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taskId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "title": "DevflowQualityGateListParams",
+        "type": "object"
+      },
+      "DevflowQualityGateListResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowQualityGate"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DevflowQualityGateListResponse",
+        "type": "object"
+      },
+      "DevflowQualityGateReadParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowQualityGateReadParams",
+        "type": "object"
+      },
+      "DevflowQualityGateReadResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "gate": {
+            "$ref": "#/definitions/v2/DevflowQualityGate"
+          }
+        },
+        "required": [
+          "gate"
+        ],
+        "title": "DevflowQualityGateReadResponse",
+        "type": "object"
+      },
+      "DevflowQualityGateRerunParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowQualityGateRerunParams",
+        "type": "object"
+      },
+      "DevflowQualityGateRerunResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "gate": {
+            "$ref": "#/definitions/v2/DevflowQualityGate"
+          }
+        },
+        "required": [
+          "gate"
+        ],
+        "title": "DevflowQualityGateRerunResponse",
+        "type": "object"
+      },
+      "DevflowQualityGateRunParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "commandOverride": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowQualityGateKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "taskId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "title": "DevflowQualityGateRunParams",
+        "type": "object"
+      },
+      "DevflowQualityGateRunResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "gate": {
+            "$ref": "#/definitions/v2/DevflowQualityGate"
+          }
+        },
+        "required": [
+          "gate"
+        ],
+        "title": "DevflowQualityGateRunResponse",
+        "type": "object"
+      },
+      "DevflowQualityGateStatus": {
+        "enum": [
+          "queued",
+          "running",
+          "passed",
+          "failed",
+          "waived"
+        ],
+        "type": "string"
+      },
+      "DevflowQualityGateWaiveParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "reason"
+        ],
+        "title": "DevflowQualityGateWaiveParams",
+        "type": "object"
+      },
+      "DevflowQualityGateWaiveResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "approval": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowApproval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "gate": {
+            "$ref": "#/definitions/v2/DevflowQualityGate"
+          }
+        },
+        "required": [
+          "gate"
+        ],
+        "title": "DevflowQualityGateWaiveResponse",
+        "type": "object"
+      },
+      "DevflowReleasePrepCreateParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "projectRoot": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "projectRoot"
+        ],
+        "title": "DevflowReleasePrepCreateParams",
+        "type": "object"
+      },
+      "DevflowReleasePrepCreateResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "blockers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "commitMessageArtifact": {
+            "$ref": "#/definitions/v2/DevflowArtifact"
+          },
+          "prBodyArtifact": {
+            "$ref": "#/definitions/v2/DevflowArtifact"
+          },
+          "releaseNoteArtifact": {
+            "$ref": "#/definitions/v2/DevflowArtifact"
+          },
+          "status": {
+            "$ref": "#/definitions/v2/DevflowReleasePrepStatus"
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "blockers",
+          "commitMessageArtifact",
+          "prBodyArtifact",
+          "releaseNoteArtifact",
+          "status",
+          "summary"
+        ],
+        "title": "DevflowReleasePrepCreateResponse",
+        "type": "object"
+      },
+      "DevflowReleasePrepStatus": {
+        "enum": [
+          "ready",
+          "blocked"
+        ],
+        "type": "string"
+      },
+      "DevflowRun": {
+        "properties": {
+          "agentId": {
+            "type": "string"
+          },
+          "artifactIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "commandIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "completedAt": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "exitReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "input": {
+            "type": "string"
+          },
+          "startedAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/definitions/v2/DevflowRunStatus"
+          },
+          "streamSummary": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "threadId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "turnId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "agentId",
+          "artifactIds",
+          "commandIds",
+          "id",
+          "input",
+          "startedAt",
+          "status",
+          "taskId"
+        ],
+        "type": "object"
+      },
+      "DevflowRunCommandCompletedNotification": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "commandId": {
+            "type": "string"
+          },
+          "durationMs": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "exitCode": {
+            "format": "int32",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "outputSummary": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "commandId",
+          "projectId",
+          "runId",
+          "status",
+          "taskId"
+        ],
+        "title": "DevflowRunCommandCompletedNotification",
+        "type": "object"
+      },
+      "DevflowRunCommandStartedNotification": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "command": {
+            "type": "string"
+          },
+          "commandId": {
+            "type": "string"
+          },
+          "cwd": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "command",
+          "commandId",
+          "cwd",
+          "projectId",
+          "runId",
+          "taskId"
+        ],
+        "title": "DevflowRunCommandStartedNotification",
+        "type": "object"
+      },
+      "DevflowRunDiffUpdatedNotification": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "artifactId": {
+            "type": "string"
+          },
+          "diff": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifactId",
+          "diff",
+          "projectId",
+          "runId",
+          "taskId"
+        ],
+        "title": "DevflowRunDiffUpdatedNotification",
+        "type": "object"
+      },
+      "DevflowRunOutputDeltaNotification": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "delta": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/definitions/v2/DevflowRunOutputSource"
+          },
+          "taskId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "delta",
+          "projectId",
+          "runId",
+          "source",
+          "taskId"
+        ],
+        "title": "DevflowRunOutputDeltaNotification",
+        "type": "object"
+      },
+      "DevflowRunOutputSource": {
+        "enum": [
+          "assistant",
+          "command_execution"
+        ],
+        "type": "string"
+      },
+      "DevflowRunStatus": {
+        "enum": [
+          "queued",
+          "running",
+          "cancelled",
+          "ready_for_review",
+          "ready_to_merge",
+          "failed"
+        ],
+        "type": "string"
+      },
+      "DevflowRunStatusChangedNotification": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "projectId": {
+            "type": "string"
+          },
+          "run": {
+            "$ref": "#/definitions/v2/DevflowRun"
+          },
+          "taskId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "projectId",
+          "run",
+          "taskId"
+        ],
+        "title": "DevflowRunStatusChangedNotification",
+        "type": "object"
+      },
+      "DevflowSupportBundle": {
+        "properties": {
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "diagnostics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "diagnostics",
+          "id",
+          "mimeType",
+          "path",
+          "projectId",
+          "summary"
+        ],
+        "type": "object"
+      },
+      "DevflowSupportBundleCreateParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "projectRoot": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "projectRoot"
+        ],
+        "title": "DevflowSupportBundleCreateParams",
+        "type": "object"
+      },
+      "DevflowSupportBundleCreateResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "bundle": {
+            "$ref": "#/definitions/v2/DevflowSupportBundle"
+          },
+          "project": {
+            "$ref": "#/definitions/v2/DevflowProject"
+          }
+        },
+        "required": [
+          "bundle",
+          "project"
+        ],
+        "title": "DevflowSupportBundleCreateResponse",
+        "type": "object"
+      },
+      "DevflowTask": {
+        "properties": {
+          "artifactIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "assignedAgentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "contextPackId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "dependencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/definitions/v2/DevflowTaskKind"
+          },
+          "objective": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "riskLevel": {
+            "$ref": "#/definitions/v2/DevflowTaskRiskLevel"
+          },
+          "runIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/definitions/v2/DevflowTaskStatus"
+          },
+          "title": {
+            "type": "string"
+          },
+          "triggerSource": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "worktreeId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "artifactIds",
+          "createdAt",
+          "dependencies",
+          "id",
+          "kind",
+          "objective",
+          "projectId",
+          "riskLevel",
+          "runIds",
+          "status",
+          "title",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "DevflowTaskAssignParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "assignedAgentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowTaskAssignParams",
+        "type": "object"
+      },
+      "DevflowTaskAssignResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "task": {
+            "$ref": "#/definitions/v2/DevflowTask"
+          }
+        },
+        "required": [
+          "task"
+        ],
+        "title": "DevflowTaskAssignResponse",
+        "type": "object"
+      },
+      "DevflowTaskCancelParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowTaskCancelParams",
+        "type": "object"
+      },
+      "DevflowTaskCancelResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "run": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowRun"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "task": {
+            "$ref": "#/definitions/v2/DevflowTask"
+          }
+        },
+        "required": [
+          "task"
+        ],
+        "title": "DevflowTaskCancelResponse",
+        "type": "object"
+      },
+      "DevflowTaskCreateParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "assignedAgentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dependencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "kind": {
+            "$ref": "#/definitions/v2/DevflowTaskKind"
+          },
+          "objective": {
+            "type": "string"
+          },
+          "projectRoot": {
+            "type": "string"
+          },
+          "riskLevel": {
+            "$ref": "#/definitions/v2/DevflowTaskRiskLevel"
+          },
+          "title": {
+            "type": "string"
+          },
+          "triggerSource": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "objective",
+          "projectRoot",
+          "riskLevel",
+          "title"
+        ],
+        "title": "DevflowTaskCreateParams",
+        "type": "object"
+      },
+      "DevflowTaskCreateResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "task": {
+            "$ref": "#/definitions/v2/DevflowTask"
+          }
+        },
+        "required": [
+          "task"
+        ],
+        "title": "DevflowTaskCreateResponse",
+        "type": "object"
+      },
+      "DevflowTaskDependenciesUpdateParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "dependencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "dependencies",
+          "id"
+        ],
+        "title": "DevflowTaskDependenciesUpdateParams",
+        "type": "object"
+      },
+      "DevflowTaskDependenciesUpdateResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "task": {
+            "$ref": "#/definitions/v2/DevflowTask"
+          }
+        },
+        "required": [
+          "task"
+        ],
+        "title": "DevflowTaskDependenciesUpdateResponse",
+        "type": "object"
+      },
+      "DevflowTaskDispatchBlocked": {
+        "properties": {
+          "dependencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "dependencies",
+          "reason",
+          "taskId",
+          "title"
+        ],
+        "type": "object"
+      },
+      "DevflowTaskDispatchParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "limit": {
+            "format": "uint32",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taskIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "title": "DevflowTaskDispatchParams",
+        "type": "object"
+      },
+      "DevflowTaskDispatchResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "blocked": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowTaskDispatchBlocked"
+            },
+            "type": "array"
+          },
+          "integratorArtifact": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowArtifact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "skipped": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowTaskDispatchSkipped"
+            },
+            "type": "array"
+          },
+          "started": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowTaskDispatchStarted"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "blocked",
+          "skipped",
+          "started"
+        ],
+        "title": "DevflowTaskDispatchResponse",
+        "type": "object"
+      },
+      "DevflowTaskDispatchSkipped": {
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/definitions/v2/DevflowTaskStatus"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason",
+          "status",
+          "taskId",
+          "title"
+        ],
+        "type": "object"
+      },
+      "DevflowTaskDispatchStarted": {
+        "properties": {
+          "run": {
+            "$ref": "#/definitions/v2/DevflowRun"
+          },
+          "task": {
+            "$ref": "#/definitions/v2/DevflowTask"
+          }
+        },
+        "required": [
+          "run",
+          "task"
+        ],
+        "type": "object"
+      },
+      "DevflowTaskKind": {
+        "enum": [
+          "implementation",
+          "review",
+          "report",
+          "diagnostic",
+          "automation"
+        ],
+        "type": "string"
+      },
+      "DevflowTaskListParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "assignedAgentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "limit": {
+            "format": "uint32",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowTaskStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "DevflowTaskListParams",
+        "type": "object"
+      },
+      "DevflowTaskListResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowTask"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DevflowTaskListResponse",
+        "type": "object"
+      },
+      "DevflowTaskPauseParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowTaskPauseParams",
+        "type": "object"
+      },
+      "DevflowTaskPauseResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "run": {
+            "$ref": "#/definitions/v2/DevflowRun"
+          },
+          "task": {
+            "$ref": "#/definitions/v2/DevflowTask"
+          }
+        },
+        "required": [
+          "run",
+          "task"
+        ],
+        "title": "DevflowTaskPauseResponse",
+        "type": "object"
+      },
+      "DevflowTaskPlanParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "maxTasks": {
+            "format": "uint32",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "objective": {
+            "type": "string"
+          },
+          "projectRoot": {
+            "type": "string"
+          },
+          "riskLevel": {
+            "$ref": "#/definitions/v2/DevflowTaskRiskLevel"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "objective",
+          "projectRoot",
+          "riskLevel",
+          "title"
+        ],
+        "title": "DevflowTaskPlanParams",
+        "type": "object"
+      },
+      "DevflowTaskPlanResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowTask"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DevflowTaskPlanResponse",
+        "type": "object"
+      },
+      "DevflowTaskReadParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowTaskReadParams",
+        "type": "object"
+      },
+      "DevflowTaskReadResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "task": {
+            "$ref": "#/definitions/v2/DevflowTask"
+          }
+        },
+        "required": [
+          "task"
+        ],
+        "title": "DevflowTaskReadResponse",
+        "type": "object"
+      },
+      "DevflowTaskResumeParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowTaskResumeParams",
+        "type": "object"
+      },
+      "DevflowTaskResumeResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "run": {
+            "$ref": "#/definitions/v2/DevflowRun"
+          },
+          "task": {
+            "$ref": "#/definitions/v2/DevflowTask"
+          }
+        },
+        "required": [
+          "run",
+          "task"
+        ],
+        "title": "DevflowTaskResumeResponse",
+        "type": "object"
+      },
+      "DevflowTaskRiskLevel": {
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "type": "string"
+      },
+      "DevflowTaskStartParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowTaskStartParams",
+        "type": "object"
+      },
+      "DevflowTaskStartResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "run": {
+            "$ref": "#/definitions/v2/DevflowRun"
+          },
+          "task": {
+            "$ref": "#/definitions/v2/DevflowTask"
+          }
+        },
+        "required": [
+          "run",
+          "task"
+        ],
+        "title": "DevflowTaskStartResponse",
+        "type": "object"
+      },
+      "DevflowTaskStatus": {
+        "enum": [
+          "planned",
+          "running",
+          "paused",
+          "ready_for_review",
+          "ready_to_merge",
+          "failed",
+          "blocked",
+          "cancelled"
+        ],
+        "type": "string"
+      },
+      "DevflowTaskStatusChangedNotification": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "task": {
+            "$ref": "#/definitions/v2/DevflowTask"
+          }
+        },
+        "required": [
+          "task"
+        ],
+        "title": "DevflowTaskStatusChangedNotification",
+        "type": "object"
+      },
+      "DevflowWatchdogAlert": {
+        "properties": {
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "runId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "severity": {
+            "$ref": "#/definitions/v2/DevflowWatchdogAlertSeverity"
+          },
+          "status": {
+            "$ref": "#/definitions/v2/DevflowWatchdogStatus"
+          },
+          "taskId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "message",
+          "severity",
+          "status"
+        ],
+        "type": "object"
+      },
+      "DevflowWatchdogAlertCreatedNotification": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "alert": {
+            "$ref": "#/definitions/v2/DevflowWatchdogAlert"
+          },
+          "projectId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "alert",
+          "projectId"
+        ],
+        "title": "DevflowWatchdogAlertCreatedNotification",
+        "type": "object"
+      },
+      "DevflowWatchdogAlertSeverity": {
+        "enum": [
+          "info",
+          "warning",
+          "critical"
+        ],
+        "type": "string"
+      },
+      "DevflowWatchdogAlertsParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "limit": {
+            "format": "uint32",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowWatchdogAlertSeverity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowWatchdogStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "DevflowWatchdogAlertsParams",
+        "type": "object"
+      },
+      "DevflowWatchdogAlertsResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowWatchdogAlert"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DevflowWatchdogAlertsResponse",
+        "type": "object"
+      },
+      "DevflowWatchdogReadParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "DevflowWatchdogReadParams",
+        "type": "object"
+      },
+      "DevflowWatchdogReadResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowWatchdogAlert"
+            },
+            "type": "array"
+          },
+          "checkedAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/definitions/v2/DevflowWatchdogStatus"
+          }
+        },
+        "required": [
+          "alerts",
+          "checkedAt",
+          "status"
+        ],
+        "title": "DevflowWatchdogReadResponse",
+        "type": "object"
+      },
+      "DevflowWatchdogStatus": {
+        "enum": [
+          "idle",
+          "running",
+          "no_progress",
+          "timed_out",
+          "recovering",
+          "quarantined"
+        ],
+        "type": "string"
+      },
+      "DevflowWorktree": {
+        "properties": {
+          "baseBranch": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "baseCommit": {
+            "type": "string"
+          },
+          "branch": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "cwdPath": {
+            "type": "string"
+          },
+          "headCommit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "managed": {
+            "type": "boolean"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "repoRoot": {
+            "type": "string"
+          },
+          "rootPath": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/definitions/v2/DevflowWorktreeStatus"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "baseCommit",
+          "branch",
+          "createdAt",
+          "cwdPath",
+          "id",
+          "managed",
+          "projectId",
+          "repoRoot",
+          "rootPath",
+          "status",
+          "taskId",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "DevflowWorktreeCleanupParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowWorktreeCleanupParams",
+        "type": "object"
+      },
+      "DevflowWorktreeCleanupResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "cleaned": {
+            "type": "boolean"
+          },
+          "worktree": {
+            "$ref": "#/definitions/v2/DevflowWorktree"
+          }
+        },
+        "required": [
+          "cleaned",
+          "worktree"
+        ],
+        "title": "DevflowWorktreeCleanupResponse",
+        "type": "object"
+      },
+      "DevflowWorktreeCreateParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "taskId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "title": "DevflowWorktreeCreateParams",
+        "type": "object"
+      },
+      "DevflowWorktreeCreateResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "worktree": {
+            "$ref": "#/definitions/v2/DevflowWorktree"
+          }
+        },
+        "required": [
+          "worktree"
+        ],
+        "title": "DevflowWorktreeCreateResponse",
+        "type": "object"
+      },
+      "DevflowWorktreeDiffParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowWorktreeDiffParams",
+        "type": "object"
+      },
+      "DevflowWorktreeDiffResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "diff": {
+            "type": "string"
+          },
+          "worktree": {
+            "$ref": "#/definitions/v2/DevflowWorktree"
+          }
+        },
+        "required": [
+          "diff",
+          "worktree"
+        ],
+        "title": "DevflowWorktreeDiffResponse",
+        "type": "object"
+      },
+      "DevflowWorktreeDiffUpdatedNotification": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "artifactId": {
+            "type": "string"
+          },
+          "diff": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "worktreeId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "artifactId",
+          "diff",
+          "projectId",
+          "runId",
+          "taskId"
+        ],
+        "title": "DevflowWorktreeDiffUpdatedNotification",
+        "type": "object"
+      },
+      "DevflowWorktreeListParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "limit": {
+            "format": "uint32",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowWorktreeStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "taskId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "title": "DevflowWorktreeListParams",
+        "type": "object"
+      },
+      "DevflowWorktreeListResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/definitions/v2/DevflowWorktree"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "DevflowWorktreeListResponse",
+        "type": "object"
+      },
+      "DevflowWorktreeMergeParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowWorktreeMergeParams",
+        "type": "object"
+      },
+      "DevflowWorktreeMergeResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "conflicts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "merged": {
+            "type": "boolean"
+          },
+          "task": {
+            "$ref": "#/definitions/v2/DevflowTask"
+          },
+          "worktree": {
+            "$ref": "#/definitions/v2/DevflowWorktree"
+          }
+        },
+        "required": [
+          "conflicts",
+          "merged",
+          "task",
+          "worktree"
+        ],
+        "title": "DevflowWorktreeMergeResponse",
+        "type": "object"
+      },
+      "DevflowWorktreeReadParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DevflowWorktreeReadParams",
+        "type": "object"
+      },
+      "DevflowWorktreeReadResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "worktree": {
+            "$ref": "#/definitions/v2/DevflowWorktree"
+          }
+        },
+        "required": [
+          "worktree"
+        ],
+        "title": "DevflowWorktreeReadResponse",
+        "type": "object"
+      },
+      "DevflowWorktreeStatus": {
+        "enum": [
+          "active",
+          "dirty",
+          "cleaned",
+          "missing"
+        ],
+        "type": "string"
+      },
+      "DevflowWorktreeStatusChangedNotification": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "worktree": {
+            "$ref": "#/definitions/v2/DevflowWorktree"
+          }
+        },
+        "required": [
+          "worktree"
+        ],
+        "title": "DevflowWorktreeStatusChangedNotification",
+        "type": "object"
+      },
       "DeviceKeyAlgorithm": {
         "description": "Device-key algorithm reported at enrollment and signing boundaries.",
         "enum": [
@@ -11459,6 +16796,13 @@
               "integer",
               "null"
             ]
+          },
+          "providerId": {
+            "description": "When set, list models for the specified provider id instead of the currently selected one.",
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "title": "ModelListParams",
@@ -11854,6 +17198,13 @@
             "type": "object"
           }
         ]
+      },
+      "PermissionGrantScope": {
+        "enum": [
+          "turn",
+          "session"
+        ],
+        "type": "string"
       },
       "PermissionProfile": {
         "oneOf": [
@@ -13121,6 +18472,745 @@
         },
         "type": "object"
       },
+      "Provider": {
+        "properties": {
+          "authStyle": {
+            "$ref": "#/definitions/v2/ProviderAuthStyle"
+          },
+          "baseUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "builtinKind": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "envKey": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hasApiKey": {
+            "type": "boolean"
+          },
+          "headers": {
+            "items": {
+              "$ref": "#/definitions/v2/ProviderHeaderSummary"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "requestMaxRetries": {
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "requiresOpenaiAuth": {
+            "type": "boolean"
+          },
+          "source": {
+            "$ref": "#/definitions/v2/ProviderSource"
+          },
+          "streamIdleTimeoutMs": {
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "streamMaxRetries": {
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "supportsWebsockets": {
+            "type": "boolean"
+          },
+          "websocketConnectTimeoutMs": {
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "wireApi": {
+            "$ref": "#/definitions/v2/ProviderWireApi"
+          }
+        },
+        "required": [
+          "authStyle",
+          "displayName",
+          "hasApiKey",
+          "headers",
+          "id",
+          "isDefault",
+          "requiresOpenaiAuth",
+          "source",
+          "supportsWebsockets",
+          "wireApi"
+        ],
+        "type": "object"
+      },
+      "ProviderAuthStyle": {
+        "enum": [
+          "bearer",
+          "x_api_key"
+        ],
+        "type": "string"
+      },
+      "ProviderConfigParams": {
+        "properties": {
+          "apiKey": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "authStyle": {
+            "$ref": "#/definitions/v2/ProviderAuthStyle"
+          },
+          "baseUrl": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "envHeaders": {
+            "items": {
+              "$ref": "#/definitions/v2/ProviderEnvHeaderInput"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "envKey": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "headers": {
+            "items": {
+              "$ref": "#/definitions/v2/ProviderHeaderInput"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "requestMaxRetries": {
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "requiresOpenaiAuth": {
+            "default": false,
+            "type": "boolean"
+          },
+          "streamIdleTimeoutMs": {
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "streamMaxRetries": {
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "supportsWebsockets": {
+            "default": false,
+            "type": "boolean"
+          },
+          "websocketConnectTimeoutMs": {
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "wireApi": {
+            "$ref": "#/definitions/v2/ProviderWireApi"
+          }
+        },
+        "required": [
+          "authStyle",
+          "baseUrl",
+          "displayName",
+          "wireApi"
+        ],
+        "type": "object"
+      },
+      "ProviderConnectionCheck": {
+        "enum": [
+          "basic",
+          "streaming",
+          "toolCalling"
+        ],
+        "type": "string"
+      },
+      "ProviderCreateParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "defaultModel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "provider": {
+            "$ref": "#/definitions/v2/ProviderConfigParams"
+          },
+          "setDefault": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "provider"
+        ],
+        "title": "ProviderCreateParams",
+        "type": "object"
+      },
+      "ProviderCreateResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "provider": {
+            "$ref": "#/definitions/v2/Provider"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "provider",
+          "warnings"
+        ],
+        "title": "ProviderCreateResponse",
+        "type": "object"
+      },
+      "ProviderDeleteParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "ProviderDeleteParams",
+        "type": "object"
+      },
+      "ProviderDeleteResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "deleted": {
+            "type": "boolean"
+          },
+          "warning": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "deleted"
+        ],
+        "title": "ProviderDeleteResponse",
+        "type": "object"
+      },
+      "ProviderEnvHeaderInput": {
+        "properties": {
+          "envVar": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "envVar",
+          "name"
+        ],
+        "type": "object"
+      },
+      "ProviderHeaderInput": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ],
+        "type": "object"
+      },
+      "ProviderHeaderSummary": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "valueSource": {
+            "$ref": "#/definitions/v2/ProviderHeaderValueSource"
+          }
+        },
+        "required": [
+          "name",
+          "value",
+          "valueSource"
+        ],
+        "type": "object"
+      },
+      "ProviderHeaderValueSource": {
+        "enum": [
+          "literal",
+          "env"
+        ],
+        "type": "string"
+      },
+      "ProviderListParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "cwd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "title": "ProviderListParams",
+        "type": "object"
+      },
+      "ProviderListResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/definitions/v2/Provider"
+            },
+            "type": "array"
+          },
+          "defaultModel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "defaultProvider": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "defaultProvider"
+        ],
+        "title": "ProviderListResponse",
+        "type": "object"
+      },
+      "ProviderPreferencesReadParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "cwd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "title": "ProviderPreferencesReadParams",
+        "type": "object"
+      },
+      "ProviderPreferencesReadResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "configScope": {
+            "$ref": "#/definitions/v2/ProviderPreferencesScope"
+          },
+          "defaultModel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "defaultProvider": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "configScope",
+          "defaultProvider"
+        ],
+        "title": "ProviderPreferencesReadResponse",
+        "type": "object"
+      },
+      "ProviderPreferencesScope": {
+        "enum": [
+          "global",
+          "project"
+        ],
+        "type": "string"
+      },
+      "ProviderPreferencesUpdateParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "configScope": {
+            "$ref": "#/definitions/v2/ProviderPreferencesScope"
+          },
+          "cwd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "defaultModel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "defaultProvider": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "configScope",
+          "defaultProvider"
+        ],
+        "title": "ProviderPreferencesUpdateParams",
+        "type": "object"
+      },
+      "ProviderPreferencesUpdateResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "configScope": {
+            "$ref": "#/definitions/v2/ProviderPreferencesScope"
+          },
+          "defaultModel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "defaultProvider": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "configScope",
+          "defaultProvider"
+        ],
+        "title": "ProviderPreferencesUpdateResponse",
+        "type": "object"
+      },
+      "ProviderReadParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "cwd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "ProviderReadParams",
+        "type": "object"
+      },
+      "ProviderReadResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "provider": {
+            "$ref": "#/definitions/v2/Provider"
+          }
+        },
+        "required": [
+          "provider"
+        ],
+        "title": "ProviderReadResponse",
+        "type": "object"
+      },
+      "ProviderSource": {
+        "enum": [
+          "builtin",
+          "custom"
+        ],
+        "type": "string"
+      },
+      "ProviderTestConnectionCheckResult": {
+        "properties": {
+          "check": {
+            "$ref": "#/definitions/v2/ProviderConnectionCheck"
+          },
+          "errorCode": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/ProviderTestConnectionErrorCode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "httpStatus": {
+            "format": "uint16",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "check",
+          "ok"
+        ],
+        "type": "object"
+      },
+      "ProviderTestConnectionChecks": {
+        "properties": {
+          "basic": {
+            "default": true,
+            "type": "boolean"
+          },
+          "streaming": {
+            "type": "boolean"
+          },
+          "toolCalling": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "ProviderTestConnectionErrorCode": {
+        "enum": [
+          "MISSING_API_KEY",
+          "INVALID_BASE_URL",
+          "FAIL_AUTH",
+          "FAIL_NETWORK",
+          "FAIL_DNS",
+          "FAIL_TLS",
+          "FAIL_ENDPOINT",
+          "FAIL_MODEL",
+          "FAIL_STREAM",
+          "FAIL_SCHEMA",
+          "FAIL_TOOL",
+          "UNSUPPORTED_WIRE_API"
+        ],
+        "type": "string"
+      },
+      "ProviderTestConnectionParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "checks": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/ProviderTestConnectionChecks"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model": {
+            "type": "string"
+          },
+          "target": {
+            "$ref": "#/definitions/v2/ProviderTestConnectionTarget"
+          }
+        },
+        "required": [
+          "model",
+          "target"
+        ],
+        "title": "ProviderTestConnectionParams",
+        "type": "object"
+      },
+      "ProviderTestConnectionResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/definitions/v2/ProviderTestConnectionCheckResult"
+            },
+            "type": "array"
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok",
+          "results",
+          "summary"
+        ],
+        "title": "ProviderTestConnectionResponse",
+        "type": "object"
+      },
+      "ProviderTestConnectionTarget": {
+        "oneOf": [
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "saved"
+                ],
+                "title": "SavedProviderTestConnectionTargetType",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "type"
+            ],
+            "title": "SavedProviderTestConnectionTarget",
+            "type": "object"
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "provider": {
+                "$ref": "#/definitions/v2/ProviderConfigParams"
+              },
+              "type": {
+                "enum": [
+                  "draft"
+                ],
+                "title": "DraftProviderTestConnectionTargetType",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "provider",
+              "type"
+            ],
+            "title": "DraftProviderTestConnectionTarget",
+            "type": "object"
+          }
+        ]
+      },
+      "ProviderUpdateParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "defaultModel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "provider": {
+            "$ref": "#/definitions/v2/ProviderConfigParams"
+          },
+          "setDefault": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "provider"
+        ],
+        "title": "ProviderUpdateParams",
+        "type": "object"
+      },
+      "ProviderUpdateResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "provider": {
+            "$ref": "#/definitions/v2/Provider"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "provider",
+          "warnings"
+        ],
+        "title": "ProviderUpdateResponse",
+        "type": "object"
+      },
+      "ProviderWireApi": {
+        "enum": [
+          "responses",
+          "anthropic_messages",
+          "chat_completions"
+        ],
+        "type": "string"
+      },
       "RateLimitReachedType": {
         "enum": [
           "rate_limit_reached",
@@ -14305,12 +20395,102 @@
           }
         ]
       },
+      "ReviewCodeLocation": {
+        "properties": {
+          "absoluteFilePath": {
+            "type": "string"
+          },
+          "lineRange": {
+            "$ref": "#/definitions/v2/ReviewLineRange"
+          }
+        },
+        "required": [
+          "absoluteFilePath",
+          "lineRange"
+        ],
+        "type": "object"
+      },
       "ReviewDelivery": {
         "enum": [
           "inline",
           "detached"
         ],
         "type": "string"
+      },
+      "ReviewFinding": {
+        "properties": {
+          "body": {
+            "type": "string"
+          },
+          "codeLocation": {
+            "$ref": "#/definitions/v2/ReviewCodeLocation"
+          },
+          "confidenceScore": {
+            "format": "float",
+            "type": "number"
+          },
+          "priority": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "codeLocation",
+          "confidenceScore",
+          "priority",
+          "title"
+        ],
+        "type": "object"
+      },
+      "ReviewLineRange": {
+        "properties": {
+          "end": {
+            "format": "uint32",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "start": {
+            "format": "uint32",
+            "minimum": 0.0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "end",
+          "start"
+        ],
+        "type": "object"
+      },
+      "ReviewOutput": {
+        "properties": {
+          "findings": {
+            "items": {
+              "$ref": "#/definitions/v2/ReviewFinding"
+            },
+            "type": "array"
+          },
+          "overallConfidenceScore": {
+            "format": "float",
+            "type": "number"
+          },
+          "overallCorrectness": {
+            "type": "string"
+          },
+          "overallExplanation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "findings",
+          "overallConfidenceScore",
+          "overallCorrectness",
+          "overallExplanation"
+        ],
+        "type": "object"
       },
       "ReviewStartParams": {
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -16424,6 +22604,16 @@
               },
               "review": {
                 "type": "string"
+              },
+              "reviewOutput": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/v2/ReviewOutput"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               "type": {
                 "enum": [

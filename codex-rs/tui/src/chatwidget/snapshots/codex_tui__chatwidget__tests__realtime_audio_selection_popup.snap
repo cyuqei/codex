@@ -1,11 +1,13 @@
 ---
-source: tui/src/chatwidget/tests.rs
+source: tui/src/chatwidget/tests/popups_and_settings.rs
+assertion_line: 2501
 expression: popup
 ---
   Settings
   Configure settings for Codex.
 
-› 1. Microphone  Current: System default
-  2. Speaker     Current: System default
+› 1. Providers   Default: openai
+  2. Microphone  Current: System default
+  3. Speaker     Current: System default
 
   Press enter to confirm or esc to go back

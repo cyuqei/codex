@@ -35,6 +35,7 @@ use codex_protocol::models::LocalShellAction;
 use codex_protocol::models::LocalShellExecAction;
 use codex_protocol::models::LocalShellStatus;
 use codex_protocol::models::MessagePhase;
+use codex_protocol::models::PermissionProfile;
 use codex_protocol::models::ReasoningItemContent;
 use codex_protocol::models::ReasoningItemReasoningSummary;
 use codex_protocol::models::ResponseItem;
@@ -69,13 +70,16 @@ use core_test_support::wait_for_event;
 use dunce::canonicalize as normalize_path;
 use futures::StreamExt;
 use pretty_assertions::assert_eq;
+use serde_json::Value;
 use serde_json::json;
 use std::io::Write;
 use std::num::NonZeroU64;
 use std::sync::Arc;
+use std::time::Duration;
 use tempfile::TempDir;
 use toml::toml;
 use uuid::Uuid;
+use wiremock::Match;
 use wiremock::Mock;
 use wiremock::MockServer;
 use wiremock::ResponseTemplate;
@@ -853,6 +857,7 @@ async fn send_provider_auth_request(server: &MockServer, auth: ModelProviderAuth
         auth: Some(auth),
         aws: None,
         wire_api: WireApi::Responses,
+        auth_style: codex_model_provider_info::AuthStyle::Bearer,
         query_params: None,
         http_headers: None,
         env_http_headers: None,
@@ -2267,6 +2272,7 @@ async fn azure_responses_request_includes_store_and_reasoning_ids() {
         auth: None,
         aws: None,
         wire_api: WireApi::Responses,
+        auth_style: codex_model_provider_info::AuthStyle::Bearer,
         query_params: None,
         http_headers: None,
         env_http_headers: None,
@@ -2423,6 +2429,392 @@ async fn azure_responses_request_includes_store_and_reasoning_ids() {
         body["input"][7]["call_id"].as_str(),
         Some("custom-tool-call-id")
     );
+}
+
+fn chat_completions_test_provider(base_url: String) -> ModelProviderInfo {
+    ModelProviderInfo {
+        name: "chat-provider".into(),
+        base_url: Some(base_url),
+        env_key: None,
+        env_key_instructions: None,
+        experimental_bearer_token: Some("chat-token".into()),
+        auth: None,
+        aws: None,
+        wire_api: WireApi::ChatCompletions,
+        auth_style: codex_model_provider_info::AuthStyle::Bearer,
+        query_params: None,
+        http_headers: None,
+        env_http_headers: None,
+        request_max_retries: Some(0),
+        stream_max_retries: Some(0),
+        stream_idle_timeout_ms: Some(5_000),
+        websocket_connect_timeout_ms: None,
+        requires_openai_auth: false,
+        supports_websockets: false,
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn chat_completions_request_uses_chat_endpoint_and_maps_tool_history() -> anyhow::Result<()> {
+    skip_if_no_network!(Ok(()));
+
+    let server = MockServer::start().await;
+    let sse_body = concat!(
+        "data: {\"id\":\"chatcmpl-1\",\"choices\":[{\"delta\":{\"content\":\"Hello\"}}]}\n\n",
+        "data: [DONE]\n\n",
+    );
+    Mock::given(method("POST"))
+        .and(path("/v1/chat/completions"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "text/event-stream")
+                .set_body_raw(sse_body, "text/event-stream"),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let provider = chat_completions_test_provider(format!("{}/v1", server.uri()));
+    let codex_home = TempDir::new().unwrap();
+    let mut config = load_default_config_for_test(&codex_home).await;
+    config.model_provider_id = provider.name.clone();
+    config.model_provider = provider.clone();
+    let effort = config.model_reasoning_effort;
+    let summary = config.model_reasoning_summary;
+    let model = codex_core::test_support::get_model_offline(config.model.as_deref());
+    config.model = Some(model.clone());
+    let config = Arc::new(config);
+    let model_info =
+        codex_core::test_support::construct_model_info_offline(model.as_str(), &config);
+    let thread_id = ThreadId::new();
+    let session_telemetry = SessionTelemetry::new(
+        thread_id,
+        model.as_str(),
+        model_info.slug.as_str(),
+        /*account_id*/ None,
+        Some("test@test.com".to_string()),
+        /*auth_mode*/ None,
+        "test_originator".to_string(),
+        /*log_user_prompts*/ false,
+        "test".to_string(),
+        SessionSource::Exec,
+    );
+    let client = ModelClient::new(
+        /*auth_manager*/ None,
+        thread_id.into(),
+        thread_id,
+        /*installation_id*/ "11111111-1111-4111-8111-111111111111".to_string(),
+        provider,
+        SessionSource::Exec,
+        config.model_verbosity,
+        /*enable_request_compression*/ false,
+        /*include_timing_metrics*/ false,
+        /*beta_features_header*/ None,
+    );
+    let mut client_session = client.new_session();
+
+    let mut prompt = Prompt::default();
+    prompt.base_instructions.text = "system instruction".to_string();
+    prompt.input.push(ResponseItem::Message {
+        id: None,
+        role: "user".to_string(),
+        content: vec![ContentItem::InputText {
+            text: "hello".to_string(),
+        }],
+        phase: None,
+    });
+    prompt.input.push(ResponseItem::FunctionCall {
+        id: Some("function-call-item".into()),
+        name: "shell".to_string(),
+        namespace: None,
+        arguments: r#"{"command":"pwd"}"#.to_string(),
+        call_id: "call-1".to_string(),
+    });
+    prompt.input.push(ResponseItem::FunctionCallOutput {
+        call_id: "call-1".to_string(),
+        output: FunctionCallOutputPayload::from_text("pwd output".to_string()),
+    });
+
+    let mut stream = client_session
+        .stream(
+            &prompt,
+            &model_info,
+            &session_telemetry,
+            effort,
+            summary.unwrap_or(ReasoningSummary::Auto),
+            /*service_tier*/ None,
+            /*turn_metadata_header*/ None,
+            &codex_rollout_trace::InferenceTraceContext::disabled(),
+        )
+        .await
+        .expect("chat completions stream should start");
+
+    while let Some(event) = stream.next().await {
+        if let Ok(ResponseEvent::Completed { .. }) = event {
+            break;
+        }
+    }
+
+    let requests = server.received_requests().await.unwrap_or_default();
+    assert_eq!(requests.len(), 1);
+    let request = &requests[0];
+    assert_eq!(request.url.path(), "/v1/chat/completions");
+    assert_eq!(
+        request
+            .headers
+            .get("authorization")
+            .and_then(|value| value.to_str().ok()),
+        Some("Bearer chat-token")
+    );
+
+    let body: Value = serde_json::from_slice(&request.body).expect("request body should be JSON");
+    assert_eq!(body["stream"], json!(true));
+    assert_eq!(body["tool_choice"], json!("auto"));
+    assert_eq!(
+        body["messages"],
+        json!([
+            {
+                "role": "system",
+                "content": "system instruction"
+            },
+            {
+                "role": "user",
+                "content": "hello"
+            },
+            {
+                "role": "assistant",
+                "tool_calls": [
+                    {
+                        "id": "call-1",
+                        "type": "function",
+                        "function": {
+                            "name": "shell",
+                            "arguments": "{\"command\":\"pwd\"}"
+                        }
+                    }
+                ]
+            },
+            {
+                "role": "tool",
+                "content": "pwd output",
+                "tool_call_id": "call-1"
+            }
+        ])
+    );
+
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn chat_completions_rejects_image_input_before_request() -> anyhow::Result<()> {
+    skip_if_no_network!(Ok(()));
+
+    let server = MockServer::start().await;
+    let provider = chat_completions_test_provider(format!("{}/v1", server.uri()));
+    let codex_home = TempDir::new().unwrap();
+    let mut config = load_default_config_for_test(&codex_home).await;
+    config.model_provider_id = provider.name.clone();
+    config.model_provider = provider.clone();
+    let effort = config.model_reasoning_effort;
+    let summary = config.model_reasoning_summary;
+    let model = codex_core::test_support::get_model_offline(config.model.as_deref());
+    config.model = Some(model.clone());
+    let config = Arc::new(config);
+    let model_info =
+        codex_core::test_support::construct_model_info_offline(model.as_str(), &config);
+    let thread_id = ThreadId::new();
+    let session_telemetry = SessionTelemetry::new(
+        thread_id,
+        model.as_str(),
+        model_info.slug.as_str(),
+        /*account_id*/ None,
+        Some("test@test.com".to_string()),
+        /*auth_mode*/ None,
+        "test_originator".to_string(),
+        /*log_user_prompts*/ false,
+        "test".to_string(),
+        SessionSource::Exec,
+    );
+    let client = ModelClient::new(
+        /*auth_manager*/ None,
+        thread_id.into(),
+        thread_id,
+        /*installation_id*/ "11111111-1111-4111-8111-111111111111".to_string(),
+        provider,
+        SessionSource::Exec,
+        config.model_verbosity,
+        /*enable_request_compression*/ false,
+        /*include_timing_metrics*/ false,
+        /*beta_features_header*/ None,
+    );
+    let mut client_session = client.new_session();
+
+    let mut prompt = Prompt::default();
+    prompt.input.push(ResponseItem::Message {
+        id: None,
+        role: "user".to_string(),
+        content: vec![ContentItem::InputImage {
+            image_url: "data:image/png;base64,AA==".to_string(),
+            detail: Some(DEFAULT_IMAGE_DETAIL),
+        }],
+        phase: None,
+    });
+
+    let err = match client_session
+        .stream(
+            &prompt,
+            &model_info,
+            &session_telemetry,
+            effort,
+            summary.unwrap_or(ReasoningSummary::Auto),
+            /*service_tier*/ None,
+            /*turn_metadata_header*/ None,
+            &codex_rollout_trace::InferenceTraceContext::disabled(),
+        )
+        .await
+    {
+        Ok(_) => panic!("image input should be rejected before any HTTP request"),
+        Err(err) => err,
+    };
+
+    assert!(
+        matches!(
+            err,
+            CodexErr::UnsupportedOperation(ref message)
+                if message == "Chat Completions provider does not yet support image input"
+        ),
+        "unexpected error: {err}"
+    );
+    assert!(
+        server
+            .received_requests()
+            .await
+            .unwrap_or_default()
+            .is_empty(),
+        "no HTTP request should be sent when image input is rejected locally"
+    );
+
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn chat_completions_executes_tool_call_and_replays_tool_result() -> anyhow::Result<()> {
+    skip_if_no_network!(Ok(()));
+
+    let server = MockServer::start().await;
+
+    let first_response = concat!(
+        "data: {\"id\":\"chatcmpl-tool-1\",\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"call_1\",\"function\":{\"name\":\"shell\",\"arguments\":\"{\\\"command\\\":[\\\"bash\\\",\\\"-lc\\\",\\\"pwd\\\"],\\\"workdir\\\":\\\"/tmp\\\"}\"}}]},\"finish_reason\":\"tool_calls\"}]}\n\n",
+        "data: [DONE]\n\n",
+    );
+    Mock::given(method("POST"))
+        .and(path("/v1/chat/completions"))
+        .and(ChatCompletionsToolResultMatcher {
+            expect_tool_result: false,
+        })
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "text/event-stream")
+                .set_body_raw(first_response, "text/event-stream"),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let second_response = concat!(
+        "data: {\"id\":\"chatcmpl-tool-2\",\"choices\":[{\"delta\":{\"content\":\"done\"}}]}\n\n",
+        "data: [DONE]\n\n",
+    );
+    Mock::given(method("POST"))
+        .and(path("/v1/chat/completions"))
+        .and(ChatCompletionsToolResultMatcher {
+            expect_tool_result: true,
+        })
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "text/event-stream")
+                .set_body_raw(second_response, "text/event-stream"),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let provider = chat_completions_test_provider(format!("{}/v1", server.uri()));
+    let test = test_codex()
+        .with_config(move |config| {
+            config.model_provider_id = provider.name.clone();
+            config.model_provider = provider;
+        })
+        .build(&server)
+        .await?;
+
+    if tokio::time::timeout(
+        Duration::from_secs(10),
+        test.submit_turn_with_permission_profile("run pwd", PermissionProfile::Disabled),
+    )
+    .await
+    .is_err()
+    {
+        let requests = server.received_requests().await.unwrap_or_default();
+        let request_bodies = requests
+            .iter()
+            .map(|request| {
+                serde_json::from_slice::<Value>(&request.body)
+                    .unwrap_or_else(|_| json!({ "raw": String::from_utf8_lossy(&request.body) }))
+            })
+            .collect::<Vec<_>>();
+        panic!(
+            "chat_completions tool loop timed out; received {} request(s): {request_bodies:?}",
+            requests.len()
+        );
+    }
+
+    let requests = server.received_requests().await.unwrap_or_default();
+    assert_eq!(
+        requests.len(),
+        2,
+        "expected tool loop to issue two chat completions requests"
+    );
+    assert_eq!(requests[0].url.path(), "/v1/chat/completions");
+    assert_eq!(requests[1].url.path(), "/v1/chat/completions");
+
+    let first_body: Value =
+        serde_json::from_slice(&requests[0].body).expect("first request body should be JSON");
+    assert!(
+        first_body["messages"]
+            .as_array()
+            .is_some_and(|messages| messages.iter().any(|message| {
+                message["role"].as_str() == Some("user")
+                    && message["content"].as_str() == Some("run pwd")
+            })),
+        "first request should contain the user prompt: {first_body}"
+    );
+
+    let second_body: Value =
+        serde_json::from_slice(&requests[1].body).expect("second request body should be JSON");
+    let messages = second_body["messages"]
+        .as_array()
+        .expect("messages array should exist");
+    assert!(
+        messages.iter().any(|message| {
+            message["role"].as_str() == Some("assistant")
+                && message["tool_calls"][0]["id"].as_str() == Some("call_1")
+                && message["tool_calls"][0]["function"]["name"].as_str() == Some("shell")
+        }),
+        "assistant tool call should be replayed in the follow-up request: {second_body}"
+    );
+    assert!(
+        messages.iter().any(|message| {
+            message["role"].as_str() == Some("tool")
+                && message["tool_call_id"].as_str() == Some("call_1")
+                && message["content"]
+                    .as_str()
+                    .is_some_and(|content| content.contains("/tmp"))
+        }),
+        "tool result should be replayed as a tool message in the follow-up request: {second_body}"
+    );
+
+    Ok(())
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -2897,6 +3289,7 @@ async fn azure_overrides_assign_properties_used_for_responses_url() {
         )])),
         env_key_instructions: None,
         wire_api: WireApi::Responses,
+        auth_style: codex_model_provider_info::AuthStyle::Bearer,
         http_headers: Some(std::collections::HashMap::from([(
             "Custom-Header".to_string(),
             "Value".to_string(),
@@ -2985,6 +3378,7 @@ async fn env_var_overrides_loaded_auth() {
         auth: None,
         aws: None,
         wire_api: WireApi::Responses,
+        auth_style: codex_model_provider_info::AuthStyle::Bearer,
         http_headers: Some(std::collections::HashMap::from([(
             "Custom-Header".to_string(),
             "Value".to_string(),
@@ -3028,6 +3422,28 @@ async fn env_var_overrides_loaded_auth() {
 
 fn create_dummy_codex_auth() -> CodexAuth {
     CodexAuth::create_dummy_chatgpt_auth_for_testing()
+}
+
+struct ChatCompletionsToolResultMatcher {
+    expect_tool_result: bool,
+}
+
+impl Match for ChatCompletionsToolResultMatcher {
+    fn matches(&self, request: &wiremock::Request) -> bool {
+        let Ok(body) = serde_json::from_slice::<Value>(&request.body) else {
+            return false;
+        };
+        let has_tool_result =
+            body.get("messages")
+                .and_then(Value::as_array)
+                .is_some_and(|messages| {
+                    messages.iter().any(|message| {
+                        message.get("role").and_then(Value::as_str) == Some("tool")
+                            && message.get("tool_call_id").is_some()
+                    })
+                });
+        has_tool_result == self.expect_tool_result
+    }
 }
 
 /// Scenario:

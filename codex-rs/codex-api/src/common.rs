@@ -185,6 +185,102 @@ pub struct ResponsesApiRequest {
     pub client_metadata: Option<HashMap<String, String>>,
 }
 
+#[derive(Debug, Serialize, Clone, PartialEq)]
+pub struct AnthropicMessagesRequest {
+    pub model: String,
+    pub max_tokens: u32,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub system: String,
+    pub messages: Vec<AnthropicMessage>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub tools: Vec<AnthropicTool>,
+    pub stream: bool,
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq)]
+pub struct AnthropicMessage {
+    pub role: String,
+    pub content: Vec<AnthropicContentBlock>,
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum AnthropicContentBlock {
+    Text {
+        text: String,
+    },
+    ToolUse {
+        id: String,
+        name: String,
+        input: Value,
+    },
+    ToolResult {
+        tool_use_id: String,
+        content: String,
+    },
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq)]
+pub struct AnthropicTool {
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    pub input_schema: Value,
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq)]
+pub struct ChatCompletionsRequest {
+    pub model: String,
+    pub messages: Vec<ChatMessage>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub tools: Vec<ChatTool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool_choice: Option<String>,
+    pub stream: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub temperature: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<u32>,
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq)]
+pub struct ChatMessage {
+    pub role: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool_calls: Option<Vec<ChatToolCall>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool_call_id: Option<String>,
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq)]
+pub struct ChatToolCall {
+    pub id: String,
+    pub r#type: String,
+    pub function: ChatFunctionCall,
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq)]
+pub struct ChatFunctionCall {
+    pub name: String,
+    pub arguments: String,
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq)]
+pub struct ChatTool {
+    pub r#type: String,
+    pub function: ChatFunctionTool,
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq)]
+pub struct ChatFunctionTool {
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    pub parameters: Value,
+}
+
 impl From<&ResponsesApiRequest> for ResponseCreateWsRequest {
     fn from(request: &ResponsesApiRequest) -> Self {
         Self {

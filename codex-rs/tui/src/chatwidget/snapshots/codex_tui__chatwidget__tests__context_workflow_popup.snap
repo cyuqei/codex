@@ -1,0 +1,12 @@
+---
+source: tui/src/chatwidget/tests/popups_and_settings.rs
+expression: popup
+---
+  Context workflow
+  Save the current context or restore a previous session.
+
+› 1. Save current context   Show the current rollout path, thread, model, and
+                            resume command.
+  2. Restore saved context  Open the saved-session picker.
+
+  Press enter to confirm or esc to go back

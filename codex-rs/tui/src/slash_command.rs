@@ -29,6 +29,8 @@ pub enum SlashCommand {
     Skills,
     Hooks,
     Review,
+    Commit,
+    Context,
     Rename,
     New,
     Resume,
@@ -64,6 +66,7 @@ pub enum SlashCommand {
     Personality,
     Realtime,
     Settings,
+    Providers,
     TestApproval,
     #[strum(serialize = "subagents")]
     MultiAgents,
@@ -83,6 +86,8 @@ impl SlashCommand {
             SlashCommand::Init => "create an AGENTS.md file with instructions for Codex",
             SlashCommand::Compact => "summarize conversation to prevent hitting the context limit",
             SlashCommand::Review => "review my current changes and find issues",
+            SlashCommand::Commit => "draft a commit message from the current git status and diff",
+            SlashCommand::Context => "save the current context or restore a previous session",
             SlashCommand::Rename => "rename the current thread",
             SlashCommand::Resume => "resume a saved chat",
             SlashCommand::Clear => "clear the terminal and start a new chat",
@@ -113,6 +118,7 @@ impl SlashCommand {
             SlashCommand::Personality => "choose a communication style for Codex",
             SlashCommand::Realtime => "toggle realtime voice mode (experimental)",
             SlashCommand::Settings => "configure realtime microphone/speaker",
+            SlashCommand::Providers => "manage model providers and launch provider setup flows",
             SlashCommand::Plan => "switch to Plan mode",
             SlashCommand::Goal => "set or view the goal for a long-running task",
             SlashCommand::Collab => "change collaboration mode (experimental)",
@@ -148,6 +154,8 @@ impl SlashCommand {
         matches!(
             self,
             SlashCommand::Review
+                | SlashCommand::Commit
+                | SlashCommand::Context
                 | SlashCommand::Rename
                 | SlashCommand::Plan
                 | SlashCommand::Goal
@@ -155,6 +163,7 @@ impl SlashCommand {
                 | SlashCommand::Ide
                 | SlashCommand::Keymap
                 | SlashCommand::Mcp
+                | SlashCommand::Providers
                 | SlashCommand::Raw
                 | SlashCommand::Side
                 | SlashCommand::Resume
@@ -183,6 +192,8 @@ impl SlashCommand {
             | SlashCommand::Fork
             | SlashCommand::Init
             | SlashCommand::Compact
+            | SlashCommand::Commit
+            | SlashCommand::Context
             | SlashCommand::Model
             | SlashCommand::Fast
             | SlashCommand::Personality
@@ -226,6 +237,7 @@ impl SlashCommand {
             SlashCommand::TestApproval => true,
             SlashCommand::Realtime => true,
             SlashCommand::Settings => true,
+            SlashCommand::Providers => true,
             SlashCommand::Collab => true,
             SlashCommand::Agent | SlashCommand::MultiAgents => true,
             SlashCommand::Theme => false,
@@ -271,11 +283,15 @@ mod tests {
     fn certain_commands_are_available_during_task() {
         assert!(SlashCommand::Goal.available_during_task());
         assert!(SlashCommand::Ide.available_during_task());
+        assert!(SlashCommand::Providers.available_during_task());
         assert!(SlashCommand::Title.available_during_task());
         assert!(SlashCommand::Statusline.available_during_task());
         assert!(SlashCommand::Raw.available_during_task());
         assert!(SlashCommand::Raw.available_in_side_conversation());
         assert!(SlashCommand::Raw.supports_inline_args());
+        assert!(SlashCommand::Providers.supports_inline_args());
+        assert!(SlashCommand::Commit.supports_inline_args());
+        assert!(SlashCommand::Context.supports_inline_args());
     }
 
     #[test]

@@ -3553,35 +3553,38 @@ async fn discard_side_thread_removes_agent_navigation_entry() -> Result<()> {
 
 #[tokio::test]
 async fn discard_side_thread_keeps_local_state_when_server_close_fails() -> Result<()> {
-    let mut app = make_test_app().await;
-    let mut app_server =
-        crate::start_embedded_app_server_for_picker(app.chat_widget.config_ref()).await?;
-    let parent_thread_id = ThreadId::new();
-    let side_thread_id = ThreadId::new();
-    app.active_thread_id = Some(side_thread_id);
-    app.side_threads
-        .insert(side_thread_id, SideThreadState::new(parent_thread_id));
-    app.agent_navigation.upsert(
-        side_thread_id,
-        Some("Side".to_string()),
-        Some("side".to_string()),
-        /*is_closed*/ false,
-    );
-
-    assert!(
-        !app.discard_side_thread(&mut app_server, side_thread_id)
-            .await
-    );
-
-    assert_eq!(app.active_thread_id, Some(side_thread_id));
-    assert_eq!(
+    Box::pin(async {
+        let mut app = make_test_app().await;
+        let mut app_server =
+            crate::start_embedded_app_server_for_picker(app.chat_widget.config_ref()).await?;
+        let parent_thread_id = ThreadId::new();
+        let side_thread_id = ThreadId::new();
+        app.active_thread_id = Some(side_thread_id);
         app.side_threads
-            .get(&side_thread_id)
-            .map(|state| state.parent_thread_id),
-        Some(parent_thread_id)
-    );
-    assert!(app.agent_navigation.get(&side_thread_id).is_some());
-    Ok(())
+            .insert(side_thread_id, SideThreadState::new(parent_thread_id));
+        app.agent_navigation.upsert(
+            side_thread_id,
+            Some("Side".to_string()),
+            Some("side".to_string()),
+            /*is_closed*/ false,
+        );
+
+        assert!(
+            !app.discard_side_thread(&mut app_server, side_thread_id)
+                .await
+        );
+
+        assert_eq!(app.active_thread_id, Some(side_thread_id));
+        assert_eq!(
+            app.side_threads
+                .get(&side_thread_id)
+                .map(|state| state.parent_thread_id),
+            Some(parent_thread_id)
+        );
+        assert!(app.agent_navigation.get(&side_thread_id).is_some());
+        Ok(())
+    })
+    .await
 }
 
 #[tokio::test]

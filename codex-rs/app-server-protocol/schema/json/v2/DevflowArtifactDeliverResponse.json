@@ -1,0 +1,551 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "AbsolutePathBuf": {
+      "description": "A path that is guaranteed to be absolute and normalized (though it is not guaranteed to be canonicalized or exist on the filesystem).\n\nIMPORTANT: When deserializing an `AbsolutePathBuf`, a base path must be set using [AbsolutePathBufGuard::new]. If no base path is set, the deserialization will fail unless the path being deserialized is already absolute.",
+      "type": "string"
+    },
+    "AdditionalFileSystemPermissions": {
+      "properties": {
+        "entries": {
+          "items": {
+            "$ref": "#/definitions/FileSystemSandboxEntry"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "globScanMaxDepth": {
+          "format": "uint",
+          "minimum": 1.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "read": {
+          "description": "This will be removed in favor of `entries`.",
+          "items": {
+            "$ref": "#/definitions/AbsolutePathBuf"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "write": {
+          "description": "This will be removed in favor of `entries`.",
+          "items": {
+            "$ref": "#/definitions/AbsolutePathBuf"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "AdditionalNetworkPermissions": {
+      "properties": {
+        "enabled": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "DevflowApproval": {
+      "properties": {
+        "command": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "createdAt": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "cwd": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevflowApprovalDecision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "filePaths": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "itemId": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/DevflowApprovalKind"
+        },
+        "projectId": {
+          "type": "string"
+        },
+        "qualityGateId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "requestedPermissions": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RequestPermissionProfile"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "respondedAt": {
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "runId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/DevflowApprovalStatus"
+        },
+        "taskId": {
+          "type": "string"
+        },
+        "threadId": {
+          "type": "string"
+        },
+        "turnId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "createdAt",
+        "filePaths",
+        "id",
+        "itemId",
+        "kind",
+        "projectId",
+        "requestId",
+        "runId",
+        "status",
+        "taskId",
+        "threadId",
+        "turnId"
+      ],
+      "type": "object"
+    },
+    "DevflowApprovalDecision": {
+      "enum": [
+        "accept",
+        "accept_for_session",
+        "accept_for_task",
+        "accept_for_project",
+        "decline",
+        "cancel"
+      ],
+      "type": "string"
+    },
+    "DevflowApprovalKind": {
+      "enum": [
+        "command_execution",
+        "file_change",
+        "permissions",
+        "quality_gate_waive",
+        "artifact_delivery"
+      ],
+      "type": "string"
+    },
+    "DevflowApprovalStatus": {
+      "enum": [
+        "pending",
+        "responded"
+      ],
+      "type": "string"
+    },
+    "DevflowArtifact": {
+      "properties": {
+        "createdAt": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/DevflowArtifactKind"
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "runId": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "taskId": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "createdAt",
+        "id",
+        "kind",
+        "mimeType",
+        "path",
+        "runId",
+        "summary",
+        "taskId",
+        "title"
+      ],
+      "type": "object"
+    },
+    "DevflowArtifactDeliveryStatus": {
+      "enum": [
+        "pending_approval",
+        "delivered",
+        "failed"
+      ],
+      "type": "string"
+    },
+    "DevflowArtifactKind": {
+      "enum": [
+        "context_pack",
+        "diff",
+        "delivery_receipt",
+        "output_archive",
+        "quality_gate_output",
+        "report",
+        "review_report",
+        "run_summary"
+      ],
+      "type": "string"
+    },
+    "FileSystemAccessMode": {
+      "enum": [
+        "read",
+        "write",
+        "none"
+      ],
+      "type": "string"
+    },
+    "FileSystemPath": {
+      "oneOf": [
+        {
+          "properties": {
+            "path": {
+              "$ref": "#/definitions/AbsolutePathBuf"
+            },
+            "type": {
+              "enum": [
+                "path"
+              ],
+              "title": "PathFileSystemPathType",
+              "type": "string"
+            }
+          },
+          "required": [
+            "path",
+            "type"
+          ],
+          "title": "PathFileSystemPath",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "pattern": {
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "glob_pattern"
+              ],
+              "title": "GlobPatternFileSystemPathType",
+              "type": "string"
+            }
+          },
+          "required": [
+            "pattern",
+            "type"
+          ],
+          "title": "GlobPatternFileSystemPath",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "enum": [
+                "special"
+              ],
+              "title": "SpecialFileSystemPathType",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/FileSystemSpecialPath"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "title": "SpecialFileSystemPath",
+          "type": "object"
+        }
+      ]
+    },
+    "FileSystemSandboxEntry": {
+      "properties": {
+        "access": {
+          "$ref": "#/definitions/FileSystemAccessMode"
+        },
+        "path": {
+          "$ref": "#/definitions/FileSystemPath"
+        }
+      },
+      "required": [
+        "access",
+        "path"
+      ],
+      "type": "object"
+    },
+    "FileSystemSpecialPath": {
+      "oneOf": [
+        {
+          "properties": {
+            "kind": {
+              "enum": [
+                "root"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "title": "RootFileSystemSpecialPath",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": {
+              "enum": [
+                "minimal"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "title": "MinimalFileSystemSpecialPath",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": {
+              "enum": [
+                "project_roots"
+              ],
+              "type": "string"
+            },
+            "subpath": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "title": "KindFileSystemSpecialPath",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": {
+              "enum": [
+                "tmpdir"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "title": "TmpdirFileSystemSpecialPath",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": {
+              "enum": [
+                "slash_tmp"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "title": "SlashTmpFileSystemSpecialPath",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": {
+              "enum": [
+                "unknown"
+              ],
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            },
+            "subpath": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "path"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "RequestPermissionProfile": {
+      "additionalProperties": false,
+      "properties": {
+        "fileSystem": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AdditionalFileSystemPermissions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "network": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AdditionalNetworkPermissions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "type": "object"
+    }
+  },
+  "properties": {
+    "approval": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DevflowApproval"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "artifact": {
+      "$ref": "#/definitions/DevflowArtifact"
+    },
+    "command": {
+      "type": "string"
+    },
+    "deliveredAt": {
+      "format": "int64",
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "destination": {
+      "type": "string"
+    },
+    "exitCode": {
+      "format": "int32",
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "outputSummary": {
+      "type": "string"
+    },
+    "receiptArtifact": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DevflowArtifact"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "$ref": "#/definitions/DevflowArtifactDeliveryStatus"
+    },
+    "targetAgentId": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "artifact",
+    "command",
+    "destination",
+    "outputSummary",
+    "status",
+    "targetAgentId"
+  ],
+  "title": "DevflowArtifactDeliverResponse",
+  "type": "object"
+}

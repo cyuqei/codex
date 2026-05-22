@@ -309,6 +309,25 @@
         }
       ]
     },
+    "AuthStyle": {
+      "description": "Header style used for API-key authentication.",
+      "oneOf": [
+        {
+          "description": "Send API keys as `Authorization: Bearer <token>`.",
+          "enum": [
+            "bearer"
+          ],
+          "type": "string"
+        },
+        {
+          "description": "Send API keys as `x-api-key: <token>`.",
+          "enum": [
+            "x_api_key"
+          ],
+          "type": "string"
+        }
+      ]
+    },
     "AutoReviewToml": {
       "properties": {
         "policy": {
@@ -1329,6 +1348,15 @@
             }
           ],
           "description": "Command-backed bearer-token configuration for this provider."
+        },
+        "auth_style": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/AuthStyle"
+            }
+          ],
+          "default": "bearer",
+          "description": "Which HTTP header style to use when `env_key` supplies an API key."
         },
         "aws": {
           "allOf": [
@@ -3733,9 +3761,23 @@
       "description": "Wire protocol that the provider speaks.",
       "oneOf": [
         {
-          "description": "The Responses API exposed by OpenAI at `/v1/responses`.",
+          "description": "The Responses API exposed by OpenAI-compatible providers at `/v1/responses`.",
           "enum": [
             "responses"
+          ],
+          "type": "string"
+        },
+        {
+          "description": "The Anthropic Messages API exposed by Claude-compatible providers at `/v1/messages`.",
+          "enum": [
+            "anthropic_messages"
+          ],
+          "type": "string"
+        },
+        {
+          "description": "The OpenAI Chat Completions API exposed by compatible providers at `/v1/chat/completions`.",
+          "enum": [
+            "chat_completions"
           ],
           "type": "string"
         }

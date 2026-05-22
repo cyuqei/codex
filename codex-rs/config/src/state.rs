@@ -224,6 +224,21 @@ impl ConfigLayerStack {
             .and_then(|index| self.layers.get(index))
     }
 
+    /// Returns the raw project config layer for the given `.codex` folder, if any.
+    pub fn get_project_layer(
+        &self,
+        dot_codex_folder: &AbsolutePathBuf,
+    ) -> Option<&ConfigLayerEntry> {
+        self.layers.iter().find(|layer| {
+            matches!(
+                &layer.name,
+                ConfigLayerSource::Project {
+                    dot_codex_folder: current
+                } if current == dot_codex_folder
+            )
+        })
+    }
+
     pub fn requirements(&self) -> &ConfigRequirements {
         &self.requirements
     }
@@ -283,6 +298,70 @@ impl ConfigLayerStack {
                 }
             }
         }
+    }
+
+    /// Creates a new [ConfigLayerStack] using the specified values to inject or replace a
+    /// project config layer for a `.codex/` folder.
+    pub fn with_project_config(
+        &self,
+        dot_codex_folder: &AbsolutePathBuf,
+        project_config: TomlValue,
+    ) -> std::io::Result<Self> {
+        let project_layer = ConfigLayerEntry::new(
+            ConfigLayerSource::Project {
+                dot_codex_folder: dot_codex_folder.clone(),
+            },
+            project_config,
+        );
+
+        let mut layers = self.layers.clone();
+        if let Some(index) = layers.iter().position(|layer| {
+            matches!(
+                &layer.name,
+                ConfigLayerSource::Project {
+                    dot_codex_folder: current
+                } if current == dot_codex_folder
+            )
+        }) {
+            layers[index] = project_layer;
+        } else {
+            let mut insert_index = None;
+            for (index, layer) in layers.iter().enumerate() {
+                if let ConfigLayerSource::Project {
+                    dot_codex_folder: current,
+                } = &layer.name
+                    && current
+                        .as_path()
+                        .ancestors()
+                        .any(|ancestor| ancestor == dot_codex_folder.as_path())
+                {
+                    insert_index = Some(index);
+                    break;
+                }
+
+                if layer.name.precedence() > project_layer.name.precedence() {
+                    insert_index = Some(index);
+                    break;
+                }
+            }
+
+            if let Some(index) = insert_index {
+                layers.insert(index, project_layer);
+            } else {
+                layers.push(project_layer);
+            }
+        }
+
+        let user_layer_index = verify_layer_ordering(&layers)?;
+        Ok(Self {
+            layers,
+            user_layer_index,
+            requirements: self.requirements.clone(),
+            requirements_toml: self.requirements_toml.clone(),
+            ignore_user_and_project_exec_policy_rules: self
+                .ignore_user_and_project_exec_policy_rules,
+            startup_warnings: self.startup_warnings.clone(),
+        })
     }
 
     /// Returns the merged config-layer view.

@@ -14,4 +14,8 @@ limit?: number | null,
 /**
  * When true, include models that are hidden from the default picker list.
  */
-includeHidden?: boolean | null, };
+includeHidden?: boolean | null,
+/**
+ * When set, list models for the specified provider id instead of the currently selected one.
+ */
+providerId?: string | null, };

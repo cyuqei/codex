@@ -8,12 +8,27 @@ pub fn create_shell_command_sse_response(
     timeout_ms: Option<u64>,
     call_id: &str,
 ) -> anyhow::Result<String> {
+    create_shell_command_sse_response_with_permissions(
+        command, workdir, timeout_ms, None, None, call_id,
+    )
+}
+
+pub fn create_shell_command_sse_response_with_permissions(
+    command: Vec<String>,
+    workdir: Option<&Path>,
+    timeout_ms: Option<u64>,
+    sandbox_permissions: Option<&str>,
+    justification: Option<&str>,
+    call_id: &str,
+) -> anyhow::Result<String> {
     // The `arguments` for the `shell_command` tool is a serialized JSON object.
     let command_str = shlex::try_join(command.iter().map(String::as_str))?;
     let tool_call_arguments = serde_json::to_string(&json!({
         "command": command_str,
         "workdir": workdir.map(|w| w.to_string_lossy()),
-        "timeout_ms": timeout_ms
+        "timeout_ms": timeout_ms,
+        "sandbox_permissions": sandbox_permissions,
+        "justification": justification,
     }))?;
     Ok(responses::sse(vec![
         responses::ev_response_created("resp-1"),

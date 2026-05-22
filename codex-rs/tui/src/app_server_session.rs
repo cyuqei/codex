@@ -38,6 +38,16 @@ use codex_app_server_protocol::ModelListParams;
 use codex_app_server_protocol::ModelListResponse;
 use codex_app_server_protocol::PermissionProfileModificationParams;
 use codex_app_server_protocol::PermissionProfileSelectionParams;
+use codex_app_server_protocol::ProviderCreateParams;
+use codex_app_server_protocol::ProviderCreateResponse;
+use codex_app_server_protocol::ProviderDeleteParams;
+use codex_app_server_protocol::ProviderDeleteResponse;
+use codex_app_server_protocol::ProviderPreferencesUpdateParams;
+use codex_app_server_protocol::ProviderPreferencesUpdateResponse;
+use codex_app_server_protocol::ProviderTestConnectionParams;
+use codex_app_server_protocol::ProviderTestConnectionResponse;
+use codex_app_server_protocol::ProviderUpdateParams;
+use codex_app_server_protocol::ProviderUpdateResponse;
 use codex_app_server_protocol::RateLimitSnapshot;
 use codex_app_server_protocol::RequestId;
 use codex_app_server_protocol::ReviewDelivery;
@@ -196,26 +206,12 @@ impl AppServerSession {
 
     pub(crate) async fn bootstrap(&mut self, config: &Config) -> Result<AppServerBootstrap> {
         let account = self.read_account().await?;
-        let model_request_id = self.next_request_id();
-        let models: ModelListResponse = self
-            .client
-            .request_typed(ClientRequest::ModelList {
-                request_id: model_request_id,
-                params: ModelListParams {
-                    cursor: None,
-                    limit: None,
-                    include_hidden: Some(true),
-                },
-            })
+        let available_models = self
+            .model_list(/*provider_id*/ None, /*include_hidden*/ true)
             .await
             .map_err(|err| {
                 bootstrap_request_error("model/list failed during TUI bootstrap", err)
             })?;
-        let available_models = models
-            .data
-            .into_iter()
-            .map(model_preset_from_api_model)
-            .collect::<Vec<_>>();
         let default_model = config
             .model
             .clone()
@@ -278,6 +274,31 @@ impl AppServerSession {
             has_chatgpt_account,
             available_models,
         })
+    }
+
+    pub(crate) async fn model_list(
+        &mut self,
+        provider_id: Option<String>,
+        include_hidden: bool,
+    ) -> Result<Vec<ModelPreset>, TypedRequestError> {
+        let request_id = self.next_request_id();
+        let models: ModelListResponse = self
+            .client
+            .request_typed(ClientRequest::ModelList {
+                request_id,
+                params: ModelListParams {
+                    cursor: None,
+                    limit: None,
+                    include_hidden: Some(include_hidden),
+                    provider_id,
+                },
+            })
+            .await?;
+        Ok(models
+            .data
+            .into_iter()
+            .map(model_preset_from_api_model)
+            .collect())
     }
 
     /// Fetches the current account info without refreshing the auth token.
@@ -664,6 +685,61 @@ impl AppServerSession {
             .await
             .wrap_err("memory/reset failed in TUI")?;
         Ok(())
+    }
+
+    pub(crate) async fn provider_preferences_update(
+        &mut self,
+        params: ProviderPreferencesUpdateParams,
+    ) -> Result<ProviderPreferencesUpdateResponse> {
+        let request_id = self.next_request_id();
+        self.client
+            .request_typed(ClientRequest::ProviderPreferencesUpdate { request_id, params })
+            .await
+            .wrap_err("providerPreferences/update failed in TUI")
+    }
+
+    pub(crate) async fn provider_create(
+        &mut self,
+        params: ProviderCreateParams,
+    ) -> Result<ProviderCreateResponse> {
+        let request_id = self.next_request_id();
+        self.client
+            .request_typed(ClientRequest::ProviderCreate { request_id, params })
+            .await
+            .wrap_err("provider/create failed in TUI")
+    }
+
+    pub(crate) async fn provider_update(
+        &mut self,
+        params: ProviderUpdateParams,
+    ) -> Result<ProviderUpdateResponse> {
+        let request_id = self.next_request_id();
+        self.client
+            .request_typed(ClientRequest::ProviderUpdate { request_id, params })
+            .await
+            .wrap_err("provider/update failed in TUI")
+    }
+
+    pub(crate) async fn provider_delete(
+        &mut self,
+        params: ProviderDeleteParams,
+    ) -> Result<ProviderDeleteResponse> {
+        let request_id = self.next_request_id();
+        self.client
+            .request_typed(ClientRequest::ProviderDelete { request_id, params })
+            .await
+            .wrap_err("provider/delete failed in TUI")
+    }
+
+    pub(crate) async fn provider_test_connection(
+        &mut self,
+        params: ProviderTestConnectionParams,
+    ) -> Result<ProviderTestConnectionResponse> {
+        let request_id = self.next_request_id();
+        self.client
+            .request_typed(ClientRequest::ProviderTestConnection { request_id, params })
+            .await
+            .wrap_err("provider/testConnection failed in TUI")
     }
 
     pub(crate) async fn thread_goal_get(

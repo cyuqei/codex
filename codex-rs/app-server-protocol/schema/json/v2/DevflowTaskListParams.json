@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowTaskStatus": {
+      "enum": [
+        "planned",
+        "running",
+        "paused",
+        "ready_for_review",
+        "ready_to_merge",
+        "failed",
+        "blocked",
+        "cancelled"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "assignedAgentId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "cursor": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "limit": {
+      "format": "uint32",
+      "minimum": 0.0,
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "projectId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DevflowTaskStatus"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "title": "DevflowTaskListParams",
+  "type": "object"
+}

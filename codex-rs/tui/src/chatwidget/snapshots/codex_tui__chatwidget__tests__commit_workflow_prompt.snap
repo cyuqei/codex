@@ -1,0 +1,16 @@
+---
+source: tui/src/chatwidget/tests/popups_and_settings.rs
+expression: popup
+---
+▌ Commit workflow
+▌ This drafts a commit message only; it does not run git commit.
+▌
+▌ Draft a git commit message.
+▌
+▌ ## Git status
+▌ ```text
+▌ ## main
+▌  M src/lib.rs
+▌ ```
+
+Press enter to confirm or esc to go back

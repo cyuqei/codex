@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowApprovalDecision": {
+      "enum": [
+        "accept",
+        "accept_for_session",
+        "accept_for_task",
+        "accept_for_project",
+        "decline",
+        "cancel"
+      ],
+      "type": "string"
+    },
+    "PermissionGrantScope": {
+      "enum": [
+        "turn",
+        "session"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "decision": {
+      "$ref": "#/definitions/DevflowApprovalDecision"
+    },
+    "id": {
+      "type": "string"
+    },
+    "scope": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PermissionGrantScope"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "decision",
+    "id"
+  ],
+  "title": "DevflowApprovalRespondParams",
+  "type": "object"
+}

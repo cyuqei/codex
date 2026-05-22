@@ -29,6 +29,8 @@ use codex_protocol::protocol::GuardianRiskLevel as CoreGuardianRiskLevel;
 use codex_protocol::protocol::GuardianUserAuthorization as CoreGuardianUserAuthorization;
 use codex_protocol::protocol::PatchApplyStatus as CorePatchApplyStatus;
 use codex_protocol::protocol::ReviewDecision as CoreReviewDecision;
+use codex_protocol::protocol::ReviewFinding as CoreReviewFinding;
+use codex_protocol::protocol::ReviewOutputEvent as CoreReviewOutputEvent;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use schemars::JsonSchema;
 use serde::Deserialize;
@@ -355,10 +357,80 @@ pub enum ThreadItem {
     EnteredReviewMode { id: String, review: String },
     #[serde(rename_all = "camelCase")]
     #[ts(rename_all = "camelCase")]
-    ExitedReviewMode { id: String, review: String },
+    ExitedReviewMode {
+        id: String,
+        review: String,
+        review_output: Option<ReviewOutput>,
+    },
     #[serde(rename_all = "camelCase")]
     #[ts(rename_all = "camelCase")]
     ContextCompaction { id: String },
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export_to = "v2/")]
+pub struct ReviewOutput {
+    pub findings: Vec<ReviewFinding>,
+    pub overall_correctness: String,
+    pub overall_explanation: String,
+    pub overall_confidence_score: f32,
+}
+
+impl From<&CoreReviewOutputEvent> for ReviewOutput {
+    fn from(value: &CoreReviewOutputEvent) -> Self {
+        Self {
+            findings: value.findings.iter().map(ReviewFinding::from).collect(),
+            overall_correctness: value.overall_correctness.clone(),
+            overall_explanation: value.overall_explanation.clone(),
+            overall_confidence_score: value.overall_confidence_score,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export_to = "v2/")]
+pub struct ReviewFinding {
+    pub title: String,
+    pub body: String,
+    pub confidence_score: f32,
+    pub priority: i32,
+    pub code_location: ReviewCodeLocation,
+}
+
+impl From<&CoreReviewFinding> for ReviewFinding {
+    fn from(value: &CoreReviewFinding) -> Self {
+        Self {
+            title: value.title.clone(),
+            body: value.body.clone(),
+            confidence_score: value.confidence_score,
+            priority: value.priority,
+            code_location: ReviewCodeLocation {
+                absolute_file_path: value.code_location.absolute_file_path.display().to_string(),
+                line_range: ReviewLineRange {
+                    start: value.code_location.line_range.start,
+                    end: value.code_location.line_range.end,
+                },
+            },
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export_to = "v2/")]
+pub struct ReviewCodeLocation {
+    pub absolute_file_path: String,
+    pub line_range: ReviewLineRange,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export_to = "v2/")]
+pub struct ReviewLineRange {
+    pub start: u32,
+    pub end: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, JsonSchema, TS)]
