@@ -1753,6 +1753,30 @@
             },
             "method": {
               "enum": [
+                "devflowReleasePrep/submit"
+              ],
+              "title": "DevflowReleasePrep/submitRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/v2/DevflowReleaseSubmitParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowReleasePrep/submitRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/v2/RequestId"
+            },
+            "method": {
+              "enum": [
                 "devflowProject/testCommands/list"
               ],
               "title": "DevflowProject/testCommands/listRequestMethod",
@@ -10282,7 +10306,8 @@
           "file_change",
           "permissions",
           "quality_gate_waive",
-          "artifact_delivery"
+          "artifact_delivery",
+          "release_publish"
         ],
         "type": "string"
       },
@@ -11785,6 +11810,137 @@
         "enum": [
           "ready",
           "blocked"
+        ],
+        "type": "string"
+      },
+      "DevflowReleaseSubmitMode": {
+        "enum": [
+          "commit_only",
+          "commit_and_push"
+        ],
+        "type": "string"
+      },
+      "DevflowReleaseSubmitParams": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "mode": {
+            "$ref": "#/definitions/v2/DevflowReleaseSubmitMode"
+          },
+          "projectRoot": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "mode",
+          "projectRoot"
+        ],
+        "title": "DevflowReleaseSubmitParams",
+        "type": "object"
+      },
+      "DevflowReleaseSubmitResponse": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "properties": {
+          "approval": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowApproval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "blockers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "branch": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "command": {
+            "type": "string"
+          },
+          "commitMessageArtifact": {
+            "$ref": "#/definitions/v2/DevflowArtifact"
+          },
+          "exitCode": {
+            "format": "int32",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "mode": {
+            "$ref": "#/definitions/v2/DevflowReleaseSubmitMode"
+          },
+          "outputSummary": {
+            "type": "string"
+          },
+          "prBodyArtifact": {
+            "$ref": "#/definitions/v2/DevflowArtifact"
+          },
+          "publishReportArtifact": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/v2/DevflowArtifact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "publishedAt": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "releaseNoteArtifact": {
+            "$ref": "#/definitions/v2/DevflowArtifact"
+          },
+          "remote": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "$ref": "#/definitions/v2/DevflowReleaseSubmitStatus"
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "blockers",
+          "command",
+          "commitMessageArtifact",
+          "mode",
+          "outputSummary",
+          "prBodyArtifact",
+          "releaseNoteArtifact",
+          "status",
+          "summary"
+        ],
+        "title": "DevflowReleaseSubmitResponse",
+        "type": "object"
+      },
+      "DevflowReleaseSubmitStatus": {
+        "enum": [
+          "blocked",
+          "pending_approval"
         ],
         "type": "string"
       },

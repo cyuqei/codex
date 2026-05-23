@@ -92,6 +92,11 @@ use codex_app_server_protocol::DevflowQualityGateWaiveParams;
 use codex_app_server_protocol::DevflowQualityGateWaiveResponse;
 use codex_app_server_protocol::DevflowReleasePrepCreateParams;
 use codex_app_server_protocol::DevflowReleasePrepCreateResponse;
+use codex_app_server_protocol::DevflowReleasePrepStatus;
+use codex_app_server_protocol::DevflowReleaseSubmitMode;
+use codex_app_server_protocol::DevflowReleaseSubmitParams;
+use codex_app_server_protocol::DevflowReleaseSubmitResponse;
+use codex_app_server_protocol::DevflowReleaseSubmitStatus;
 use codex_app_server_protocol::DevflowRun;
 use codex_app_server_protocol::DevflowRunCommandCompletedNotification;
 use codex_app_server_protocol::DevflowRunCommandStartedNotification;
@@ -219,6 +224,9 @@ use super::devflow_quality_gate::run_gate_command;
 use super::devflow_release_prep::DevflowReleasePrepDraft;
 use super::devflow_release_prep::DevflowReleasePrepInput;
 use super::devflow_release_prep::create_devflow_release_prep;
+use super::devflow_release_publish::release_publish_command;
+use super::devflow_release_publish::release_submit_mode_label;
+use super::devflow_release_publish::run_release_publish;
 use super::devflow_review_findings::build_review_finding_state;
 use super::devflow_review_findings::render_review_artifact;
 use super::devflow_review_findings::review_artifact_all_findings_addressed;
@@ -375,6 +383,32 @@ enum PendingDevflowApprovalRequest {
         destination: String,
         message: Option<String>,
     },
+    ReleasePublish(ReleasePublishApprovalRequest),
+}
+
+#[derive(Clone, PartialEq, Eq)]
+struct ReleasePublishApprovalRequest {
+    project_root: String,
+    commit_message_artifact_id: String,
+    pr_body_artifact_id: String,
+    release_note_artifact_id: String,
+    mode: DevflowReleaseSubmitMode,
+    remote: Option<String>,
+    branch: Option<String>,
+}
+
+#[derive(Clone)]
+struct ReleasePublishTarget {
+    project_root: String,
+    mode: DevflowReleaseSubmitMode,
+    remote: Option<String>,
+    branch: Option<String>,
+}
+
+struct ReleasePublishArtifactRefs<'a> {
+    commit_message: &'a DevflowArtifact,
+    pr_body: &'a DevflowArtifact,
+    release_note: &'a DevflowArtifact,
 }
 
 #[derive(Clone)]
@@ -1351,6 +1385,98 @@ impl DevflowRequestProcessor {
         }
     }
 
+    pub(crate) async fn release_prep_submit(
+        &self,
+        params: DevflowReleaseSubmitParams,
+    ) -> Result<DevflowReleaseSubmitResponse, JSONRPCErrorError> {
+        if params.project_root.trim().is_empty() {
+            return Err(invalid_request("project_root is required".to_string()));
+        }
+
+        let project = diagnose_project(&self.config_manager, &params.project_root).await?;
+        let project_root = project.root_path.clone();
+        let project_remote = project.git_remote.clone();
+        let project_branch = project.current_branch.clone();
+        let prep = self
+            .release_prep_create(DevflowReleasePrepCreateParams {
+                project_root: params.project_root.clone(),
+                task_id: params.task_id.clone(),
+            })
+            .await?;
+        let command = release_publish_command(params.mode).to_string();
+        let publish_target = ReleasePublishTarget {
+            project_root,
+            mode: params.mode,
+            remote: project_remote.clone(),
+            branch: project_branch.clone(),
+        };
+        let release_artifacts = ReleasePublishArtifactRefs {
+            commit_message: &prep.commit_message_artifact,
+            pr_body: &prep.pr_body_artifact,
+            release_note: &prep.release_note_artifact,
+        };
+
+        if prep.status == DevflowReleasePrepStatus::Blocked {
+            return Ok(build_release_submit_response(ReleaseSubmitResponseInput {
+                status: DevflowReleaseSubmitStatus::Blocked,
+                summary: format!("release publish blocked before approval: {}", prep.summary),
+                blockers: prep.blockers.clone(),
+                prep,
+                approval: None,
+                target: publish_target.clone(),
+                command,
+                exit_code: None,
+                published_at: None,
+            }));
+        }
+
+        let mut blockers = Vec::new();
+        if params.mode == DevflowReleaseSubmitMode::CommitAndPush {
+            if project_remote.is_none() {
+                blockers.push(
+                    "release submit requires an origin remote for commit_and_push".to_string(),
+                );
+            }
+            if project_branch.is_none() {
+                blockers.push(
+                    "release submit requires a current branch for commit_and_push".to_string(),
+                );
+            }
+        }
+        if !blockers.is_empty() {
+            return Ok(build_release_submit_response(ReleaseSubmitResponseInput {
+                status: DevflowReleaseSubmitStatus::Blocked,
+                summary: "release publish blocked before approval".to_string(),
+                blockers: blockers.clone(),
+                prep,
+                approval: None,
+                target: publish_target.clone(),
+                command,
+                exit_code: None,
+                published_at: None,
+            }));
+        }
+
+        let approval = self
+            .request_release_publish_approval(release_artifacts, publish_target.clone())
+            .await?;
+
+        Ok(build_release_submit_response(ReleaseSubmitResponseInput {
+            status: DevflowReleaseSubmitStatus::PendingApproval,
+            summary: format!(
+                "waiting for devflow approval before release publish ({})",
+                release_submit_mode_label(params.mode)
+            ),
+            blockers: Vec::new(),
+            prep,
+            approval: Some(approval),
+            target: publish_target,
+            command,
+            exit_code: None,
+            published_at: None,
+        }))
+    }
+
     pub(crate) async fn project_test_commands_list(
         &self,
         params: DevflowProjectTestCommandsListParams,
@@ -1512,6 +1638,20 @@ impl DevflowRequestProcessor {
                                 message,
                             )
                             .await;
+                    });
+                }
+            }
+            PendingDevflowApprovalRequest::ReleasePublish(request) => {
+                if approval_decision_accepts(params.decision) {
+                    let processor = self.clone();
+                    let request = request.clone();
+                    tokio::spawn(async move {
+                        if let Err(err) = processor.finalize_release_publish(request).await {
+                            tracing::warn!(
+                                error = ?err,
+                                "failed to finalize devflow release publish"
+                            );
+                        }
                     });
                 }
             }
@@ -2625,7 +2765,8 @@ impl DevflowRequestProcessor {
                         PendingDevflowApprovalRequest::CommandExecution { .. }
                         | PendingDevflowApprovalRequest::FileChange { .. }
                         | PendingDevflowApprovalRequest::Permissions { .. }
-                        | PendingDevflowApprovalRequest::QualityGateWaive { .. } => false,
+                        | PendingDevflowApprovalRequest::QualityGateWaive { .. }
+                        | PendingDevflowApprovalRequest::ReleasePublish(_) => false,
                     }
                 })
                 .map(|record| record.approval.clone())
@@ -2693,6 +2834,134 @@ impl DevflowRequestProcessor {
         Ok(approval)
     }
 
+    async fn request_release_publish_approval(
+        &self,
+        artifacts: ReleasePublishArtifactRefs<'_>,
+        target: ReleasePublishTarget,
+    ) -> Result<DevflowApproval, JSONRPCErrorError> {
+        let existing_approval = {
+            let store = self.store.lock().await;
+            store
+                .approvals
+                .values()
+                .find(|record| {
+                    if record.approval.status != DevflowApprovalStatus::Pending {
+                        return false;
+                    }
+                    match &record.request {
+                        PendingDevflowApprovalRequest::ReleasePublish(request) => {
+                            request.project_root.as_str() == target.project_root.as_str()
+                                && request.commit_message_artifact_id.as_str()
+                                    == artifacts.commit_message.id.as_str()
+                                && request.pr_body_artifact_id.as_str()
+                                    == artifacts.pr_body.id.as_str()
+                                && request.release_note_artifact_id.as_str()
+                                    == artifacts.release_note.id.as_str()
+                                && request.mode == target.mode
+                                && request.remote.as_deref() == target.remote.as_deref()
+                                && request.branch.as_deref() == target.branch.as_deref()
+                        }
+                        PendingDevflowApprovalRequest::CommandExecution { .. }
+                        | PendingDevflowApprovalRequest::FileChange { .. }
+                        | PendingDevflowApprovalRequest::Permissions { .. }
+                        | PendingDevflowApprovalRequest::QualityGateWaive { .. }
+                        | PendingDevflowApprovalRequest::ArtifactDelivery { .. } => false,
+                    }
+                })
+                .map(|record| record.approval.clone())
+        };
+        if let Some(approval) = existing_approval {
+            return Ok(approval);
+        }
+
+        let (thread_id, turn_id, task_title) = {
+            let store = self.store.lock().await;
+            let record = store
+                .runs
+                .get(&artifacts.commit_message.run_id)
+                .ok_or_else(|| {
+                    invalid_request(format!(
+                        "unknown devflow run id for release publish approval: {}",
+                        artifacts.commit_message.run_id
+                    ))
+                })?;
+            let task = store
+                .tasks
+                .get(&artifacts.commit_message.task_id)
+                .ok_or_else(|| {
+                    internal_error(format!(
+                        "unknown devflow task id for release publish approval: {}",
+                        artifacts.commit_message.task_id
+                    ))
+                })?;
+            if !store.artifacts.contains_key(&artifacts.commit_message.id)
+                || !store.artifacts.contains_key(&artifacts.pr_body.id)
+                || !store.artifacts.contains_key(&artifacts.release_note.id)
+            {
+                return Err(invalid_request(
+                    "release publish requires persisted release prep artifacts".to_string(),
+                ));
+            }
+            (
+                record.run.thread_id.clone().unwrap_or_default(),
+                record.run.turn_id.clone().unwrap_or_default(),
+                task.title.clone(),
+            )
+        };
+        let approval = DevflowApproval {
+            id: Uuid::new_v4().to_string(),
+            project_id: target.project_root.clone(),
+            task_id: artifacts.commit_message.task_id.clone(),
+            run_id: artifacts.commit_message.run_id.clone(),
+            quality_gate_id: None,
+            request_id: format!("release-publish:{}", Uuid::new_v4()),
+            thread_id,
+            turn_id,
+            item_id: String::new(),
+            kind: DevflowApprovalKind::ReleasePublish,
+            status: DevflowApprovalStatus::Pending,
+            reason: Some(format!(
+                "Publish Devflow release for {} using {}",
+                task_title,
+                release_submit_mode_label(target.mode)
+            )),
+            command: Some(release_publish_command(target.mode).to_string()),
+            cwd: Some(target.project_root.clone()),
+            file_paths: vec![
+                artifacts.commit_message.path.clone(),
+                artifacts.pr_body.path.clone(),
+                artifacts.release_note.path.clone(),
+            ],
+            requested_permissions: None,
+            responded_at: None,
+            decision: None,
+            created_at: Utc::now().timestamp(),
+        };
+        let approval_record = DevflowApprovalRecord {
+            approval: approval.clone(),
+            request: PendingDevflowApprovalRequest::ReleasePublish(ReleasePublishApprovalRequest {
+                project_root: target.project_root,
+                commit_message_artifact_id: artifacts.commit_message.id.clone(),
+                pr_body_artifact_id: artifacts.pr_body.id.clone(),
+                release_note_artifact_id: artifacts.release_note.id.clone(),
+                mode: target.mode,
+                remote: target.remote,
+                branch: target.branch,
+            }),
+        };
+        {
+            let mut store = self.store.lock().await;
+            store
+                .approval_history
+                .insert(approval.id.clone(), approval.clone());
+            store
+                .approvals
+                .insert(approval_record.approval.id.clone(), approval_record.clone());
+        }
+        self.send_approval_requested(approval.clone()).await;
+        Ok(approval)
+    }
+
     async fn finalize_artifact_delivery(
         &self,
         artifact_id: String,
@@ -2710,6 +2979,167 @@ impl DevflowRequestProcessor {
             ArtifactDeliveryMode::HermesLegacy,
         )
         .await
+    }
+
+    async fn finalize_release_publish(
+        &self,
+        request: ReleasePublishApprovalRequest,
+    ) -> Result<DevflowArtifact, JSONRPCErrorError> {
+        let (
+            commit_message_artifact,
+            pr_body_artifact,
+            release_note_artifact,
+            task_title,
+            task_id,
+            run_id,
+        ) = {
+            let store = self.store.lock().await;
+            let commit_message_artifact = store
+                .artifacts
+                .get(&request.commit_message_artifact_id)
+                .cloned()
+                .ok_or_else(|| {
+                    invalid_request(format!(
+                        "unknown devflow artifact id for release publish: {}",
+                        request.commit_message_artifact_id
+                    ))
+                })?;
+            let pr_body_artifact = store
+                .artifacts
+                .get(&request.pr_body_artifact_id)
+                .cloned()
+                .ok_or_else(|| {
+                    invalid_request(format!(
+                        "unknown devflow artifact id for release publish: {}",
+                        request.pr_body_artifact_id
+                    ))
+                })?;
+            let release_note_artifact = store
+                .artifacts
+                .get(&request.release_note_artifact_id)
+                .cloned()
+                .ok_or_else(|| {
+                    invalid_request(format!(
+                        "unknown devflow artifact id for release publish: {}",
+                        request.release_note_artifact_id
+                    ))
+                })?;
+            if commit_message_artifact.task_id != pr_body_artifact.task_id
+                || commit_message_artifact.task_id != release_note_artifact.task_id
+                || commit_message_artifact.run_id != pr_body_artifact.run_id
+                || commit_message_artifact.run_id != release_note_artifact.run_id
+            {
+                return Err(invalid_request(
+                    "release publish artifacts must belong to the same task and run".to_string(),
+                ));
+            }
+            let task = store
+                .tasks
+                .get(&commit_message_artifact.task_id)
+                .ok_or_else(|| {
+                    internal_error(format!(
+                        "unknown devflow task id for release publish: {}",
+                        commit_message_artifact.task_id
+                    ))
+                })?;
+            let task_id = commit_message_artifact.task_id.clone();
+            let run_id = commit_message_artifact.run_id.clone();
+            (
+                commit_message_artifact,
+                pr_body_artifact,
+                release_note_artifact,
+                task.title.clone(),
+                task_id,
+                run_id,
+            )
+        };
+        if request.mode == DevflowReleaseSubmitMode::CommitAndPush && request.branch.is_none() {
+            return Err(invalid_request(
+                "release publish requires a branch for commit_and_push".to_string(),
+            ));
+        }
+
+        let result = run_release_publish(
+            Path::new(&request.project_root),
+            request.mode,
+            request.remote.as_deref(),
+            request.branch.as_deref(),
+            &commit_message_artifact,
+            &pr_body_artifact,
+            &release_note_artifact,
+        )
+        .await;
+        let artifact_id = Uuid::new_v4().to_string();
+        let exit_code = result
+            .exit_code
+            .map(|code| format!("exit code {code}"))
+            .unwrap_or_else(|| "exit code none".to_string());
+        let publish_summary = truncate(
+            &format!(
+                "Release publish {} with mode {} ({exit_code}): {}",
+                if result.succeeded {
+                    "submitted"
+                } else {
+                    "failed"
+                },
+                release_submit_mode_label(request.mode),
+                result.output_summary
+            ),
+            COMMAND_OUTPUT_SUMMARY_LIMIT,
+        );
+        let publish_report_artifact = DevflowArtifact {
+            id: artifact_id.clone(),
+            task_id: task_id.clone(),
+            run_id: run_id.clone(),
+            kind: DevflowArtifactKind::Report,
+            title: format!("Release publish report for {task_title}"),
+            path: artifact_file_path(
+                &request.project_root,
+                &run_id,
+                &format!("release-publish-{artifact_id}"),
+                "md",
+            )
+            .display()
+            .to_string(),
+            mime_type: "text/markdown".to_string(),
+            summary: publish_summary,
+            created_at: result.published_at,
+        };
+        write_artifact_file(Path::new(&publish_report_artifact.path), &result.report)
+            .await
+            .map_err(|err| {
+                internal_error(format!(
+                    "failed to write devflow release publish report: {err}"
+                ))
+            })?;
+
+        {
+            let mut store = self.store.lock().await;
+            if let Some(task) = store.tasks.get_mut(&task_id)
+                && !task.artifact_ids.contains(&publish_report_artifact.id)
+            {
+                task.artifact_ids.push(publish_report_artifact.id.clone());
+                task.updated_at = result.published_at;
+            }
+            if let Some(record) = store.runs.get_mut(&run_id)
+                && !record
+                    .run
+                    .artifact_ids
+                    .contains(&publish_report_artifact.id)
+            {
+                record
+                    .run
+                    .artifact_ids
+                    .push(publish_report_artifact.id.clone());
+            }
+            store.artifacts.insert(
+                publish_report_artifact.id.clone(),
+                publish_report_artifact.clone(),
+            );
+        }
+        self.send_artifact_created(publish_report_artifact.clone())
+            .await;
+        Ok(publish_report_artifact)
     }
 
     async fn artifact_delivery_context(
@@ -4798,7 +5228,8 @@ impl DevflowRequestProcessor {
                 (params.turn_id.clone(), params.item_id.clone())
             }
             PendingDevflowApprovalRequest::QualityGateWaive { .. }
-            | PendingDevflowApprovalRequest::ArtifactDelivery { .. } => {
+            | PendingDevflowApprovalRequest::ArtifactDelivery { .. }
+            | PendingDevflowApprovalRequest::ReleasePublish(_) => {
                 unreachable!("synthetic devflow approvals are not built through projection")
             }
         };
@@ -7797,6 +8228,40 @@ fn default_agent_id(task_kind: DevflowTaskKind) -> &'static str {
     }
 }
 
+struct ReleaseSubmitResponseInput {
+    status: DevflowReleaseSubmitStatus,
+    summary: String,
+    blockers: Vec<String>,
+    prep: DevflowReleasePrepCreateResponse,
+    approval: Option<DevflowApproval>,
+    target: ReleasePublishTarget,
+    command: String,
+    exit_code: Option<i32>,
+    published_at: Option<i64>,
+}
+
+fn build_release_submit_response(
+    input: ReleaseSubmitResponseInput,
+) -> DevflowReleaseSubmitResponse {
+    DevflowReleaseSubmitResponse {
+        status: input.status,
+        output_summary: input.summary.clone(),
+        summary: input.summary,
+        blockers: input.blockers,
+        commit_message_artifact: input.prep.commit_message_artifact,
+        pr_body_artifact: input.prep.pr_body_artifact,
+        release_note_artifact: input.prep.release_note_artifact,
+        approval: input.approval,
+        publish_report_artifact: None,
+        mode: input.target.mode,
+        remote: input.target.remote,
+        branch: input.target.branch,
+        command: input.command,
+        exit_code: input.exit_code,
+        published_at: input.published_at,
+    }
+}
+
 fn default_trigger_source(assigned_agent_id: Option<&str>) -> Option<String> {
     (assigned_agent_id == Some("hermes-automation")).then_some("hermes:manual".to_string())
 }
@@ -7831,6 +8296,7 @@ fn devflow_approval_grant(
     if !approval_decision_creates_grant(decision)
         || approval.kind == DevflowApprovalKind::QualityGateWaive
         || approval.kind == DevflowApprovalKind::ArtifactDelivery
+        || approval.kind == DevflowApprovalKind::ReleasePublish
     {
         return None;
     }
@@ -7873,7 +8339,8 @@ fn pending_approval_request_id(request: &PendingDevflowApprovalRequest) -> Optio
         | PendingDevflowApprovalRequest::FileChange { request_id, .. }
         | PendingDevflowApprovalRequest::Permissions { request_id, .. } => Some(request_id),
         PendingDevflowApprovalRequest::QualityGateWaive { .. }
-        | PendingDevflowApprovalRequest::ArtifactDelivery { .. } => None,
+        | PendingDevflowApprovalRequest::ArtifactDelivery { .. }
+        | PendingDevflowApprovalRequest::ReleasePublish(_) => None,
     }
 }
 
@@ -7948,6 +8415,9 @@ fn approval_response_value(
         )),
         PendingDevflowApprovalRequest::ArtifactDelivery { .. } => Err(invalid_request(
             "artifact delivery approvals do not use direct client approval callbacks".to_string(),
+        )),
+        PendingDevflowApprovalRequest::ReleasePublish(_) => Err(invalid_request(
+            "release publish approvals do not use direct client approval callbacks".to_string(),
         )),
     }
 }

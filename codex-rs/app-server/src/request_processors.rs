@@ -441,6 +441,7 @@ mod devflow_processor;
 mod devflow_project;
 mod devflow_quality_gate;
 mod devflow_release_prep;
+mod devflow_release_publish;
 mod devflow_review_findings;
 mod devflow_root_cause;
 mod devflow_store_persistence;

@@ -475,6 +475,7 @@ cargo test -p codex-app-server-protocol
 当前实现进展：
 
 - `devflowReleasePrep/create`、support bundle、大输出归档已接入 app-server v2；release prep 的 commit message / PR body / release note artifacts 以及长输出 `output_archive` 已纳入可重启恢复的 artifact store。
+- `devflowReleasePrep/submit` 已补上发布执行层：它会先复用 release-prep gate，再在 `release_publish` 审批通过后执行 `git add` / `git commit`，并在 `commit_and_push` 模式下继续 `git push origin <currentBranch>`；`devflowReleasePrep/create` 仍然只做只读 gate，不直接 mutate Git。
 - release prep 的 finish-branch gate 已接入 Integrator 证据和 Devflow store persistence 健康检查：有 managed worktree 的 implementation task 必须存在成功 merge report，当前 store snapshot load/persist error 会 fail-closed 阻止发布准备，PR body 会输出 Integrator、Persistence 和 finish-branch blockers，展示已合并/待合并任务以及发布前持久化健康状态。
 - support bundle 已输出 release prep 复现入口、release prep artifact 元数据、Integrator merge evidence 摘要，以及 persistence health 区块；该区块会列出 snapshot 路径、snapshot 文件 metadata、load/persist error、可恢复索引和仍保持进程内语义的易失状态。带 task scope 的 bundle 也会登记为可恢复的 `report` artifact 并推送 `devflowArtifact/created`，方便把发布阻塞原因导出给 Warp 或在 app-server 重启后继续排障。
 - task/run/quality gate/approval audit/artifact/watchdog runtime store 已快照到 `CODEX_HOME/devflow/store/state.json`，app-server 重启时会恢复这些索引。

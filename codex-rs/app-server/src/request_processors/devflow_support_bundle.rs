@@ -92,6 +92,7 @@ pub(crate) async fn create_devflow_support_bundle(
             "taskList": "devflowTask/list",
             "artifactList": "devflowArtifact/list",
             "releasePrepCreate": "devflowReleasePrep/create",
+            "releasePrepSubmit": "devflowReleasePrep/submit",
             "watchdogRead": "devflowWatchdog/read",
         },
         "createdAt": created_at,
@@ -248,6 +249,19 @@ fn release_prep_diagnostics(input: &DevflowSupportBundleInput) -> Value {
             })
         })
         .collect::<Vec<_>>();
+    let publish_reports = input
+        .artifacts
+        .iter()
+        .filter(|artifact| artifact.title.starts_with("Release publish report for "))
+        .map(|artifact| {
+            json!({
+                "id": &artifact.id,
+                "title": &artifact.title,
+                "path": &artifact.path,
+                "summary": &artifact.summary,
+            })
+        })
+        .collect::<Vec<_>>();
     let integrator_tasks = input
         .tasks
         .iter()
@@ -285,6 +299,7 @@ fn release_prep_diagnostics(input: &DevflowSupportBundleInput) -> Value {
         .count();
     json!({
         "artifacts": release_artifacts,
+        "publishReports": publish_reports,
         "integrator": {
             "counts": {
                 "merged": merged,
@@ -295,6 +310,7 @@ fn release_prep_diagnostics(input: &DevflowSupportBundleInput) -> Value {
         },
         "reproduction": {
             "create": "devflowReleasePrep/create",
+            "submit": "devflowReleasePrep/submit",
             "readArtifacts": "devflowArtifact/read",
         },
     })

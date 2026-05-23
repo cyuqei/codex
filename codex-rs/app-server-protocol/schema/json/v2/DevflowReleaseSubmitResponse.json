@@ -197,6 +197,77 @@
       ],
       "type": "string"
     },
+    "DevflowArtifact": {
+      "properties": {
+        "createdAt": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/DevflowArtifactKind"
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "runId": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "taskId": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "createdAt",
+        "id",
+        "kind",
+        "mimeType",
+        "path",
+        "runId",
+        "summary",
+        "taskId",
+        "title"
+      ],
+      "type": "object"
+    },
+    "DevflowArtifactKind": {
+      "enum": [
+        "context_pack",
+        "diff",
+        "delivery_receipt",
+        "output_archive",
+        "quality_gate_output",
+        "report",
+        "review_report",
+        "run_summary"
+      ],
+      "type": "string"
+    },
+    "DevflowReleaseSubmitMode": {
+      "enum": [
+        "commit_only",
+        "commit_and_push"
+      ],
+      "type": "string"
+    },
+    "DevflowReleaseSubmitStatus": {
+      "enum": [
+        "blocked",
+        "pending_approval"
+      ],
+      "type": "string"
+    },
     "FileSystemAccessMode": {
       "enum": [
         "read",
@@ -421,16 +492,94 @@
     }
   },
   "properties": {
-    "data": {
+    "approval": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DevflowApproval"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "blockers": {
       "items": {
-        "$ref": "#/definitions/DevflowApproval"
+        "type": "string"
       },
       "type": "array"
+    },
+    "branch": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "command": {
+      "type": "string"
+    },
+    "commitMessageArtifact": {
+      "$ref": "#/definitions/DevflowArtifact"
+    },
+    "exitCode": {
+      "format": "int32",
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "mode": {
+      "$ref": "#/definitions/DevflowReleaseSubmitMode"
+    },
+    "outputSummary": {
+      "type": "string"
+    },
+    "prBodyArtifact": {
+      "$ref": "#/definitions/DevflowArtifact"
+    },
+    "publishReportArtifact": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DevflowArtifact"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "publishedAt": {
+      "format": "int64",
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "releaseNoteArtifact": {
+      "$ref": "#/definitions/DevflowArtifact"
+    },
+    "remote": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "$ref": "#/definitions/DevflowReleaseSubmitStatus"
+    },
+    "summary": {
+      "type": "string"
     }
   },
   "required": [
-    "data"
+    "blockers",
+    "command",
+    "commitMessageArtifact",
+    "mode",
+    "outputSummary",
+    "prBodyArtifact",
+    "releaseNoteArtifact",
+    "status",
+    "summary"
   ],
-  "title": "DevflowApprovalListResponse",
+  "title": "DevflowReleaseSubmitResponse",
   "type": "object"
 }

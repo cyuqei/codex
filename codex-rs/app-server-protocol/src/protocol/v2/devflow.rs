@@ -289,6 +289,22 @@ pub enum DevflowReleasePrepStatus {
     Blocked,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, JsonSchema, TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(export_to = "v2/")]
+pub enum DevflowReleaseSubmitMode {
+    CommitOnly,
+    CommitAndPush,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, JsonSchema, TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(export_to = "v2/")]
+pub enum DevflowReleaseSubmitStatus {
+    Blocked,
+    PendingApproval,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default, JsonSchema, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export_to = "v2/")]
@@ -308,6 +324,43 @@ pub struct DevflowReleasePrepCreateResponse {
     pub commit_message_artifact: DevflowArtifact,
     pub pr_body_artifact: DevflowArtifact,
     pub release_note_artifact: DevflowArtifact,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export_to = "v2/")]
+pub struct DevflowReleaseSubmitParams {
+    pub project_root: String,
+    #[ts(optional = nullable)]
+    pub task_id: Option<String>,
+    pub mode: DevflowReleaseSubmitMode,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export_to = "v2/")]
+pub struct DevflowReleaseSubmitResponse {
+    pub status: DevflowReleaseSubmitStatus,
+    pub summary: String,
+    pub blockers: Vec<String>,
+    pub commit_message_artifact: DevflowArtifact,
+    pub pr_body_artifact: DevflowArtifact,
+    pub release_note_artifact: DevflowArtifact,
+    #[ts(type = "DevflowApproval | null")]
+    pub approval: Option<DevflowApproval>,
+    #[ts(type = "DevflowArtifact | null")]
+    pub publish_report_artifact: Option<DevflowArtifact>,
+    pub mode: DevflowReleaseSubmitMode,
+    #[ts(type = "string | null")]
+    pub remote: Option<String>,
+    #[ts(type = "string | null")]
+    pub branch: Option<String>,
+    pub command: String,
+    #[ts(type = "number | null")]
+    pub exit_code: Option<i32>,
+    pub output_summary: String,
+    #[ts(type = "bigint | null")]
+    pub published_at: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default, JsonSchema, TS)]
@@ -392,6 +445,7 @@ pub enum DevflowApprovalKind {
     Permissions,
     QualityGateWaive,
     ArtifactDelivery,
+    ReleasePublish,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, JsonSchema, TS)]

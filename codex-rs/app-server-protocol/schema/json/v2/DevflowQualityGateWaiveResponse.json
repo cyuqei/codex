@@ -185,7 +185,8 @@
         "file_change",
         "permissions",
         "quality_gate_waive",
-        "artifact_delivery"
+        "artifact_delivery",
+        "release_publish"
       ],
       "type": "string"
     },

@@ -60,6 +60,7 @@ use codex_app_server_protocol::DevflowQualityGateRerunParams;
 use codex_app_server_protocol::DevflowQualityGateRunParams;
 use codex_app_server_protocol::DevflowQualityGateWaiveParams;
 use codex_app_server_protocol::DevflowReleasePrepCreateParams;
+use codex_app_server_protocol::DevflowReleaseSubmitParams;
 use codex_app_server_protocol::DevflowSupportBundleCreateParams;
 use codex_app_server_protocol::DevflowTaskAssignParams;
 use codex_app_server_protocol::DevflowTaskCancelParams;
@@ -823,6 +824,15 @@ impl McpProcess {
     ) -> anyhow::Result<i64> {
         let params = Some(serde_json::to_value(params)?);
         self.send_request("devflowReleasePrep/create", params).await
+    }
+
+    /// Send a `devflowReleasePrep/submit` JSON-RPC request.
+    pub async fn send_devflow_release_prep_submit_request(
+        &mut self,
+        params: DevflowReleaseSubmitParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowReleasePrep/submit", params).await
     }
 
     /// Send a `devflowProject/testCommands/list` JSON-RPC request.

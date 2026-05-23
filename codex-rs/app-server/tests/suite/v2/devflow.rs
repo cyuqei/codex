@@ -109,6 +109,10 @@ use codex_app_server_protocol::DevflowQualityGateWaiveResponse;
 use codex_app_server_protocol::DevflowReleasePrepCreateParams;
 use codex_app_server_protocol::DevflowReleasePrepCreateResponse;
 use codex_app_server_protocol::DevflowReleasePrepStatus;
+use codex_app_server_protocol::DevflowReleaseSubmitMode;
+use codex_app_server_protocol::DevflowReleaseSubmitParams;
+use codex_app_server_protocol::DevflowReleaseSubmitResponse;
+use codex_app_server_protocol::DevflowReleaseSubmitStatus;
 use codex_app_server_protocol::DevflowRunCommandCompletedNotification;
 use codex_app_server_protocol::DevflowRunCommandStartedNotification;
 use codex_app_server_protocol::DevflowRunDiffUpdatedNotification;
@@ -5535,6 +5539,113 @@ async fn devflow_task_dispatch_auto_merges_clean_ready_worktree() -> Result<()> 
     let pr_body = std::fs::read_to_string(&pr_body_artifact.path)?;
     assert!(pr_body.contains("## Integrator"));
     assert!(pr_body.contains("Auto merge provider workstream: merged via"));
+
+    let submit_request_id = mcp
+        .send_devflow_release_prep_submit_request(DevflowReleaseSubmitParams {
+            project_root: project_root.path().display().to_string(),
+            task_id: Some(read_task.id.clone()),
+            mode: DevflowReleaseSubmitMode::CommitOnly,
+        })
+        .await?;
+    let submit_response: JSONRPCResponse = timeout(
+        DEFAULT_TIMEOUT,
+        mcp.read_stream_until_response_message(RequestId::Integer(submit_request_id)),
+    )
+    .await??;
+    let DevflowReleaseSubmitResponse {
+        status,
+        blockers,
+        approval,
+        commit_message_artifact,
+        pr_body_artifact: submit_pr_body_artifact,
+        release_note_artifact,
+        command,
+        remote,
+        branch,
+        ..
+    } = to_response(submit_response)?;
+    assert_eq!(status, DevflowReleaseSubmitStatus::PendingApproval);
+    assert!(blockers.is_empty());
+    assert!(command.contains("git commit -F"));
+    assert!(!command.contains("git push"));
+    assert!(remote.is_none());
+    assert_eq!(branch.as_deref(), Some("main"));
+    assert!(
+        commit_message_artifact
+            .summary
+            .contains("Release prep status: ready")
+    );
+    assert_eq!(submit_pr_body_artifact.kind, DevflowArtifactKind::Report);
+    assert_eq!(release_note_artifact.kind, DevflowArtifactKind::Report);
+
+    let approval = approval.expect("release publish approval");
+    assert_eq!(
+        approval.kind,
+        codex_app_server_protocol::DevflowApprovalKind::ReleasePublish
+    );
+    let approval_requested = timeout(DEFAULT_TIMEOUT, async {
+        loop {
+            let notification = mcp
+                .read_stream_until_notification_message("devflowApproval/requested")
+                .await?;
+            let payload: DevflowApprovalRequestedNotification =
+                serde_json::from_value(notification.params.expect("approval params"))?;
+            if payload.approval.id == approval.id {
+                return Ok::<_, anyhow::Error>(payload);
+            }
+        }
+    })
+    .await??;
+    assert_eq!(
+        approval_requested.approval.command.as_deref(),
+        Some(command.as_str())
+    );
+
+    let approval_request_id = mcp
+        .send_devflow_approval_respond_request(DevflowApprovalRespondParams {
+            id: approval.id.clone(),
+            decision: DevflowApprovalDecision::Accept,
+            scope: None,
+        })
+        .await?;
+    let approval_response: JSONRPCResponse = timeout(
+        DEFAULT_TIMEOUT,
+        mcp.read_stream_until_response_message(RequestId::Integer(approval_request_id)),
+    )
+    .await??;
+    let DevflowApprovalRespondResponse { approval } = to_response(approval_response)?;
+    assert_eq!(approval.status, DevflowApprovalStatus::Responded);
+
+    let publish_artifact_created = timeout(DEFAULT_TIMEOUT, async {
+        loop {
+            let notification = mcp
+                .read_stream_until_notification_message("devflowArtifact/created")
+                .await?;
+            let payload: DevflowArtifactCreatedNotification =
+                serde_json::from_value(notification.params.expect("artifact params"))?;
+            if payload
+                .artifact
+                .title
+                .starts_with("Release publish report for ")
+            {
+                return Ok::<_, anyhow::Error>(payload);
+            }
+        }
+    })
+    .await??;
+    let publish_report = std::fs::read_to_string(&publish_artifact_created.artifact.path)?;
+    assert!(publish_report.contains("Release publish report"));
+    assert!(publish_report.contains("Mode: commit_only"));
+    assert!(publish_report.contains("Command template:"));
+    assert!(publish_report.contains("Status: submitted"));
+
+    let git_commit_message = std::process::Command::new("git")
+        .args(["log", "-1", "--pretty=%B"])
+        .current_dir(project_root.path())
+        .output()?;
+    assert!(git_commit_message.status.success());
+    let git_commit_message = String::from_utf8(git_commit_message.stdout)?;
+    assert!(git_commit_message.contains("devflow: Auto merge provider workstream"));
 
     Ok(())
 }

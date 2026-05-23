@@ -178,6 +178,10 @@ export type { DevflowQualityGateWaiveResponse } from "./DevflowQualityGateWaiveR
 export type { DevflowReleasePrepCreateParams } from "./DevflowReleasePrepCreateParams";
 export type { DevflowReleasePrepCreateResponse } from "./DevflowReleasePrepCreateResponse";
 export type { DevflowReleasePrepStatus } from "./DevflowReleasePrepStatus";
+export type { DevflowReleaseSubmitMode } from "./DevflowReleaseSubmitMode";
+export type { DevflowReleaseSubmitParams } from "./DevflowReleaseSubmitParams";
+export type { DevflowReleaseSubmitResponse } from "./DevflowReleaseSubmitResponse";
+export type { DevflowReleaseSubmitStatus } from "./DevflowReleaseSubmitStatus";
 export type { DevflowRun } from "./DevflowRun";
 export type { DevflowRunCommandCompletedNotification } from "./DevflowRunCommandCompletedNotification";
 export type { DevflowRunCommandStartedNotification } from "./DevflowRunCommandStartedNotification";

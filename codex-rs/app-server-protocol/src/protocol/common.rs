@@ -857,6 +857,11 @@ client_request_definitions! {
         serialization: global("devflow"),
         response: v2::DevflowReleasePrepCreateResponse,
     },
+    DevflowReleasePrepSubmit => "devflowReleasePrep/submit" {
+        params: v2::DevflowReleaseSubmitParams,
+        serialization: global("devflow"),
+        response: v2::DevflowReleaseSubmitResponse,
+    },
     DevflowProjectTestCommandsList => "devflowProject/testCommands/list" {
         params: v2::DevflowProjectTestCommandsListParams,
         serialization: global("devflow"),

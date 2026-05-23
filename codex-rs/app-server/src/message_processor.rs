@@ -1316,6 +1316,11 @@ impl MessageProcessor {
                 .release_prep_create(params)
                 .await
                 .map(|response| Some(response.into())),
+            ClientRequest::DevflowReleasePrepSubmit { params, .. } => self
+                .devflow_processor
+                .release_prep_submit(params)
+                .await
+                .map(|response| Some(response.into())),
             ClientRequest::DevflowProjectTestCommandsList { params, .. } => self
                 .devflow_processor
                 .project_test_commands_list(params)

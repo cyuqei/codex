@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowReleaseSubmitMode": {
+      "enum": [
+        "commit_only",
+        "commit_and_push"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "mode": {
+      "$ref": "#/definitions/DevflowReleaseSubmitMode"
+    },
+    "projectRoot": {
+      "type": "string"
+    },
+    "taskId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "mode",
+    "projectRoot"
+  ],
+  "title": "DevflowReleaseSubmitParams",
+  "type": "object"
+}

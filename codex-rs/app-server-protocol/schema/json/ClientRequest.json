@@ -1182,6 +1182,34 @@
       ],
       "type": "object"
     },
+    "DevflowReleaseSubmitMode": {
+      "enum": [
+        "commit_only",
+        "commit_and_push"
+      ],
+      "type": "string"
+    },
+    "DevflowReleaseSubmitParams": {
+      "properties": {
+        "mode": {
+          "$ref": "#/definitions/DevflowReleaseSubmitMode"
+        },
+        "projectRoot": {
+          "type": "string"
+        },
+        "taskId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "mode",
+        "projectRoot"
+      ],
+      "type": "object"
+    },
     "DevflowSupportBundleCreateParams": {
       "properties": {
         "projectRoot": {
@@ -7652,6 +7680,30 @@
         "params"
       ],
       "title": "DevflowReleasePrep/createRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowReleasePrep/submit"
+          ],
+          "title": "DevflowReleasePrep/submitRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowReleaseSubmitParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowReleasePrep/submitRequest",
       "type": "object"
     },
     {
