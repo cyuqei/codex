@@ -19,6 +19,8 @@ use codex_app_server_protocol::DevflowApprovalKind;
 use codex_app_server_protocol::DevflowApprovalListParams;
 use codex_app_server_protocol::DevflowApprovalRequestedNotification;
 use codex_app_server_protocol::DevflowApprovalRespondParams;
+use codex_app_server_protocol::DevflowArtifactCreatedNotification;
+use codex_app_server_protocol::DevflowArtifactKind;
 use codex_app_server_protocol::DevflowRun;
 use codex_app_server_protocol::DevflowRunStatus;
 use codex_app_server_protocol::DevflowTask;
@@ -28,14 +30,24 @@ use codex_app_server_protocol::DevflowTaskStatus;
 use codex_app_server_protocol::FileSystemAccessMode;
 use codex_app_server_protocol::FileSystemPath;
 use codex_app_server_protocol::FileSystemSandboxEntry;
+use codex_app_server_protocol::ItemCompletedNotification;
 use codex_app_server_protocol::JSONRPCErrorError;
 use codex_app_server_protocol::PermissionGrantScope;
 use codex_app_server_protocol::PermissionsRequestApprovalParams;
 use codex_app_server_protocol::PermissionsRequestApprovalResponse;
 use codex_app_server_protocol::RequestId;
 use codex_app_server_protocol::RequestPermissionProfile;
+use codex_app_server_protocol::ReviewCodeLocation;
+use codex_app_server_protocol::ReviewFinding;
+use codex_app_server_protocol::ReviewLineRange;
+use codex_app_server_protocol::ReviewOutput;
 use codex_app_server_protocol::ServerNotification;
 use codex_app_server_protocol::ServerRequestPayload;
+use codex_app_server_protocol::ThreadItem;
+use codex_app_server_protocol::Turn;
+use codex_app_server_protocol::TurnCompletedNotification;
+use codex_app_server_protocol::TurnItemsView;
+use codex_app_server_protocol::TurnStatus;
 use codex_arg0::Arg0DispatchPaths;
 use codex_config::CloudRequirementsLoader;
 use codex_config::LoaderOverrides;
@@ -425,5 +437,125 @@ async fn accept_for_project_auto_responds_to_matching_approval_in_sibling_task()
         list.data[0].decision,
         Some(DevflowApprovalDecision::AcceptForProject)
     );
+    Ok(())
+}
+
+#[tokio::test]
+async fn review_turn_completion_preserves_structured_review_output() -> Result<()> {
+    let tempdir = TempDir::new()?;
+    let (processor, _outgoing, mut rx) = build_processor().await?;
+    let (task_id, run_id) = seed_task_and_run_for_thread(
+        &processor,
+        &tempdir.path().display().to_string(),
+        "thread-1",
+        "turn-1",
+        ConnectionId(1),
+    )
+    .await?;
+
+    {
+        let mut store = processor.store.lock().await;
+        let task = store
+            .tasks
+            .get_mut(&task_id)
+            .expect("seeded task should exist");
+        task.kind = DevflowTaskKind::Review;
+        task.title = "Codex reviewer".to_string();
+        task.objective = "Review the diff and preserve structured findings.".to_string();
+        task.assigned_agent_id = Some("codex-reviewer".to_string());
+        let run = store
+            .runs
+            .get_mut(&run_id)
+            .expect("seeded run should exist");
+        run.run.agent_id = "codex-reviewer".to_string();
+    }
+
+    let review_output = ReviewOutput {
+        findings: vec![ReviewFinding {
+            title: "Prefer explicit review finding state".to_string(),
+            body: "Keep structured findings in the persisted ReviewReport.".to_string(),
+            confidence_score: 0.95,
+            priority: 1,
+            code_location: ReviewCodeLocation {
+                absolute_file_path: tempdir.path().join("note.txt").display().to_string(),
+                line_range: ReviewLineRange { start: 1, end: 1 },
+            },
+        }],
+        overall_correctness: "needs_work".to_string(),
+        overall_explanation: "Structured reviewer output should survive turn completion."
+            .to_string(),
+        overall_confidence_score: 0.82,
+    };
+
+    processor
+        .handle_item_completed(ItemCompletedNotification {
+            thread_id: "thread-1".to_string(),
+            turn_id: "turn-1".to_string(),
+            completed_at_ms: 1,
+            item: ThreadItem::ExitedReviewMode {
+                id: "turn-1".to_string(),
+                review: "Structured reviewer output should survive turn completion.".to_string(),
+                review_output: Some(review_output.clone()),
+            },
+        })
+        .await;
+
+    let review_artifact = timeout(Duration::from_secs(5), async {
+        loop {
+            let envelope = rx.recv().await.expect("outgoing envelope");
+            let OutgoingEnvelope::Broadcast { message } = envelope else {
+                continue;
+            };
+            let OutgoingMessage::AppServerNotification(ServerNotification::DevflowArtifactCreated(
+                notification,
+            )) = message
+            else {
+                continue;
+            };
+            let DevflowArtifactCreatedNotification { artifact, .. } = notification;
+            if artifact.kind == DevflowArtifactKind::ReviewReport {
+                return Ok::<_, anyhow::Error>(artifact);
+            }
+        }
+    })
+    .await??;
+    assert!(review_artifact.summary.contains("status=open"));
+
+    let artifact_id = review_artifact.id.clone();
+    let before_contents = std::fs::read_to_string(&review_artifact.path)?;
+    assert!(before_contents.contains("Prefer explicit review finding state"));
+    assert!(before_contents.contains("Structured reviewer output should survive turn completion."));
+
+    processor
+        .handle_turn_completed(TurnCompletedNotification {
+            thread_id: "thread-1".to_string(),
+            turn: Turn {
+                id: "turn-1".to_string(),
+                items: vec![ThreadItem::AgentMessage {
+                    id: "assistant-1".to_string(),
+                    text: "fallback text that should not overwrite structured findings".to_string(),
+                    phase: None,
+                    memory_citation: None,
+                }],
+                items_view: TurnItemsView::Full,
+                status: TurnStatus::Completed,
+                error: None,
+                started_at: None,
+                completed_at: Some(2),
+                duration_ms: Some(1),
+            },
+        })
+        .await;
+
+    let after_contents = std::fs::read_to_string(&review_artifact.path)?;
+    assert_eq!(before_contents, after_contents);
+
+    let store = processor.store.lock().await;
+    let artifact = store
+        .artifacts
+        .get(&artifact_id)
+        .expect("review artifact should remain stored");
+    assert_eq!(artifact.summary, review_artifact.summary);
+    assert_eq!(artifact.id, review_artifact.id);
     Ok(())
 }

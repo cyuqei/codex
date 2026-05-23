@@ -3425,17 +3425,17 @@ impl DevflowRequestProcessor {
             && let Some(worktree) = self
                 .refresh_conflict_repair_worktree_base(&task, &worktree)
                 .await?
-            {
-                self.outgoing
-                    .send_server_notification(ServerNotification::DevflowWorktreeStatusChanged(
-                        DevflowWorktreeStatusChangedNotification {
-                            worktree: worktree.clone(),
-                        },
-                    ))
-                    .await;
-                managed_worktree = Some(worktree);
-                conflict_repair_base_refreshed = true;
-            }
+        {
+            self.outgoing
+                .send_server_notification(ServerNotification::DevflowWorktreeStatusChanged(
+                    DevflowWorktreeStatusChangedNotification {
+                        worktree: worktree.clone(),
+                    },
+                ))
+                .await;
+            managed_worktree = Some(worktree);
+            conflict_repair_base_refreshed = true;
+        }
         let agent_id = task
             .assigned_agent_id
             .clone()
@@ -5035,7 +5035,14 @@ impl DevflowRequestProcessor {
             return;
         };
 
-        let (task_id, original_turn_id, task_kind, review_requested, requested_stop) = {
+        let (
+            task_id,
+            original_turn_id,
+            task_kind,
+            review_requested,
+            review_artifact_recorded,
+            requested_stop,
+        ) = {
             let store = self.store.lock().await;
             let Some(record) = store.runs.get(&run_id) else {
                 return;
@@ -5043,11 +5050,17 @@ impl DevflowRequestProcessor {
             let Some(task) = store.tasks.get(&record.run.task_id) else {
                 return;
             };
+            let review_artifact_recorded = record.review_completed
+                && record
+                    .review_artifact_id
+                    .as_deref()
+                    .is_some_and(|artifact_id| store.artifacts.contains_key(artifact_id));
             (
                 task.id.clone(),
                 record.run.turn_id.clone(),
                 task.kind,
                 record.review_requested,
+                review_artifact_recorded,
                 record.requested_stop,
             )
         };
@@ -5082,6 +5095,10 @@ impl DevflowRequestProcessor {
                 return;
             }
             if task_kind == codex_app_server_protocol::DevflowTaskKind::Review {
+                if review_artifact_recorded {
+                    self.finalize_ready_for_review(&run_id).await;
+                    return;
+                }
                 let review = payload
                     .turn
                     .items
