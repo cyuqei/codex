@@ -3400,6 +3400,30 @@
             },
             "method": {
               "enum": [
+                "devflowWatchdog/reconcile"
+              ],
+              "title": "DevflowWatchdog/reconcileRequestMethod",
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/definitions/DevflowWatchdogReconcileParams"
+            }
+          },
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "title": "DevflowWatchdog/reconcileRequest",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/RequestId"
+            },
+            "method": {
+              "enum": [
                 "devflowArtifact/list"
               ],
               "title": "DevflowArtifact/listRequestMethod",
@@ -9302,6 +9326,75 @@
         "status"
       ],
       "title": "DevflowWatchdogReadResponse",
+      "type": "object"
+    },
+    "DevflowWatchdogReconcileParams": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "limit": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "projectId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "projectId"
+      ],
+      "title": "DevflowWatchdogReconcileParams",
+      "type": "object"
+    },
+    "DevflowWatchdogReconcileResponse": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "blocked": {
+          "items": {
+            "$ref": "#/definitions/DevflowTaskDispatchBlocked"
+          },
+          "type": "array"
+        },
+        "integratorArtifact": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DevflowArtifact"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "projectId": {
+          "type": "string"
+        },
+        "skipped": {
+          "items": {
+            "$ref": "#/definitions/DevflowTaskDispatchSkipped"
+          },
+          "type": "array"
+        },
+        "started": {
+          "items": {
+            "$ref": "#/definitions/DevflowTaskDispatchStarted"
+          },
+          "type": "array"
+        },
+        "summary": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "blocked",
+        "projectId",
+        "skipped",
+        "started",
+        "summary"
+      ],
+      "title": "DevflowWatchdogReconcileResponse",
       "type": "object"
     },
     "DevflowWatchdogStatus": {

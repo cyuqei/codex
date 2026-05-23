@@ -154,6 +154,8 @@ use codex_app_server_protocol::DevflowWatchdogAlertsParams;
 use codex_app_server_protocol::DevflowWatchdogAlertsResponse;
 use codex_app_server_protocol::DevflowWatchdogReadParams;
 use codex_app_server_protocol::DevflowWatchdogReadResponse;
+use codex_app_server_protocol::DevflowWatchdogReconcileParams;
+use codex_app_server_protocol::DevflowWatchdogReconcileResponse;
 use codex_app_server_protocol::DevflowWatchdogStatus;
 use codex_app_server_protocol::DevflowWorktreeCleanupParams;
 use codex_app_server_protocol::DevflowWorktreeCleanupResponse;
@@ -5278,7 +5280,9 @@ async fn devflow_task_dispatch_starts_ready_implementation_tasks_and_reports_int
             && response.task.assigned_agent_id.as_deref() == Some("codex-reviewer")
     }));
     assert!(review_blocked.iter().any(|item| {
-        item.task_id == dependent_task.id && item.reason == "already blocked; requires dependency resolution, approval, or explicit conflict-repair dispatch"
+        item.task_id == dependent_task.id
+            && item.reason
+                == "already blocked; requires dependency resolution, approval, or a conflict-repair action"
     }));
     assert!(review_skipped.iter().any(|item| {
         item.task_id == tasks[0].id && item.status == DevflowTaskStatus::ReadyToMerge
@@ -6718,24 +6722,29 @@ async fn devflow_worktree_merge_applies_clean_diff_and_blocks_conflicts() -> Res
         &["commit", "-m", "resolve mainline conflict"],
     )?;
 
-    let repair_dispatch_request_id = mcp
-        .send_devflow_task_dispatch_request(DevflowTaskDispatchParams {
-            project_id: None,
-            task_ids: Some(vec![blocked_task.id.clone()]),
+    let repair_reconcile_request_id = mcp
+        .send_devflow_watchdog_reconcile_request(DevflowWatchdogReconcileParams {
+            project_id: project_root.path().display().to_string(),
             limit: Some(1),
         })
         .await?;
-    let repair_dispatch_response: JSONRPCResponse = timeout(
+    let repair_reconcile_response: JSONRPCResponse = timeout(
         DEFAULT_TIMEOUT,
-        mcp.read_stream_until_response_message(RequestId::Integer(repair_dispatch_request_id)),
+        mcp.read_stream_until_response_message(RequestId::Integer(repair_reconcile_request_id)),
     )
     .await??;
-    let DevflowTaskDispatchResponse {
+    let DevflowWatchdogReconcileResponse {
+        project_id,
+        summary,
         started,
         skipped,
         blocked,
+        integrator_artifact,
         ..
-    } = to_response(repair_dispatch_response)?;
+    } = to_response(repair_reconcile_response)?;
+    assert_eq!(project_id, project_root.path().display().to_string());
+    assert!(summary.contains("watchdog reconcile selected 1 repairable blocked conflict task"));
+    assert!(integrator_artifact.is_some());
     assert_eq!(started.len(), 1);
     assert!(skipped.is_empty());
     assert!(blocked.is_empty());

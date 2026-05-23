@@ -1042,6 +1042,11 @@ client_request_definitions! {
         serialization: global("devflow"),
         response: v2::DevflowWatchdogAlertsResponse,
     },
+    DevflowWatchdogReconcile => "devflowWatchdog/reconcile" {
+        params: v2::DevflowWatchdogReconcileParams,
+        serialization: global("devflow"),
+        response: v2::DevflowWatchdogReconcileResponse,
+    },
     DevflowArtifactList => "devflowArtifact/list" {
         params: v2::DevflowArtifactListParams,
         serialization: global("devflow"),

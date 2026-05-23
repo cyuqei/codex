@@ -816,6 +816,28 @@ pub struct DevflowWatchdogAlertsResponse {
     pub next_cursor: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export_to = "v2/")]
+pub struct DevflowWatchdogReconcileParams {
+    pub project_id: String,
+    #[ts(optional = nullable)]
+    pub limit: Option<u32>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export_to = "v2/")]
+pub struct DevflowWatchdogReconcileResponse {
+    pub project_id: String,
+    pub summary: String,
+    pub started: Vec<DevflowTaskDispatchStarted>,
+    pub skipped: Vec<DevflowTaskDispatchSkipped>,
+    pub blocked: Vec<DevflowTaskDispatchBlocked>,
+    #[ts(type = "DevflowArtifact | null")]
+    pub integrator_artifact: Option<DevflowArtifact>,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, JsonSchema, TS)]
 #[serde(rename_all = "snake_case")]
 #[ts(export_to = "v2/")]

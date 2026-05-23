@@ -1864,7 +1864,7 @@ fn default_capability_packs() -> Vec<DevflowCapabilityPack> {
             "watchdogQueue".to_string(),
         ],
         diagnostics: vec![
-            "health, browseQa, review, benchmark, canary, and watchdogQueue are wired through the Codex-owned pack runner; health, browseQa, benchmark, and canary can create watchdog alerts and failed quality gates, review records a static diff-intake artifact, and watchdogQueue projects running/no-progress/timed-out/blocked queue summaries."
+            "health, browseQa, review, benchmark, canary, and watchdogQueue are wired through the Codex-owned pack runner; health, browseQa, benchmark, and canary can create watchdog alerts and failed quality gates, review records a static diff-intake artifact, watchdogQueue projects running/no-progress/timed-out/blocked queue summaries, and devflowWatchdog/reconcile provides the bounded recovery action for repairable Integrator conflicts."
                 .to_string(),
         ],
     }]

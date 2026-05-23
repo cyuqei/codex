@@ -1546,6 +1546,25 @@
     "DevflowWatchdogReadParams": {
       "type": "object"
     },
+    "DevflowWatchdogReconcileParams": {
+      "properties": {
+        "limit": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "projectId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "projectId"
+      ],
+      "type": "object"
+    },
     "DevflowWatchdogStatus": {
       "enum": [
         "idle",
@@ -8568,6 +8587,30 @@
         "params"
       ],
       "title": "DevflowWatchdog/alertsRequest",
+      "type": "object"
+    },
+    {
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "enum": [
+            "devflowWatchdog/reconcile"
+          ],
+          "title": "DevflowWatchdog/reconcileRequestMethod",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/DevflowWatchdogReconcileParams"
+        }
+      },
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "title": "DevflowWatchdog/reconcileRequest",
       "type": "object"
     },
     {

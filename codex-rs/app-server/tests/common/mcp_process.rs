@@ -75,6 +75,7 @@ use codex_app_server_protocol::DevflowTaskResumeParams;
 use codex_app_server_protocol::DevflowTaskStartParams;
 use codex_app_server_protocol::DevflowWatchdogAlertsParams;
 use codex_app_server_protocol::DevflowWatchdogReadParams;
+use codex_app_server_protocol::DevflowWatchdogReconcileParams;
 use codex_app_server_protocol::DevflowWorktreeCleanupParams;
 use codex_app_server_protocol::DevflowWorktreeCreateParams;
 use codex_app_server_protocol::DevflowWorktreeDiffParams;
@@ -1163,6 +1164,15 @@ impl McpProcess {
     ) -> anyhow::Result<i64> {
         let params = Some(serde_json::to_value(params)?);
         self.send_request("devflowWatchdog/alerts", params).await
+    }
+
+    /// Send a `devflowWatchdog/reconcile` JSON-RPC request.
+    pub async fn send_devflow_watchdog_reconcile_request(
+        &mut self,
+        params: DevflowWatchdogReconcileParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowWatchdog/reconcile", params).await
     }
 
     /// Send a `devflowArtifact/list` JSON-RPC request.

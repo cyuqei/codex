@@ -141,6 +141,8 @@ use codex_app_server_protocol::DevflowTaskStatusChangedNotification;
 use codex_app_server_protocol::DevflowWatchdogAlert;
 use codex_app_server_protocol::DevflowWatchdogAlertCreatedNotification;
 use codex_app_server_protocol::DevflowWatchdogAlertSeverity;
+use codex_app_server_protocol::DevflowWatchdogReconcileParams;
+use codex_app_server_protocol::DevflowWatchdogReconcileResponse;
 use codex_app_server_protocol::DevflowWatchdogStatus;
 use codex_app_server_protocol::DevflowWorktree;
 use codex_app_server_protocol::DevflowWorktreeCleanupParams;
@@ -2021,9 +2023,7 @@ impl DevflowRequestProcessor {
                             let repair_eligible =
                                 requested_task_ids.as_ref().is_some_and(|task_ids| {
                                     task_ids.contains(&task.id)
-                                        && dependencies.is_empty()
-                                        && latest_integrator_conflict_report(&store, &task)
-                                            .is_some()
+                                        && conflict_repair_eligible(&store, &task)
                                 });
                             if repair_eligible && ready_tasks.len() < limit {
                                 ready_tasks.push(task);
@@ -2039,7 +2039,7 @@ impl DevflowRequestProcessor {
                                     task_id: task.id.clone(),
                                     title: task.title.clone(),
                                     dependencies,
-                                    reason: "already blocked; requires dependency resolution, approval, or explicit conflict-repair dispatch"
+                                    reason: "already blocked; requires dependency resolution, approval, or a conflict-repair action"
                                         .to_string(),
                                 });
                             }
@@ -7220,6 +7220,82 @@ impl DevflowRequestProcessor {
         }
     }
 
+    pub(crate) async fn watchdog_reconcile(
+        &self,
+        params: DevflowWatchdogReconcileParams,
+    ) -> Result<DevflowWatchdogReconcileResponse, JSONRPCErrorError> {
+        let project_id = params.project_id.trim();
+        if project_id.is_empty() {
+            return Err(invalid_request("project_id must not be empty".to_string()));
+        }
+        let project_id = project_id.to_string();
+        let limit = params
+            .limit
+            .map(|limit| limit as usize)
+            .unwrap_or(DEVFLOW_DISPATCH_DEFAULT_LIMIT);
+        if limit == 0 {
+            return Err(invalid_request("limit must be greater than 0".to_string()));
+        }
+        let limit = limit.min(DEVFLOW_DISPATCH_MAX_LIMIT);
+
+        let repair_task_ids = {
+            let store = self.store.lock().await;
+            let mut candidates = store
+                .tasks
+                .values()
+                .filter(|task| task.project_id == project_id)
+                .filter(|task| conflict_repair_eligible(&store, task))
+                .cloned()
+                .collect::<Vec<_>>();
+            candidates.sort_by(|a, b| {
+                a.updated_at
+                    .cmp(&b.updated_at)
+                    .then_with(|| a.id.cmp(&b.id))
+            });
+            candidates
+                .into_iter()
+                .take(limit)
+                .map(|task| task.id)
+                .collect::<Vec<_>>()
+        };
+
+        if repair_task_ids.is_empty() {
+            return Ok(DevflowWatchdogReconcileResponse {
+                project_id: project_id.clone(),
+                summary: format!(
+                    "watchdog reconcile found no repairable blocked conflict tasks for project {project_id}"
+                ),
+                started: Vec::new(),
+                skipped: Vec::new(),
+                blocked: Vec::new(),
+                integrator_artifact: None,
+            });
+        }
+
+        let selected_count = repair_task_ids.len();
+        let dispatch = self
+            .task_dispatch(DevflowTaskDispatchParams {
+                project_id: None,
+                task_ids: Some(repair_task_ids),
+                limit: Some(limit as u32),
+            })
+            .await?;
+        let summary = format!(
+            "watchdog reconcile selected {selected_count} repairable blocked conflict task(s) for project {project_id}; started {}, skipped {}, blocked {}",
+            dispatch.started.len(),
+            dispatch.skipped.len(),
+            dispatch.blocked.len()
+        );
+        Ok(DevflowWatchdogReconcileResponse {
+            project_id,
+            summary,
+            started: dispatch.started,
+            skipped: dispatch.skipped,
+            blocked: dispatch.blocked,
+            integrator_artifact: dispatch.integrator_artifact,
+        })
+    }
+
     pub(super) async fn record_capability_pack_quality_gate(
         &self,
         target: &DevflowCapabilityPackTarget,
@@ -8080,6 +8156,13 @@ fn latest_integrator_conflict_report(
                 && artifact.summary.starts_with("Integrator blocked ")
         })
         .cloned()
+}
+
+fn conflict_repair_eligible(store: &DevflowStore, task: &DevflowTask) -> bool {
+    task.kind == DevflowTaskKind::Implementation
+        && task.status == DevflowTaskStatus::Blocked
+        && unresolved_dependencies(store, task).is_empty()
+        && latest_integrator_conflict_report(store, task).is_some()
 }
 
 fn completed_task_status(

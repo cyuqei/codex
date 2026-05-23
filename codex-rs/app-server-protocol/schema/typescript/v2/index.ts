@@ -230,6 +230,8 @@ export type { DevflowWatchdogAlertsParams } from "./DevflowWatchdogAlertsParams"
 export type { DevflowWatchdogAlertsResponse } from "./DevflowWatchdogAlertsResponse";
 export type { DevflowWatchdogReadParams } from "./DevflowWatchdogReadParams";
 export type { DevflowWatchdogReadResponse } from "./DevflowWatchdogReadResponse";
+export type { DevflowWatchdogReconcileParams } from "./DevflowWatchdogReconcileParams";
+export type { DevflowWatchdogReconcileResponse } from "./DevflowWatchdogReconcileResponse";
 export type { DevflowWatchdogStatus } from "./DevflowWatchdogStatus";
 export type { DevflowWorktree } from "./DevflowWorktree";
 export type { DevflowWorktreeCleanupParams } from "./DevflowWorktreeCleanupParams";

@@ -1501,6 +1501,11 @@ impl MessageProcessor {
                 .watchdog_alerts(params)
                 .await
                 .map(|response| Some(response.into())),
+            ClientRequest::DevflowWatchdogReconcile { params, .. } => self
+                .devflow_processor
+                .watchdog_reconcile(params)
+                .await
+                .map(|response| Some(response.into())),
             ClientRequest::DevflowArtifactList { params, .. } => self
                 .devflow_processor
                 .artifact_list(params)
