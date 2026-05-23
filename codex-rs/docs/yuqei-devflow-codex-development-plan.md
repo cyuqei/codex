@@ -63,7 +63,7 @@ Codex 不负责：
 - `codex-rs/app-server/src/request_processors/devflow_approval.rs`
 - `codex-rs/app-server/tests/suite/v2/devflow.rs`
 
-需要注意：当前部分 Devflow 代码还保留 Claude / Hermes runtime，以及外部 artifact delivery / agent adapter 设计。新路线中这些外部消息能力应被迁移、废弃或隔离为 legacy；Codex 主路径可以保留本地 handoff / receipt，但不应把外发消息能力当成主链路必需项。
+需要注意：当前部分 Devflow 代码还保留 Claude / Hermes runtime，以及外部 artifact delivery / agent adapter 设计。新路线中这些外部消息能力应被迁移、废弃或隔离为 legacy；Codex 主路径可以保留本地 handoff / receipt，但不应把外发消息能力当成主链路必需项。legacy Claude/Hermes 任务如果要从 `devflowTask/start` 进入，必须携带显式 migration trigger source（例如 `legacy:manual` 或 `hermes:*`），不能只靠 agent id 自动落到主链路。
 
 ## 4. 核心原则
 

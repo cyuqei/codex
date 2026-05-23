@@ -1710,9 +1710,7 @@ impl DevflowRequestProcessor {
             project_id: params.project_root,
             title: params.title,
             objective: params.objective,
-            trigger_source: params
-                .trigger_source
-                .or_else(|| default_trigger_source(params.assigned_agent_id.as_deref())),
+            trigger_source: params.trigger_source,
             status: DevflowTaskStatus::Planned,
             kind: params.kind,
             risk_level: params.risk_level,
@@ -3940,6 +3938,15 @@ impl DevflowRequestProcessor {
             (DevflowTaskKind::Report, "claude-writer")
                 | (DevflowTaskKind::Review, "claude-reviewer")
         );
+        if uses_legacy_automation_agent || uses_legacy_text_agent {
+            let trigger_source = task.trigger_source.as_deref();
+            if !is_migration_trigger_source(trigger_source) {
+                return Err(invalid_request(format!(
+                    "legacy devflow tasks must declare an explicit migration triggerSource before start: {}",
+                    task.id
+                )));
+            }
+        }
         let input = self
             .build_devflow_task_input(&task, prompt_override)
             .await
@@ -4398,9 +4405,6 @@ impl DevflowRequestProcessor {
                 invalid_request(format!("unknown devflow task id: {}", params.id))
             })?;
             task.assigned_agent_id = params.assigned_agent_id;
-            if task.trigger_source.is_none() {
-                task.trigger_source = default_trigger_source(task.assigned_agent_id.as_deref());
-            }
             task.updated_at = Utc::now().timestamp();
             task.clone()
         };
@@ -8345,12 +8349,10 @@ fn build_release_submit_response(
     }
 }
 
-fn default_trigger_source(assigned_agent_id: Option<&str>) -> Option<String> {
-    match assigned_agent_id {
-        Some("hermes-automation") => Some("hermes:manual".to_string()),
-        Some("claude-writer") | Some("claude-reviewer") => Some("legacy:manual".to_string()),
-        _ => None,
-    }
+fn is_migration_trigger_source(trigger_source: Option<&str>) -> bool {
+    trigger_source.is_some_and(|trigger_source| {
+        trigger_source.starts_with("legacy:") || trigger_source.starts_with("hermes:")
+    })
 }
 
 fn approval_decision_accepts(decision: DevflowApprovalDecision) -> bool {

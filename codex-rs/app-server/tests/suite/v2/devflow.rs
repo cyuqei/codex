@@ -1797,7 +1797,7 @@ async fn devflow_legacy_claude_report_task_creates_report_artifact() -> Result<(
             objective: "Write a short release summary for the current project.".to_string(),
             kind: DevflowTaskKind::Report,
             risk_level: DevflowTaskRiskLevel::Low,
-            trigger_source: None,
+            trigger_source: Some("legacy:manual".to_string()),
             dependencies: None,
             assigned_agent_id: Some("claude-writer".to_string()),
         })
@@ -1887,6 +1887,62 @@ async fn devflow_legacy_claude_report_task_creates_report_artifact() -> Result<(
     assert!(prompt_args.contains("Summarize rollout"));
     assert!(execution_cwd.contains(project_root.path().to_str().expect("utf-8 path")));
     assert!(report_body.contains("Release Summary"));
+    Ok(())
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn devflow_legacy_report_task_requires_explicit_migration_trigger_source() -> Result<()> {
+    let codex_home = TempDir::new()?;
+    let project_root = TempDir::new()?;
+
+    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
+
+    let create_request_id = mcp
+        .send_devflow_task_create_request(DevflowTaskCreateParams {
+            project_root: project_root.path().display().to_string(),
+            title: "Summarize rollout".to_string(),
+            objective: "Write a short release summary for the current project.".to_string(),
+            kind: DevflowTaskKind::Report,
+            risk_level: DevflowTaskRiskLevel::Low,
+            trigger_source: None,
+            dependencies: None,
+            assigned_agent_id: Some("claude-writer".to_string()),
+        })
+        .await?;
+    let create_response: JSONRPCResponse = timeout(
+        DEFAULT_TIMEOUT,
+        mcp.read_stream_until_response_message(RequestId::Integer(create_request_id)),
+    )
+    .await??;
+    let DevflowTaskCreateResponse { task } = to_response(create_response)?;
+    let _: JSONRPCNotification = timeout(
+        DEFAULT_TIMEOUT,
+        mcp.read_stream_until_notification_message("devflowTask/statusChanged"),
+    )
+    .await??;
+    assert!(task.trigger_source.is_none());
+
+    let start_request_id = mcp
+        .send_devflow_task_start_request(DevflowTaskStartParams {
+            id: task.id.clone(),
+        })
+        .await?;
+    let start_error: JSONRPCError = timeout(
+        DEFAULT_TIMEOUT,
+        mcp.read_stream_until_error_message(RequestId::Integer(start_request_id)),
+    )
+    .await??;
+    assert_eq!(start_error.error.code, INVALID_REQUEST_ERROR_CODE);
+    assert!(
+        start_error
+            .error
+            .message
+            .contains("explicit migration triggerSource"),
+        "unexpected start error: {}",
+        start_error.error.message
+    );
     Ok(())
 }
 
@@ -2056,7 +2112,7 @@ async fn devflow_legacy_automation_task_runs_hermes_doctor_and_records_trigger_s
             objective: "Run hermes doctor and summarize the result.".to_string(),
             kind: DevflowTaskKind::Automation,
             risk_level: DevflowTaskRiskLevel::Low,
-            trigger_source: None,
+            trigger_source: Some("hermes:manual".to_string()),
             dependencies: None,
             assigned_agent_id: Some("hermes-automation".to_string()),
         })
@@ -2241,7 +2297,7 @@ async fn devflow_store_snapshot_recovers_task_run_gate_artifact_and_watchdog_aft
                 .to_string(),
             kind: DevflowTaskKind::Automation,
             risk_level: DevflowTaskRiskLevel::Low,
-            trigger_source: None,
+            trigger_source: Some("hermes:manual".to_string()),
             dependencies: None,
             assigned_agent_id: Some("hermes-automation".to_string()),
         })
@@ -2531,7 +2587,7 @@ async fn devflow_artifact_list_read_and_export_roundtrip() -> Result<()> {
             objective: "Run hermes doctor and summarize the result.".to_string(),
             kind: DevflowTaskKind::Automation,
             risk_level: DevflowTaskRiskLevel::Low,
-            trigger_source: None,
+            trigger_source: Some("hermes:manual".to_string()),
             dependencies: None,
             assigned_agent_id: Some("hermes-automation".to_string()),
         })
@@ -4192,7 +4248,7 @@ async fn devflow_automation_task_archives_large_output() -> Result<()> {
             objective: "Run hermes doctor with verbose output.".to_string(),
             kind: DevflowTaskKind::Automation,
             risk_level: DevflowTaskRiskLevel::Low,
-            trigger_source: None,
+            trigger_source: Some("hermes:manual".to_string()),
             dependencies: None,
             assigned_agent_id: Some("hermes-automation".to_string()),
         })
@@ -7415,7 +7471,7 @@ async fn devflow_legacy_claude_review_task_uses_dependency_diff_context() -> Res
             objective: "Write a text review for the implementation task.".to_string(),
             kind: DevflowTaskKind::Review,
             risk_level: DevflowTaskRiskLevel::Low,
-            trigger_source: None,
+            trigger_source: Some("legacy:manual".to_string()),
             dependencies: Some(vec![implementation_task.id.clone()]),
             assigned_agent_id: Some("claude-reviewer".to_string()),
         })
