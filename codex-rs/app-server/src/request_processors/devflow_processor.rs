@@ -257,8 +257,15 @@ const OUTPUT_ARCHIVE_THRESHOLD: usize = STREAM_SUMMARY_LIMIT;
 const DEVFLOW_DISPATCH_DEFAULT_LIMIT: usize = 4;
 const DEVFLOW_DISPATCH_MAX_LIMIT: usize = 16;
 const STORE_SNAPSHOT_PERSIST_ALERT_ID: &str = "devflow-store-snapshot-persist-error";
+const CODEX_ARTIFACT_DELIVERY_COMMAND: &str = "codex artifact handoff <local-devflow-artifact>";
 const ARTIFACT_DELIVERY_COMMAND: &str =
     "hermes chat -Q --source devflow --max-turns 5 -q <devflow-artifact-delivery-prompt>";
+
+#[derive(Clone, Copy)]
+enum ArtifactDeliveryMode {
+    CodexLocal,
+    HermesLegacy,
+}
 
 struct StaticAgentDescriptor<'a> {
     id: &'a str,
@@ -2523,12 +2530,6 @@ impl DevflowRequestProcessor {
             destination,
             message,
         } = params;
-
-        if target_agent_id != "hermes-automation" {
-            return Err(invalid_request(format!(
-                "devflow artifact delivery only supports hermes-automation in the current MVP: {target_agent_id}"
-            )));
-        }
         let destination = destination.trim().to_string();
         if destination.is_empty() {
             return Err(invalid_request(
@@ -2536,8 +2537,25 @@ impl DevflowRequestProcessor {
             ));
         }
 
+        let delivery_mode = match target_agent_id.as_str() {
+            "codex-main" => ArtifactDeliveryMode::CodexLocal,
+            "hermes-automation" => ArtifactDeliveryMode::HermesLegacy,
+            _ => {
+                return Err(invalid_request(format!(
+                    "devflow artifact delivery supports codex-main for local handoff or hermes-automation for legacy delivery: {target_agent_id}"
+                )));
+            }
+        };
+        let is_local_destination = destination == "local" || destination.starts_with("local:");
+        if matches!(delivery_mode, ArtifactDeliveryMode::CodexLocal) && !is_local_destination {
+            return Err(invalid_request(
+                "codex-main artifact delivery only supports local or local:* destinations"
+                    .to_string(),
+            ));
+        }
+
         let (artifact, project_root) = self.artifact_delivery_context(&id).await?;
-        if destination == "local" || destination.starts_with("local:") {
+        if is_local_destination {
             return self
                 .run_artifact_delivery(
                     artifact,
@@ -2545,6 +2563,7 @@ impl DevflowRequestProcessor {
                     target_agent_id,
                     destination,
                     message,
+                    delivery_mode,
                 )
                 .await;
         }
@@ -2688,6 +2707,7 @@ impl DevflowRequestProcessor {
             target_agent_id,
             destination,
             message,
+            ArtifactDeliveryMode::HermesLegacy,
         )
         .await
     }
@@ -2723,54 +2743,96 @@ impl DevflowRequestProcessor {
         target_agent_id: String,
         destination: String,
         message: Option<String>,
+        delivery_mode: ArtifactDeliveryMode,
     ) -> Result<DevflowArtifactDeliverResponse, JSONRPCErrorError> {
         let delivery_message = message.unwrap_or_else(|| {
             "Deliver this Devflow artifact and return a concise delivery receipt.".to_string()
         });
-        let prompt = format!(
-            "You are Hermes handling a Devflow artifact delivery request.\n\nDestination: {destination}\nMessage: {delivery_message}\nArtifact ID: {}\nArtifact title: {}\nArtifact kind: {:?}\nArtifact path: {}\n\nRead the artifact file if needed, deliver it to the requested destination using the safest configured Hermes messaging path, and return a concise delivery receipt. If the destination is local, do not send an external message; print the receipt only.",
-            artifact.id, artifact.title, artifact.kind, artifact.path
-        );
-        let command = ARTIFACT_DELIVERY_COMMAND.to_string();
-        let command_args = [
-            "chat".to_string(),
-            "-Q".to_string(),
-            "--source".to_string(),
-            "devflow".to_string(),
-            "--max-turns".to_string(),
-            "5".to_string(),
-            "-q".to_string(),
-            prompt,
-        ];
-        let command_arg_refs = command_args.iter().map(String::as_str).collect::<Vec<_>>();
-        let execution_result =
-            run_hermes_command(Path::new(&project_root), &command_arg_refs).await;
-        let (exit_code, output_summary) = match execution_result {
-            Ok(execution) => (
-                execution.exit_code,
-                truncate(
-                    &combine_external_agent_output(&execution),
-                    COMMAND_OUTPUT_SUMMARY_LIMIT,
-                ),
-            ),
-            Err(err) => (
-                None,
-                truncate(
-                    &format!("failed to run Hermes artifact delivery: {err}"),
-                    COMMAND_OUTPUT_SUMMARY_LIMIT,
-                ),
-            ),
-        };
-        let status = if exit_code == Some(0) {
-            DevflowArtifactDeliveryStatus::Delivered
-        } else {
-            DevflowArtifactDeliveryStatus::Failed
-        };
         let delivered_at = Utc::now().timestamp();
-        let status_label = match status {
-            DevflowArtifactDeliveryStatus::PendingApproval => "pending approval",
-            DevflowArtifactDeliveryStatus::Delivered => "delivered",
-            DevflowArtifactDeliveryStatus::Failed => "failed",
+        let (
+            command,
+            exit_code,
+            output_summary,
+            status,
+            status_label,
+            receipt_summary,
+            output_label,
+        ) = match delivery_mode {
+            ArtifactDeliveryMode::CodexLocal => {
+                let output_summary = truncate(
+                    &format!(
+                        "Codex local artifact handoff recorded for destination {destination}. Artifact path: {}. Message: {delivery_message}. No external message was sent.",
+                        artifact.path
+                    ),
+                    COMMAND_OUTPUT_SUMMARY_LIMIT,
+                );
+                (
+                    CODEX_ARTIFACT_DELIVERY_COMMAND.to_string(),
+                    Some(0),
+                    output_summary,
+                    DevflowArtifactDeliveryStatus::Delivered,
+                    "delivered",
+                    format!("Codex artifact handoff delivered for destination {destination}"),
+                    "Codex output",
+                )
+            }
+            ArtifactDeliveryMode::HermesLegacy => {
+                let prompt = format!(
+                    "You are Hermes handling a Devflow artifact delivery request.\n\nDestination: {destination}\nMessage: {delivery_message}\nArtifact ID: {}\nArtifact title: {}\nArtifact kind: {:?}\nArtifact path: {}\n\nRead the artifact file if needed, deliver it to the requested destination using the safest configured Hermes messaging path, and return a concise delivery receipt. If the destination is local, do not send an external message; print the receipt only.",
+                    artifact.id, artifact.title, artifact.kind, artifact.path
+                );
+                let command = ARTIFACT_DELIVERY_COMMAND.to_string();
+                let command_args = [
+                    "chat".to_string(),
+                    "-Q".to_string(),
+                    "--source".to_string(),
+                    "devflow".to_string(),
+                    "--max-turns".to_string(),
+                    "5".to_string(),
+                    "-q".to_string(),
+                    prompt,
+                ];
+                let command_arg_refs = command_args.iter().map(String::as_str).collect::<Vec<_>>();
+                let execution_result =
+                    run_hermes_command(Path::new(&project_root), &command_arg_refs).await;
+                let (exit_code, output_summary) = match execution_result {
+                    Ok(execution) => (
+                        execution.exit_code,
+                        truncate(
+                            &combine_external_agent_output(&execution),
+                            COMMAND_OUTPUT_SUMMARY_LIMIT,
+                        ),
+                    ),
+                    Err(err) => (
+                        None,
+                        truncate(
+                            &format!("failed to run Hermes artifact delivery: {err}"),
+                            COMMAND_OUTPUT_SUMMARY_LIMIT,
+                        ),
+                    ),
+                };
+                let status = if exit_code == Some(0) {
+                    DevflowArtifactDeliveryStatus::Delivered
+                } else {
+                    DevflowArtifactDeliveryStatus::Failed
+                };
+                let status_label = match status {
+                    DevflowArtifactDeliveryStatus::PendingApproval => "pending approval",
+                    DevflowArtifactDeliveryStatus::Delivered => "delivered",
+                    DevflowArtifactDeliveryStatus::Failed => "failed",
+                };
+                (
+                    command,
+                    exit_code,
+                    output_summary,
+                    status,
+                    status_label,
+                    format!(
+                        "Hermes artifact delivery {status_label} for destination {destination}"
+                    ),
+                    "Hermes output",
+                )
+            }
         };
         let receipt_id = Uuid::new_v4().to_string();
         let receipt_artifact = DevflowArtifact {
@@ -2788,13 +2850,11 @@ impl DevflowRequestProcessor {
             .display()
             .to_string(),
             mime_type: "text/markdown".to_string(),
-            summary: format!(
-                "Hermes artifact delivery {status_label} for destination {destination}"
-            ),
+            summary: receipt_summary,
             created_at: delivered_at,
         };
         let receipt = format!(
-            "# {}\n\n- Artifact ID: {}\n- Artifact title: {}\n- Target agent: {}\n- Destination: {}\n- Status: {}\n- Command: `{}`\n- Exit code: {}\n- Delivered at: {}\n\n## Hermes output\n\n```text\n{}\n```\n",
+            "# {}\n\n- Artifact ID: {}\n- Artifact title: {}\n- Target agent: {}\n- Destination: {}\n- Status: {}\n- Command: `{}`\n- Exit code: {}\n- Delivered at: {}\n\n## {}\n\n```text\n{}\n```\n",
             receipt_artifact.title,
             artifact.id,
             artifact.title,
@@ -2806,6 +2866,7 @@ impl DevflowRequestProcessor {
                 .map(|code| code.to_string())
                 .unwrap_or_else(|| "none".to_string()),
             delivered_at,
+            output_label,
             output_summary
         );
         write_artifact_file(Path::new(&receipt_artifact.path), &receipt)

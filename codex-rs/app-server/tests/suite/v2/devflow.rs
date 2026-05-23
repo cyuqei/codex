@@ -2637,6 +2637,57 @@ async fn devflow_artifact_list_read_and_export_roundtrip() -> Result<()> {
     assert_eq!(destination_path, export_path.display().to_string());
     assert!(std::fs::read_to_string(export_path)?.contains("Hermes Exportable Report"));
 
+    let hermes_args_before_codex_delivery = std::fs::read_to_string(&args_path)?;
+    let codex_deliver_request_id = mcp
+        .send_devflow_artifact_deliver_request(DevflowArtifactDeliverParams {
+            id: report_artifact.id.clone(),
+            target_agent_id: "codex-main".to_string(),
+            destination: "local:warp".to_string(),
+            message: Some("Hand this report to the local Warp handoff path.".to_string()),
+        })
+        .await?;
+    let codex_deliver_response: JSONRPCResponse = timeout(
+        DEFAULT_TIMEOUT,
+        mcp.read_stream_until_response_message(RequestId::Integer(codex_deliver_request_id)),
+    )
+    .await??;
+    let DevflowArtifactDeliverResponse {
+        artifact: codex_delivered_artifact,
+        receipt_artifact,
+        approval,
+        target_agent_id,
+        destination,
+        command,
+        exit_code,
+        status,
+        output_summary,
+        delivered_at,
+    } = to_response(codex_deliver_response)?;
+    assert_eq!(codex_delivered_artifact.id, report_artifact.id);
+    assert_eq!(approval, None);
+    let receipt_artifact = receipt_artifact.expect("local codex delivery should create a receipt");
+    assert_eq!(receipt_artifact.kind, DevflowArtifactKind::DeliveryReceipt);
+    assert_eq!(target_agent_id, "codex-main");
+    assert_eq!(destination, "local:warp");
+    assert_eq!(command, "codex artifact handoff <local-devflow-artifact>");
+    assert_eq!(exit_code, Some(0));
+    assert_eq!(status, DevflowArtifactDeliveryStatus::Delivered);
+    assert!(output_summary.contains("Codex local artifact handoff recorded"));
+    assert!(output_summary.contains("local:warp"));
+    assert!(output_summary.contains(&report_artifact.path));
+    assert!(output_summary.contains("Hand this report to the local Warp handoff path."));
+    assert!(delivered_at.expect("codex delivered at") > 0);
+
+    let codex_receipt = std::fs::read_to_string(&receipt_artifact.path)?;
+    assert!(codex_receipt.contains("Codex output"));
+    assert!(codex_receipt.contains("Destination: local:warp"));
+    assert!(codex_receipt.contains("No external message was sent"));
+    assert!(codex_receipt.contains(&report_artifact.path));
+    assert_eq!(
+        std::fs::read_to_string(&args_path)?,
+        hermes_args_before_codex_delivery
+    );
+
     let deliver_request_id = mcp
         .send_devflow_artifact_deliver_request(DevflowArtifactDeliverParams {
             id: report_artifact.id.clone(),

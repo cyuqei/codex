@@ -63,7 +63,7 @@ Codex 不负责：
 - `codex-rs/app-server/src/request_processors/devflow_approval.rs`
 - `codex-rs/app-server/tests/suite/v2/devflow.rs`
 
-需要注意：当前部分 Devflow 代码还保留 Claude / Hermes runtime、artifact delivery 和外部 agent adapter 设计。新路线中这些能力应被迁移、废弃或隔离为 legacy，不进入新的 Warp + Codex 主路径。
+需要注意：当前部分 Devflow 代码还保留 Claude / Hermes runtime，以及外部 artifact delivery / agent adapter 设计。新路线中这些外部消息能力应被迁移、废弃或隔离为 legacy；Codex 主路径可以保留本地 handoff / receipt，但不应把外发消息能力当成主链路必需项。
 
 ## 4. 核心原则
 
@@ -290,7 +290,7 @@ devflowWatchdog/alerts
 
 - 盘点 `DevflowAgentRuntime::Claude` / `Hermes` 使用点。
 - 将新文档和协议明确为 Codex-only 主路径。
-- 标记 artifact delivery / external agent adapter 为 legacy 或后续可选功能。
+- 标记外部 artifact delivery / external agent adapter 为 legacy 或后续可选功能；本地 handoff/receipt 仍可保留在 Codex 主路径内。
 - 定义 Superpowers/gstack 的 pack schema。
 - 更新 `app-server/README.md` 中的 Devflow 说明。
 
