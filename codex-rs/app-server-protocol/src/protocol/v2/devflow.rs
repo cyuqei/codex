@@ -16,6 +16,16 @@ pub enum DevflowAgentRuntime {
     Hermes,
 }
 
+/// Distinguishes the Codex-owned Devflow main path from legacy compatibility
+/// adapters that are exposed for migration and diagnostics.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, JsonSchema, TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(export_to = "v2/")]
+pub enum DevflowAgentLane {
+    Main,
+    Legacy,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, JsonSchema, TS)]
 #[serde(rename_all = "snake_case")]
 #[ts(export_to = "v2/")]
@@ -31,6 +41,7 @@ pub struct DevflowAgent {
     pub id: String,
     pub name: String,
     pub runtime: DevflowAgentRuntime,
+    pub lane: DevflowAgentLane,
     pub roles: Vec<String>,
     pub root_path: Option<String>,
     pub launch_command: Option<String>,

@@ -22,6 +22,7 @@ use codex_app_server_protocol::DevflowAgentDetectParams;
 use codex_app_server_protocol::DevflowAgentDetectResponse;
 use codex_app_server_protocol::DevflowAgentDiagnoseParams;
 use codex_app_server_protocol::DevflowAgentDiagnoseResponse;
+use codex_app_server_protocol::DevflowAgentLane;
 use codex_app_server_protocol::DevflowAgentListParams;
 use codex_app_server_protocol::DevflowAgentListResponse;
 use codex_app_server_protocol::DevflowAgentReadParams;
@@ -265,7 +266,7 @@ fn write_fake_browse_cli(project_root: &std::path::Path, script: &str) -> Result
 }
 
 #[tokio::test]
-async fn devflow_agent_detect_reports_requested_roots() -> Result<()> {
+async fn devflow_agent_detect_marks_codex_main_and_external_agents_legacy() -> Result<()> {
     let codex_home = TempDir::new()?;
     let claude_root = TempDir::new()?;
     let hermes_root = TempDir::new()?;
@@ -289,21 +290,25 @@ async fn devflow_agent_detect_reports_requested_roots() -> Result<()> {
 
     assert_eq!(agents.len(), 4);
     assert_eq!(agents[0].runtime, DevflowAgentRuntime::Codex);
+    assert_eq!(agents[0].lane, DevflowAgentLane::Main);
     assert_eq!(agents[0].status, DevflowAgentStatus::Available);
     assert_eq!(agents[0].root_path.as_deref(), Some("/tmp/codex-runtime"));
     assert_eq!(agents[1].runtime, DevflowAgentRuntime::Claude);
+    assert_eq!(agents[1].lane, DevflowAgentLane::Legacy);
     assert_eq!(agents[1].status, DevflowAgentStatus::Available);
     assert_eq!(
         agents[1].root_path.as_deref(),
         Some(claude_root.path().to_str().expect("utf-8 path"))
     );
     assert_eq!(agents[2].runtime, DevflowAgentRuntime::Claude);
+    assert_eq!(agents[2].lane, DevflowAgentLane::Legacy);
     assert_eq!(agents[2].status, DevflowAgentStatus::Available);
     assert_eq!(
         agents[2].root_path.as_deref(),
         Some(claude_root.path().to_str().expect("utf-8 path"))
     );
     assert_eq!(agents[3].runtime, DevflowAgentRuntime::Hermes);
+    assert_eq!(agents[3].lane, DevflowAgentLane::Legacy);
     assert_eq!(agents[3].status, DevflowAgentStatus::Available);
     assert_eq!(
         agents[3].root_path.as_deref(),
@@ -327,6 +332,7 @@ async fn devflow_agent_detect_reports_requested_roots() -> Result<()> {
         hermes_status_changed.agent.status,
         DevflowAgentStatus::Available
     );
+    assert_eq!(hermes_status_changed.agent.lane, DevflowAgentLane::Legacy);
     assert_eq!(
         hermes_status_changed.agent.root_path.as_deref(),
         Some(hermes_root.path().to_str().expect("utf-8 path"))
@@ -335,7 +341,7 @@ async fn devflow_agent_detect_reports_requested_roots() -> Result<()> {
 }
 
 #[tokio::test]
-async fn devflow_agent_list_read_and_capabilities_roundtrip() -> Result<()> {
+async fn devflow_legacy_agent_list_read_and_capabilities_roundtrip() -> Result<()> {
     let codex_home = TempDir::new()?;
     let mut mcp = McpProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
@@ -356,6 +362,10 @@ async fn devflow_agent_list_read_and_capabilities_roundtrip() -> Result<()> {
         data.iter()
             .all(|agent| agent.runtime == DevflowAgentRuntime::Claude)
     );
+    assert!(
+        data.iter()
+            .all(|agent| agent.lane == DevflowAgentLane::Legacy)
+    );
 
     let read_request_id = mcp
         .send_devflow_agent_read_request(DevflowAgentReadParams {
@@ -370,6 +380,7 @@ async fn devflow_agent_list_read_and_capabilities_roundtrip() -> Result<()> {
     let DevflowAgentReadResponse { agent } = to_response(read_response)?;
     assert_eq!(agent.id, "hermes-automation");
     assert_eq!(agent.runtime, DevflowAgentRuntime::Hermes);
+    assert_eq!(agent.lane, DevflowAgentLane::Legacy);
 
     let capabilities_request_id = mcp
         .send_devflow_agent_capabilities_read_request(DevflowAgentCapabilitiesReadParams {
@@ -389,7 +400,7 @@ async fn devflow_agent_list_read_and_capabilities_roundtrip() -> Result<()> {
 }
 
 #[tokio::test]
-async fn devflow_agent_lifecycle_methods_are_safe_noops() -> Result<()> {
+async fn devflow_legacy_agent_lifecycle_methods_are_safe_noops() -> Result<()> {
     let codex_home = TempDir::new()?;
     let mut mcp = McpProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
@@ -411,6 +422,7 @@ async fn devflow_agent_lifecycle_methods_are_safe_noops() -> Result<()> {
     } = to_response(start_response)?;
     assert_eq!(agent.id, "hermes-automation");
     assert_eq!(agent.runtime, DevflowAgentRuntime::Hermes);
+    assert_eq!(agent.lane, DevflowAgentLane::Legacy);
     assert!(!started);
     assert!(message.contains("safe no-op"));
 
@@ -431,6 +443,7 @@ async fn devflow_agent_lifecycle_methods_are_safe_noops() -> Result<()> {
     } = to_response(stop_response)?;
     assert_eq!(agent.id, "claude-writer");
     assert_eq!(agent.runtime, DevflowAgentRuntime::Claude);
+    assert_eq!(agent.lane, DevflowAgentLane::Legacy);
     assert!(!stopped);
     assert!(message.contains("Devflow does not own long-running Claude or Hermes services yet"));
 
@@ -451,6 +464,7 @@ async fn devflow_agent_lifecycle_methods_are_safe_noops() -> Result<()> {
     } = to_response(restart_response)?;
     assert_eq!(agent.id, "codex-main");
     assert_eq!(agent.runtime, DevflowAgentRuntime::Codex);
+    assert_eq!(agent.lane, DevflowAgentLane::Main);
     assert!(!restarted);
     assert!(message.contains("devflowAgent/restart"));
     Ok(())
@@ -1677,7 +1691,7 @@ fi
 
 #[cfg(unix)]
 #[tokio::test]
-async fn devflow_agent_diagnose_runs_hermes_doctor() -> Result<()> {
+async fn devflow_legacy_agent_diagnose_runs_hermes_doctor() -> Result<()> {
     let codex_home = TempDir::new()?;
     let project_root = TempDir::new()?;
     let cli_root = TempDir::new()?;
@@ -1728,7 +1742,7 @@ async fn devflow_agent_diagnose_runs_hermes_doctor() -> Result<()> {
 
 #[cfg(unix)]
 #[tokio::test]
-async fn devflow_claude_report_task_creates_report_artifact() -> Result<()> {
+async fn devflow_legacy_claude_report_task_creates_report_artifact() -> Result<()> {
     let codex_home = TempDir::new()?;
     let project_root = TempDir::new()?;
     let cli_root = TempDir::new()?;
@@ -1754,7 +1768,7 @@ async fn devflow_claude_report_task_creates_report_artifact() -> Result<()> {
             risk_level: DevflowTaskRiskLevel::Low,
             trigger_source: None,
             dependencies: None,
-            assigned_agent_id: None,
+            assigned_agent_id: Some("claude-writer".to_string()),
         })
         .await?;
     let create_response: JSONRPCResponse = timeout(
@@ -1846,7 +1860,7 @@ async fn devflow_claude_report_task_creates_report_artifact() -> Result<()> {
 
 #[cfg(unix)]
 #[tokio::test]
-async fn devflow_hermes_triggered_report_task_preserves_trigger_source() -> Result<()> {
+async fn devflow_legacy_hermes_triggered_report_task_preserves_trigger_source() -> Result<()> {
     let codex_home = TempDir::new()?;
     let project_root = TempDir::new()?;
     let cli_root = TempDir::new()?;
@@ -1887,7 +1901,7 @@ async fn devflow_hermes_triggered_report_task_preserves_trigger_source() -> Resu
             risk_level: DevflowTaskRiskLevel::Low,
             trigger_source: Some("hermes:cron".to_string()),
             dependencies: None,
-            assigned_agent_id: None,
+            assigned_agent_id: Some("claude-writer".to_string()),
         })
         .await?;
     let create_response: JSONRPCResponse = timeout(
@@ -1985,7 +1999,8 @@ async fn devflow_hermes_triggered_report_task_preserves_trigger_source() -> Resu
 
 #[cfg(unix)]
 #[tokio::test]
-async fn devflow_automation_task_runs_hermes_doctor_and_records_trigger_source() -> Result<()> {
+async fn devflow_legacy_automation_task_runs_hermes_doctor_and_records_trigger_source() -> Result<()>
+{
     let codex_home = TempDir::new()?;
     let project_root = TempDir::new()?;
     let cli_root = TempDir::new()?;
@@ -2011,7 +2026,7 @@ async fn devflow_automation_task_runs_hermes_doctor_and_records_trigger_source()
             risk_level: DevflowTaskRiskLevel::Low,
             trigger_source: None,
             dependencies: None,
-            assigned_agent_id: None,
+            assigned_agent_id: Some("hermes-automation".to_string()),
         })
         .await?;
     let create_response: JSONRPCResponse = timeout(
@@ -2196,7 +2211,7 @@ async fn devflow_store_snapshot_recovers_task_run_gate_artifact_and_watchdog_aft
             risk_level: DevflowTaskRiskLevel::Low,
             trigger_source: None,
             dependencies: None,
-            assigned_agent_id: None,
+            assigned_agent_id: Some("hermes-automation".to_string()),
         })
         .await?;
     let create_automation_response: JSONRPCResponse = timeout(
@@ -2486,7 +2501,7 @@ async fn devflow_artifact_list_read_and_export_roundtrip() -> Result<()> {
             risk_level: DevflowTaskRiskLevel::Low,
             trigger_source: None,
             dependencies: None,
-            assigned_agent_id: None,
+            assigned_agent_id: Some("hermes-automation".to_string()),
         })
         .await?;
     let create_response: JSONRPCResponse = timeout(
@@ -4096,7 +4111,7 @@ async fn devflow_automation_task_archives_large_output() -> Result<()> {
             risk_level: DevflowTaskRiskLevel::Low,
             trigger_source: None,
             dependencies: None,
-            assigned_agent_id: None,
+            assigned_agent_id: Some("hermes-automation".to_string()),
         })
         .await?;
     let create_response: JSONRPCResponse = timeout(
@@ -4817,10 +4832,7 @@ async fn devflow_task_plan_list_assign_and_dependency_update_roundtrip() -> Resu
         vec![tasks[0].id.clone(), tasks[1].id.clone()]
     );
     assert_eq!(tasks[0].assigned_agent_id.as_deref(), Some("codex-main"));
-    assert_eq!(
-        tasks[2].assigned_agent_id.as_deref(),
-        Some("claude-reviewer")
-    );
+    assert_eq!(tasks[2].assigned_agent_id.as_deref(), Some("codex-main"));
 
     for expected_task in &tasks {
         let notification: JSONRPCNotification = timeout(
@@ -4862,7 +4874,7 @@ async fn devflow_task_plan_list_assign_and_dependency_update_roundtrip() -> Resu
         .send_devflow_task_list_request(DevflowTaskListParams {
             project_id: Some(project_root.path().display().to_string()),
             status: None,
-            assigned_agent_id: None,
+            assigned_agent_id: Some("codex-main".to_string()),
             cursor: None,
             limit: Some(2),
         })
@@ -6863,7 +6875,7 @@ async fn devflow_quality_gate_run_rerun_and_waive_roundtrip() -> Result<()> {
 
 #[cfg(unix)]
 #[tokio::test]
-async fn devflow_claude_review_task_uses_dependency_diff_context() -> Result<()> {
+async fn devflow_legacy_claude_review_task_uses_dependency_diff_context() -> Result<()> {
     let project_root = TempDir::new()?;
     init_git_repo(project_root.path())?;
     std::fs::write(project_root.path().join("note.txt"), "before\n")?;
@@ -6978,7 +6990,7 @@ async fn devflow_claude_review_task_uses_dependency_diff_context() -> Result<()>
             risk_level: DevflowTaskRiskLevel::Low,
             trigger_source: None,
             dependencies: Some(vec![implementation_task.id.clone()]),
-            assigned_agent_id: None,
+            assigned_agent_id: Some("claude-reviewer".to_string()),
         })
         .await?;
     let review_create_response: JSONRPCResponse = timeout(

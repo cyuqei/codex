@@ -86,6 +86,7 @@ export type { DevflowAgentDetectParams } from "./DevflowAgentDetectParams";
 export type { DevflowAgentDetectResponse } from "./DevflowAgentDetectResponse";
 export type { DevflowAgentDiagnoseParams } from "./DevflowAgentDiagnoseParams";
 export type { DevflowAgentDiagnoseResponse } from "./DevflowAgentDiagnoseResponse";
+export type { DevflowAgentLane } from "./DevflowAgentLane";
 export type { DevflowAgentListParams } from "./DevflowAgentListParams";
 export type { DevflowAgentListResponse } from "./DevflowAgentListResponse";
 export type { DevflowAgentReadParams } from "./DevflowAgentReadParams";

@@ -970,6 +970,9 @@
         "id": {
           "type": "string"
         },
+        "lane": {
+          "$ref": "#/definitions/DevflowAgentLane"
+        },
         "lastError": {
           "type": [
             "string",
@@ -1008,12 +1011,21 @@
         "capabilities",
         "diagnostics",
         "id",
+        "lane",
         "name",
         "roles",
         "runtime",
         "status"
       ],
       "type": "object"
+    },
+    "DevflowAgentLane": {
+      "description": "Distinguishes the Codex-owned Devflow main path from legacy compatibility adapters that are exposed for migration and diagnostics.",
+      "enum": [
+        "main",
+        "legacy"
+      ],
+      "type": "string"
     },
     "DevflowAgentRuntime": {
       "enum": [

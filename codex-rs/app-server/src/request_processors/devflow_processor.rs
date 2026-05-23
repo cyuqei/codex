@@ -18,6 +18,7 @@ use codex_app_server_protocol::DevflowAgentDetectParams;
 use codex_app_server_protocol::DevflowAgentDetectResponse;
 use codex_app_server_protocol::DevflowAgentDiagnoseParams;
 use codex_app_server_protocol::DevflowAgentDiagnoseResponse;
+use codex_app_server_protocol::DevflowAgentLane;
 use codex_app_server_protocol::DevflowAgentListParams;
 use codex_app_server_protocol::DevflowAgentListResponse;
 use codex_app_server_protocol::DevflowAgentReadParams;
@@ -261,6 +262,7 @@ struct StaticAgentDescriptor<'a> {
     id: &'a str,
     name: &'a str,
     runtime: DevflowAgentRuntime,
+    lane: DevflowAgentLane,
     root: &'a str,
     launch_command: &'a str,
     roles: &'a [&'a str],
@@ -1550,9 +1552,9 @@ impl DevflowRequestProcessor {
             project_id: params.project_root,
             title: params.title,
             objective: params.objective,
-            trigger_source: params.trigger_source.or_else(|| {
-                default_trigger_source(params.kind, params.assigned_agent_id.as_deref())
-            }),
+            trigger_source: params
+                .trigger_source
+                .or_else(|| default_trigger_source(params.assigned_agent_id.as_deref())),
             status: DevflowTaskStatus::Planned,
             kind: params.kind,
             risk_level: params.risk_level,
@@ -1630,7 +1632,7 @@ impl DevflowRequestProcessor {
                 .iter()
                 .map(|task| task.id.clone())
                 .collect(),
-            assigned_agent_id: Some("claude-reviewer".to_string()),
+            assigned_agent_id: Some("codex-main".to_string()),
             worktree_id: None,
             context_pack_id: None,
             run_ids: Vec::new(),
@@ -3300,6 +3302,15 @@ impl DevflowRequestProcessor {
             .assigned_agent_id
             .clone()
             .unwrap_or_else(|| default_agent_id(task.kind).to_string());
+        let uses_legacy_automation_agent = matches!(
+            (task.kind, agent_id.as_str()),
+            (DevflowTaskKind::Automation, "hermes-automation")
+        );
+        let uses_legacy_text_agent = matches!(
+            (task.kind, agent_id.as_str()),
+            (DevflowTaskKind::Report, "claude-writer")
+                | (DevflowTaskKind::Review, "claude-reviewer")
+        );
         let input = prompt_override.unwrap_or_else(|| devflow_turn_prompt(&task));
         let run_id = Uuid::new_v4().to_string();
         let internal_connection_id = ConnectionId(
@@ -3361,7 +3372,7 @@ impl DevflowRequestProcessor {
             );
         }
 
-        if task.kind == DevflowTaskKind::Automation {
+        if uses_legacy_automation_agent {
             run.status = DevflowRunStatus::Running;
             {
                 let mut store = self.store.lock().await;
@@ -3386,7 +3397,7 @@ impl DevflowRequestProcessor {
             return Ok(DevflowTaskStartResponse { task, run });
         }
 
-        if matches!(task.kind, DevflowTaskKind::Report | DevflowTaskKind::Review) {
+        if uses_legacy_text_agent {
             run.status = DevflowRunStatus::Running;
             {
                 let mut store = self.store.lock().await;
@@ -3698,8 +3709,7 @@ impl DevflowRequestProcessor {
             })?;
             task.assigned_agent_id = params.assigned_agent_id;
             if task.trigger_source.is_none() {
-                task.trigger_source =
-                    default_trigger_source(task.kind, task.assigned_agent_id.as_deref());
+                task.trigger_source = default_trigger_source(task.assigned_agent_id.as_deref());
             }
             task.updated_at = Utc::now().timestamp();
             task.clone()
@@ -6552,6 +6562,7 @@ impl DevflowRequestProcessor {
                 id: "claude-writer",
                 name: "Claude Code",
                 runtime: DevflowAgentRuntime::Claude,
+                lane: DevflowAgentLane::Legacy,
                 root: DEFAULT_CLAUDE_ROOT,
                 launch_command: "cd /Users/yuqei/claude-code && claude",
                 roles: &["report", "design"],
@@ -6561,6 +6572,7 @@ impl DevflowRequestProcessor {
                 id: "claude-reviewer",
                 name: "Claude Code Reviewer",
                 runtime: DevflowAgentRuntime::Claude,
+                lane: DevflowAgentLane::Legacy,
                 root: DEFAULT_CLAUDE_ROOT,
                 launch_command: "cd /Users/yuqei/claude-code && claude",
                 roles: &["review", "second-opinion"],
@@ -6570,6 +6582,7 @@ impl DevflowRequestProcessor {
                 id: "hermes-automation",
                 name: "Hermes Agent",
                 runtime: DevflowAgentRuntime::Hermes,
+                lane: DevflowAgentLane::Legacy,
                 root: DEFAULT_HERMES_ROOT,
                 launch_command: "cd /Users/yuqei/hermes-agent && hermes",
                 roles: &["automation", "memory", "delivery"],
@@ -6588,6 +6601,7 @@ impl DevflowRequestProcessor {
                 id: "claude-writer",
                 name: "Claude Code",
                 runtime: DevflowAgentRuntime::Claude,
+                lane: DevflowAgentLane::Legacy,
                 root: params.claude_root.as_deref().unwrap_or(DEFAULT_CLAUDE_ROOT),
                 launch_command: "cd /Users/yuqei/claude-code && claude",
                 roles: &["report", "design"],
@@ -6597,6 +6611,7 @@ impl DevflowRequestProcessor {
                 id: "claude-reviewer",
                 name: "Claude Code Reviewer",
                 runtime: DevflowAgentRuntime::Claude,
+                lane: DevflowAgentLane::Legacy,
                 root: params.claude_root.as_deref().unwrap_or(DEFAULT_CLAUDE_ROOT),
                 launch_command: "cd /Users/yuqei/claude-code && claude",
                 roles: &["review", "second-opinion"],
@@ -6606,6 +6621,7 @@ impl DevflowRequestProcessor {
                 id: "hermes-automation",
                 name: "Hermes Agent",
                 runtime: DevflowAgentRuntime::Hermes,
+                lane: DevflowAgentLane::Legacy,
                 root: params.hermes_root.as_deref().unwrap_or(DEFAULT_HERMES_ROOT),
                 launch_command: "cd /Users/yuqei/hermes-agent && hermes",
                 roles: &["automation", "memory", "delivery"],
@@ -6626,6 +6642,7 @@ impl DevflowRequestProcessor {
             id: "codex-main".to_string(),
             name: "Codex".to_string(),
             runtime: DevflowAgentRuntime::Codex,
+            lane: DevflowAgentLane::Main,
             roles: vec![
                 "implementation".to_string(),
                 "review".to_string(),
@@ -6673,6 +6690,7 @@ impl DevflowRequestProcessor {
             id: descriptor.id.to_string(),
             name: descriptor.name.to_string(),
             runtime: descriptor.runtime,
+            lane: descriptor.lane,
             roles: descriptor.roles.iter().map(ToString::to_string).collect(),
             root_path: Some(root_path),
             launch_command: Some(descriptor.launch_command.to_string()),
@@ -7087,22 +7105,16 @@ fn devflow_agent_lifecycle_noop_message(action: &str) -> String {
 
 fn default_agent_id(task_kind: DevflowTaskKind) -> &'static str {
     match task_kind {
-        DevflowTaskKind::Implementation | DevflowTaskKind::Diagnostic => "codex-main",
-        DevflowTaskKind::Review => "claude-reviewer",
-        DevflowTaskKind::Report => "claude-writer",
-        DevflowTaskKind::Automation => "hermes-automation",
+        DevflowTaskKind::Implementation
+        | DevflowTaskKind::Diagnostic
+        | DevflowTaskKind::Review
+        | DevflowTaskKind::Report
+        | DevflowTaskKind::Automation => "codex-main",
     }
 }
 
-fn default_trigger_source(
-    task_kind: DevflowTaskKind,
-    assigned_agent_id: Option<&str>,
-) -> Option<String> {
-    match (task_kind, assigned_agent_id) {
-        (DevflowTaskKind::Automation, _) => Some("hermes:manual".to_string()),
-        (_, Some("hermes-automation")) => Some("hermes:manual".to_string()),
-        _ => None,
-    }
+fn default_trigger_source(assigned_agent_id: Option<&str>) -> Option<String> {
+    (assigned_agent_id == Some("hermes-automation")).then_some("hermes:manual".to_string())
 }
 
 fn approval_decision_accepts(decision: DevflowApprovalDecision) -> bool {
