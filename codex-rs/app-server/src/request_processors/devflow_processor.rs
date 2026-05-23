@@ -7099,7 +7099,7 @@ fn external_agent_failure_reason(execution: &ExternalAgentExecution) -> String {
 
 fn devflow_agent_lifecycle_noop_message(action: &str) -> String {
     format!(
-        "devflowAgent/{action} is a safe no-op in the current MVP; Devflow does not own long-running Claude or Hermes services yet. Use devflowAgent/diagnose for health checks and devflowTask/pause or devflowTask/cancel for active work."
+        "devflowAgent/{action} is a diagnostic-only no-op in the current MVP; Devflow does not own long-running Claude or Hermes services yet and does not start or stop codex-main here. Use devflowAgent/diagnose for health checks and devflowTask/pause or devflowTask/cancel for active work."
     )
 }
 

@@ -400,7 +400,7 @@ async fn devflow_legacy_agent_list_read_and_capabilities_roundtrip() -> Result<(
 }
 
 #[tokio::test]
-async fn devflow_legacy_agent_lifecycle_methods_are_safe_noops() -> Result<()> {
+async fn devflow_legacy_agent_lifecycle_methods_are_diagnostic_only_noops() -> Result<()> {
     let codex_home = TempDir::new()?;
     let mut mcp = McpProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
@@ -424,7 +424,7 @@ async fn devflow_legacy_agent_lifecycle_methods_are_safe_noops() -> Result<()> {
     assert_eq!(agent.runtime, DevflowAgentRuntime::Hermes);
     assert_eq!(agent.lane, DevflowAgentLane::Legacy);
     assert!(!started);
-    assert!(message.contains("safe no-op"));
+    assert!(message.contains("diagnostic-only no-op"));
 
     let stop_request_id = mcp
         .send_devflow_agent_stop_request(DevflowAgentStopParams {
@@ -445,6 +445,7 @@ async fn devflow_legacy_agent_lifecycle_methods_are_safe_noops() -> Result<()> {
     assert_eq!(agent.runtime, DevflowAgentRuntime::Claude);
     assert_eq!(agent.lane, DevflowAgentLane::Legacy);
     assert!(!stopped);
+    assert!(message.contains("diagnostic-only no-op"));
     assert!(message.contains("Devflow does not own long-running Claude or Hermes services yet"));
 
     let restart_request_id = mcp
@@ -467,6 +468,7 @@ async fn devflow_legacy_agent_lifecycle_methods_are_safe_noops() -> Result<()> {
     assert_eq!(agent.lane, DevflowAgentLane::Main);
     assert!(!restarted);
     assert!(message.contains("devflowAgent/restart"));
+    assert!(message.contains("does not start or stop codex-main here"));
     Ok(())
 }
 
