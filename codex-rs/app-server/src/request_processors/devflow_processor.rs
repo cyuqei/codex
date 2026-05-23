@@ -8346,7 +8346,11 @@ fn build_release_submit_response(
 }
 
 fn default_trigger_source(assigned_agent_id: Option<&str>) -> Option<String> {
-    (assigned_agent_id == Some("hermes-automation")).then_some("hermes:manual".to_string())
+    match assigned_agent_id {
+        Some("hermes-automation") => Some("hermes:manual".to_string()),
+        Some("claude-writer") | Some("claude-reviewer") => Some("legacy:manual".to_string()),
+        _ => None,
+    }
 }
 
 fn approval_decision_accepts(decision: DevflowApprovalDecision) -> bool {

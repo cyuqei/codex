@@ -1808,6 +1808,7 @@ async fn devflow_legacy_claude_report_task_creates_report_artifact() -> Result<(
     )
     .await??;
     let DevflowTaskCreateResponse { task } = to_response(create_response)?;
+    assert_eq!(task.trigger_source.as_deref(), Some("legacy:manual"));
     let _: JSONRPCNotification = timeout(
         DEFAULT_TIMEOUT,
         mcp.read_stream_until_notification_message("devflowTask/statusChanged"),
@@ -7425,6 +7426,7 @@ async fn devflow_legacy_claude_review_task_uses_dependency_diff_context() -> Res
     )
     .await??;
     let DevflowTaskCreateResponse { task: review_task } = to_response(review_create_response)?;
+    assert_eq!(review_task.trigger_source.as_deref(), Some("legacy:manual"));
     let _: JSONRPCNotification = timeout(
         DEFAULT_TIMEOUT,
         mcp.read_stream_until_notification_message("devflowTask/statusChanged"),
