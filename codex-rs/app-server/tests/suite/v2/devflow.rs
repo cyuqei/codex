@@ -10,7 +10,9 @@ use app_test_support::McpProcess;
 use app_test_support::create_apply_patch_sse_response;
 use app_test_support::create_exec_command_sse_response;
 use app_test_support::create_final_assistant_message_sse_response;
+use app_test_support::create_mock_responses_server_repeating_assistant;
 use app_test_support::create_mock_responses_server_sequence;
+use app_test_support::create_mock_responses_server_sequence_unchecked;
 use app_test_support::create_shell_command_sse_response_with_permissions;
 use app_test_support::to_response;
 use app_test_support::write_mock_responses_config_toml;
@@ -172,6 +174,7 @@ use codex_app_server_protocol::RequestId;
 use codex_features::Feature;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
+use tokio::time::sleep;
 use tokio::time::timeout;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(20);
@@ -288,30 +291,50 @@ async fn devflow_agent_detect_marks_codex_main_and_external_agents_legacy() -> R
     .await??;
     let DevflowAgentDetectResponse { agents } = to_response(response)?;
 
-    assert_eq!(agents.len(), 4);
+    assert_eq!(agents.len(), 7);
+    assert_eq!(agents[0].id, "codex-main");
     assert_eq!(agents[0].runtime, DevflowAgentRuntime::Codex);
     assert_eq!(agents[0].lane, DevflowAgentLane::Main);
     assert_eq!(agents[0].status, DevflowAgentStatus::Available);
     assert_eq!(agents[0].root_path.as_deref(), Some("/tmp/codex-runtime"));
-    assert_eq!(agents[1].runtime, DevflowAgentRuntime::Claude);
-    assert_eq!(agents[1].lane, DevflowAgentLane::Legacy);
+    assert!(agents[0].roles.contains(&"planner".to_string()));
+    assert_eq!(agents[1].id, "codex-worker");
+    assert_eq!(agents[1].runtime, DevflowAgentRuntime::Codex);
+    assert_eq!(agents[1].lane, DevflowAgentLane::Main);
     assert_eq!(agents[1].status, DevflowAgentStatus::Available);
-    assert_eq!(
-        agents[1].root_path.as_deref(),
-        Some(claude_root.path().to_str().expect("utf-8 path"))
-    );
-    assert_eq!(agents[2].runtime, DevflowAgentRuntime::Claude);
-    assert_eq!(agents[2].lane, DevflowAgentLane::Legacy);
+    assert_eq!(agents[1].root_path.as_deref(), Some("/tmp/codex-runtime"));
+    assert!(agents[1].roles.contains(&"worker".to_string()));
+    assert_eq!(agents[2].id, "codex-reviewer");
+    assert_eq!(agents[2].runtime, DevflowAgentRuntime::Codex);
+    assert_eq!(agents[2].lane, DevflowAgentLane::Main);
     assert_eq!(agents[2].status, DevflowAgentStatus::Available);
+    assert_eq!(agents[2].root_path.as_deref(), Some("/tmp/codex-runtime"));
+    assert!(agents[2].roles.contains(&"reviewer".to_string()));
+    assert_eq!(agents[3].id, "codex-integrator");
+    assert_eq!(agents[3].runtime, DevflowAgentRuntime::Codex);
+    assert_eq!(agents[3].lane, DevflowAgentLane::Main);
+    assert_eq!(agents[3].status, DevflowAgentStatus::Available);
+    assert_eq!(agents[3].root_path.as_deref(), Some("/tmp/codex-runtime"));
+    assert!(agents[3].roles.contains(&"integrator".to_string()));
+    assert_eq!(agents[4].runtime, DevflowAgentRuntime::Claude);
+    assert_eq!(agents[4].lane, DevflowAgentLane::Legacy);
+    assert_eq!(agents[4].status, DevflowAgentStatus::Available);
     assert_eq!(
-        agents[2].root_path.as_deref(),
+        agents[4].root_path.as_deref(),
         Some(claude_root.path().to_str().expect("utf-8 path"))
     );
-    assert_eq!(agents[3].runtime, DevflowAgentRuntime::Hermes);
-    assert_eq!(agents[3].lane, DevflowAgentLane::Legacy);
-    assert_eq!(agents[3].status, DevflowAgentStatus::Available);
+    assert_eq!(agents[5].runtime, DevflowAgentRuntime::Claude);
+    assert_eq!(agents[5].lane, DevflowAgentLane::Legacy);
+    assert_eq!(agents[5].status, DevflowAgentStatus::Available);
     assert_eq!(
-        agents[3].root_path.as_deref(),
+        agents[5].root_path.as_deref(),
+        Some(claude_root.path().to_str().expect("utf-8 path"))
+    );
+    assert_eq!(agents[6].runtime, DevflowAgentRuntime::Hermes);
+    assert_eq!(agents[6].lane, DevflowAgentLane::Legacy);
+    assert_eq!(agents[6].status, DevflowAgentStatus::Available);
+    assert_eq!(
+        agents[6].root_path.as_deref(),
         Some(hermes_root.path().to_str().expect("utf-8 path"))
     );
 
@@ -4828,13 +4851,17 @@ async fn devflow_task_plan_list_assign_and_dependency_update_roundtrip() -> Resu
     assert_eq!(tasks[2].kind, DevflowTaskKind::Review);
     assert_eq!(tasks[0].artifact_ids.len(), 1);
     assert_eq!(tasks[1].artifact_ids.len(), 1);
-    assert_eq!(tasks[2].artifact_ids, Vec::<String>::new());
+    assert_eq!(tasks[2].artifact_ids.len(), 1);
     assert_eq!(
         tasks[2].dependencies,
         vec![tasks[0].id.clone(), tasks[1].id.clone()]
     );
-    assert_eq!(tasks[0].assigned_agent_id.as_deref(), Some("codex-main"));
-    assert_eq!(tasks[2].assigned_agent_id.as_deref(), Some("codex-main"));
+    assert_eq!(tasks[0].assigned_agent_id.as_deref(), Some("codex-worker"));
+    assert_eq!(tasks[1].assigned_agent_id.as_deref(), Some("codex-worker"));
+    assert_eq!(
+        tasks[2].assigned_agent_id.as_deref(),
+        Some("codex-reviewer")
+    );
 
     for expected_task in &tasks {
         let notification: JSONRPCNotification = timeout(
@@ -4872,13 +4899,49 @@ async fn devflow_task_plan_list_assign_and_dependency_update_roundtrip() -> Resu
     assert!(plan_contents.contains("## Objective"));
     assert!(plan_contents.contains("## Execution Discipline"));
 
+    let planner_dag_artifact_id = tasks[2]
+        .artifact_ids
+        .first()
+        .cloned()
+        .expect("review task should include planner DAG artifact");
+    let planner_dag_artifact_request_id = mcp
+        .send_devflow_artifact_read_request(DevflowArtifactReadParams {
+            id: planner_dag_artifact_id,
+        })
+        .await?;
+    let planner_dag_artifact_response: JSONRPCResponse = timeout(
+        DEFAULT_TIMEOUT,
+        mcp.read_stream_until_response_message(RequestId::Integer(planner_dag_artifact_request_id)),
+    )
+    .await??;
+    let DevflowArtifactReadResponse {
+        artifact: planner_dag_artifact,
+        contents: planner_dag_contents,
+    } = to_response(planner_dag_artifact_response)?;
+    assert_eq!(planner_dag_artifact.kind, DevflowArtifactKind::Report);
+    assert_eq!(planner_dag_artifact.task_id, tasks[2].id);
+    assert!(planner_dag_artifact.title.contains("Planner DAG"));
+    let planner_dag: serde_json::Value = serde_json::from_str(&planner_dag_contents)?;
+    assert_eq!(planner_dag["runner"], "codex-devflow-planner");
+    assert_eq!(planner_dag["plannerAgentId"], "codex-main");
+    assert_eq!(planner_dag["workerAgentId"], "codex-worker");
+    assert_eq!(planner_dag["reviewerAgentId"], "codex-reviewer");
+    assert_eq!(planner_dag["integratorAgentId"], "codex-integrator");
+    assert_eq!(planner_dag["reviewTaskId"], tasks[2].id);
+    assert_eq!(
+        planner_dag["implementationTaskIds"]
+            .as_array()
+            .map(Vec::len),
+        Some(2)
+    );
+
     let list_request_id = mcp
         .send_devflow_task_list_request(DevflowTaskListParams {
             project_id: Some(project_root.path().display().to_string()),
             status: None,
-            assigned_agent_id: Some("codex-main".to_string()),
+            assigned_agent_id: Some("codex-worker".to_string()),
             cursor: None,
-            limit: Some(2),
+            limit: Some(1),
         })
         .await?;
     let list_response: JSONRPCResponse = timeout(
@@ -4890,14 +4953,14 @@ async fn devflow_task_plan_list_assign_and_dependency_update_roundtrip() -> Resu
         data: page_one,
         next_cursor,
     } = to_response(list_response)?;
-    assert_eq!(page_one.len(), 2);
-    assert_eq!(next_cursor.as_deref(), Some("2"));
+    assert_eq!(page_one.len(), 1);
+    assert_eq!(next_cursor.as_deref(), Some("1"));
 
     let page_two_request_id = mcp
         .send_devflow_task_list_request(DevflowTaskListParams {
             project_id: Some(project_root.path().display().to_string()),
             status: None,
-            assigned_agent_id: None,
+            assigned_agent_id: Some("codex-worker".to_string()),
             cursor: next_cursor,
             limit: Some(2),
         })
@@ -5003,13 +5066,7 @@ async fn devflow_task_plan_list_assign_and_dependency_update_roundtrip() -> Resu
 #[tokio::test]
 async fn devflow_task_dispatch_starts_ready_implementation_tasks_and_reports_integrator_queue()
 -> Result<()> {
-    let responses = vec![
-        create_final_assistant_message_sse_response("first workstream done")?,
-        create_final_assistant_message_sse_response("Review: first workstream approved.")?,
-        create_final_assistant_message_sse_response("second workstream done")?,
-        create_final_assistant_message_sse_response("Review: second workstream approved.")?,
-    ];
-    let server = create_mock_responses_server_sequence(responses).await;
+    let server = create_mock_responses_server_repeating_assistant("Done").await;
     let codex_home = TempDir::new()?;
     write_mock_responses_config_toml(
         codex_home.path(),
@@ -5093,12 +5150,13 @@ async fn devflow_task_dispatch_starts_ready_implementation_tasks_and_reports_int
         response.task.kind == DevflowTaskKind::Implementation
             && response.task.status == DevflowTaskStatus::Running
             && response.run.status == DevflowRunStatus::Running
+            && response.task.assigned_agent_id.as_deref() == Some("codex-worker")
     }));
     assert!(blocked.iter().any(|item| {
         item.task_id == dependent_task.id && item.dependencies == vec![tasks[0].id.clone()]
     }));
     assert!(skipped.iter().any(|item| {
-        item.task_id == tasks[2].id && item.reason == "not an implementation task"
+        item.task_id == tasks[2].id && item.reason == "waiting for dependency workstreams to merge"
     }));
 
     let integrator_artifact = integrator_artifact.expect("dispatch report artifact");
@@ -5139,6 +5197,92 @@ async fn devflow_task_dispatch_starts_ready_implementation_tasks_and_reports_int
         })
         .await??;
     }
+
+    let review_dispatch_request_id = mcp
+        .send_devflow_task_dispatch_request(DevflowTaskDispatchParams {
+            project_id: Some(project_root.path().display().to_string()),
+            task_ids: None,
+            limit: Some(4),
+        })
+        .await?;
+    let review_dispatch_response: JSONRPCResponse = timeout(
+        DEFAULT_TIMEOUT,
+        mcp.read_stream_until_response_message(RequestId::Integer(review_dispatch_request_id)),
+    )
+    .await??;
+    let DevflowTaskDispatchResponse {
+        started: review_started,
+        skipped: review_skipped,
+        blocked: review_blocked,
+        ..
+    } = to_response(review_dispatch_response)?;
+    assert_eq!(review_started.len(), 1);
+    assert!(review_started.iter().all(|response| {
+        response.task.id == tasks[2].id
+            && response.task.kind == DevflowTaskKind::Review
+            && response.task.assigned_agent_id.as_deref() == Some("codex-reviewer")
+    }));
+    assert!(review_blocked.iter().any(|item| {
+        item.task_id == dependent_task.id && item.reason == "already blocked; requires dependency resolution, approval, or explicit conflict-repair dispatch"
+    }));
+    assert!(review_skipped.iter().any(|item| {
+        item.task_id == tasks[0].id && item.status == DevflowTaskStatus::ReadyToMerge
+    }));
+
+    let review_artifact_created = timeout(DEFAULT_TIMEOUT, async {
+        loop {
+            let review_task_request_id = mcp
+                .send_devflow_task_read_request(DevflowTaskReadParams {
+                    id: tasks[2].id.clone(),
+                })
+                .await?;
+            let review_task_response: JSONRPCResponse = timeout(
+                DEFAULT_TIMEOUT,
+                mcp.read_stream_until_response_message(RequestId::Integer(review_task_request_id)),
+            )
+            .await??;
+            let DevflowTaskReadResponse { task: review_task } = to_response(review_task_response)?;
+
+            for artifact_id in review_task.artifact_ids.iter().rev() {
+                let review_artifact_read_request_id = mcp
+                    .send_devflow_artifact_read_request(DevflowArtifactReadParams {
+                        id: artifact_id.clone(),
+                    })
+                    .await?;
+                let review_artifact_read_response: JSONRPCResponse = timeout(
+                    DEFAULT_TIMEOUT,
+                    mcp.read_stream_until_response_message(RequestId::Integer(
+                        review_artifact_read_request_id,
+                    )),
+                )
+                .await??;
+                let review_artifact_read: DevflowArtifactReadResponse =
+                    to_response(review_artifact_read_response)?;
+                if review_artifact_read.artifact.kind == DevflowArtifactKind::ReviewReport
+                    && review_artifact_read
+                        .artifact
+                        .summary
+                        .starts_with("Review finding state:")
+                {
+                    return Ok::<_, anyhow::Error>(review_artifact_read);
+                }
+            }
+
+            sleep(Duration::from_millis(50)).await;
+        }
+    })
+    .await??;
+    let DevflowArtifactReadResponse {
+        contents: review_contents,
+        artifact: review_artifact,
+        ..
+    } = review_artifact_created;
+    assert_eq!(
+        review_artifact.summary,
+        "Review finding state: status=clear; open=0; resolved=0; waived=0; followUp=0"
+    );
+    assert!(review_contents.contains("# Review Finding State"));
+    assert!(review_contents.contains("\"status\": \"clear\""));
 
     Ok(())
 }
@@ -6046,12 +6190,19 @@ async fn devflow_worktree_merge_applies_clean_diff_and_blocks_conflicts() -> Res
 +after
 *** End Patch
 "#;
-    let responses = vec![
+    let mut responses = vec![
         create_apply_patch_sse_response(patch, "patch-1")?,
         create_final_assistant_message_sse_response("done")?,
         create_final_assistant_message_sse_response("Review: ready to merge.")?,
+        create_final_assistant_message_sse_response("Conflict repair ready.")?,
+        create_final_assistant_message_sse_response("Review: repair ready to merge.")?,
     ];
-    let server = create_mock_responses_server_sequence(responses).await;
+    responses.extend(
+        (0..10)
+            .map(|_| create_final_assistant_message_sse_response("Done"))
+            .collect::<Result<Vec<_>>>()?,
+    );
+    let server = create_mock_responses_server_sequence_unchecked(responses).await;
     let codex_home = TempDir::new()?;
     write_mock_responses_config_toml(
         codex_home.path(),
@@ -6377,6 +6528,108 @@ async fn devflow_worktree_merge_applies_clean_diff_and_blocks_conflicts() -> Res
         conflict_report["diff"]
             .as_str()
             .is_some_and(|diff| diff.contains("conflict-worktree"))
+    );
+
+    timeout(DEFAULT_TIMEOUT, async {
+        loop {
+            let notification = mcp
+                .read_stream_until_notification_message("devflowArtifact/created")
+                .await?;
+            let payload: DevflowArtifactCreatedNotification =
+                serde_json::from_value(notification.params.expect("artifact params"))?;
+            if payload.artifact.task_id == blocked_task.id
+                && payload
+                    .artifact
+                    .title
+                    .starts_with("Integrator merge report")
+            {
+                return Ok::<_, anyhow::Error>(());
+            }
+        }
+    })
+    .await??;
+
+    std::fs::write(project_root.path().join("note.txt"), "after\n")?;
+    run_git(project_root.path(), &["add", "note.txt"])?;
+    run_git(
+        project_root.path(),
+        &["commit", "-m", "resolve mainline conflict"],
+    )?;
+
+    let repair_dispatch_request_id = mcp
+        .send_devflow_task_dispatch_request(DevflowTaskDispatchParams {
+            project_id: None,
+            task_ids: Some(vec![blocked_task.id.clone()]),
+            limit: Some(1),
+        })
+        .await?;
+    let repair_dispatch_response: JSONRPCResponse = timeout(
+        DEFAULT_TIMEOUT,
+        mcp.read_stream_until_response_message(RequestId::Integer(repair_dispatch_request_id)),
+    )
+    .await??;
+    let DevflowTaskDispatchResponse {
+        started,
+        skipped,
+        blocked,
+        ..
+    } = to_response(repair_dispatch_response)?;
+    assert_eq!(started.len(), 1);
+    assert!(skipped.is_empty());
+    assert!(blocked.is_empty());
+    let repair_run = started[0].run.clone();
+    assert_eq!(repair_run.task_id, blocked_task.id);
+    assert!(repair_run.input.contains("Devflow conflict repair task"));
+    assert!(
+        repair_run
+            .input
+            .contains("resolve_conflicts_before_retrying_integrator_merge")
+    );
+
+    let repair_merge_artifact_created = timeout(DEFAULT_TIMEOUT, async {
+        loop {
+            let notification = mcp
+                .read_stream_until_notification_message("devflowArtifact/created")
+                .await?;
+            let payload: DevflowArtifactCreatedNotification =
+                serde_json::from_value(notification.params.expect("artifact params"))?;
+            if payload.artifact.run_id == repair_run.id
+                && payload
+                    .artifact
+                    .title
+                    .starts_with("Integrator merge report")
+            {
+                return Ok::<_, anyhow::Error>(payload.artifact);
+            }
+        }
+    })
+    .await??;
+    assert_eq!(
+        std::fs::read_to_string(project_root.path().join("note.txt"))?,
+        "conflict-worktree\n"
+    );
+
+    let repair_merge_artifact_read_request_id = mcp
+        .send_devflow_artifact_read_request(DevflowArtifactReadParams {
+            id: repair_merge_artifact_created.id,
+        })
+        .await?;
+    let repair_merge_artifact_read_response: JSONRPCResponse = timeout(
+        DEFAULT_TIMEOUT,
+        mcp.read_stream_until_response_message(RequestId::Integer(
+            repair_merge_artifact_read_request_id,
+        )),
+    )
+    .await??;
+    let DevflowArtifactReadResponse {
+        contents: repair_merge_report,
+        ..
+    } = to_response(repair_merge_artifact_read_response)?;
+    let repair_merge_report: serde_json::Value = serde_json::from_str(&repair_merge_report)?;
+    assert_eq!(repair_merge_report["merged"].as_bool(), Some(true));
+    assert_eq!(
+        repair_merge_report["nextAction"].as_str(),
+        Some("ready_for_release_prep")
     );
 
     Ok(())

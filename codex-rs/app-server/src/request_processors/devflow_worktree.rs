@@ -118,6 +118,28 @@ pub(crate) async fn read_managed_worktree(
     refresh_worktree_status(persisted.worktree).await
 }
 
+pub(crate) async fn refresh_managed_worktree_base(
+    codex_home: &Path,
+    worktree_id: &str,
+    base_commit: String,
+) -> Result<DevflowWorktree, String> {
+    let metadata_path = metadata_file_path(codex_home, worktree_id);
+    let persisted = load_persisted_worktree(&metadata_path)
+        .await?
+        .ok_or_else(|| format!("unknown devflow worktree id: {worktree_id}"))?;
+    let mut worktree = persisted.worktree;
+    if !worktree.managed {
+        return Err(format!("cannot refresh unmanaged worktree: {worktree_id}"));
+    }
+
+    worktree.base_commit = base_commit;
+    let worktree = refresh_worktree_status(worktree).await?;
+    save_persisted_worktree(codex_home, &worktree)
+        .await
+        .map_err(|err| format!("failed to persist refreshed worktree base: {err}"))?;
+    Ok(worktree)
+}
+
 pub(crate) async fn list_managed_worktrees(
     codex_home: &Path,
 ) -> Result<Vec<DevflowWorktree>, String> {

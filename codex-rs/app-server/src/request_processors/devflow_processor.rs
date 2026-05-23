@@ -176,6 +176,7 @@ use codex_core::ThreadManager;
 use codex_core::config::Config;
 use codex_core::config::ConfigOverrides;
 use codex_git_utils::get_git_repo_root;
+use codex_git_utils::get_head_commit_hash;
 use codex_protocol::ThreadId;
 use codex_protocol::config_types::SandboxMode;
 use codex_protocol::error::CodexErr;
@@ -241,6 +242,7 @@ use super::devflow_worktree::create_managed_worktree;
 use super::devflow_worktree::list_managed_worktrees;
 use super::devflow_worktree::merge_managed_worktree;
 use super::devflow_worktree::read_managed_worktree;
+use super::devflow_worktree::refresh_managed_worktree_base;
 use super::devflow_worktree::worktree_diff;
 use super::thread_lifecycle::ListenerTaskContext;
 use super::thread_lifecycle::ensure_conversation_listener;
@@ -265,6 +267,13 @@ struct StaticAgentDescriptor<'a> {
     lane: DevflowAgentLane,
     root: &'a str,
     launch_command: &'a str,
+    roles: &'a [&'a str],
+    capabilities: &'a [&'a str],
+}
+
+struct CodexAgentProfile<'a> {
+    id: &'a str,
+    name: &'a str,
     roles: &'a [&'a str],
     capabilities: &'a [&'a str],
 }
@@ -1607,7 +1616,7 @@ impl DevflowRequestProcessor {
                 kind: DevflowTaskKind::Implementation,
                 risk_level: params.risk_level,
                 dependencies: Vec::new(),
-                assigned_agent_id: Some("codex-main".to_string()),
+                assigned_agent_id: Some("codex-worker".to_string()),
                 worktree_id: None,
                 context_pack_id: None,
                 run_ids: Vec::new(),
@@ -1632,7 +1641,7 @@ impl DevflowRequestProcessor {
                 .iter()
                 .map(|task| task.id.clone())
                 .collect(),
-            assigned_agent_id: Some("codex-main".to_string()),
+            assigned_agent_id: Some("codex-reviewer".to_string()),
             worktree_id: None,
             context_pack_id: None,
             run_ids: Vec::new(),
@@ -1686,6 +1695,18 @@ impl DevflowRequestProcessor {
                 plan_artifacts.push(artifact);
             }
         }
+        let (planner_dag_artifact, planner_dag_content) =
+            build_planner_dag_artifact(&mut tasks, &params.title, &params.objective, now)
+                .map_err(internal_error)?;
+        write_artifact_file(Path::new(&planner_dag_artifact.path), &planner_dag_content)
+            .await
+            .map_err(|err| {
+                internal_error(format!(
+                    "failed to write devflow planner DAG artifact for {}: {err}",
+                    params.title
+                ))
+            })?;
+        plan_artifacts.push(planner_dag_artifact);
 
         {
             let mut store = self.store.lock().await;
@@ -1797,81 +1818,174 @@ impl DevflowRequestProcessor {
             let mut blocked = Vec::new();
             let mut blocked_notifications = Vec::new();
             for task in tasks {
-                if task.kind != DevflowTaskKind::Implementation {
-                    skipped.push(DevflowTaskDispatchSkipped {
-                        task_id: task.id,
-                        title: task.title,
-                        status: task.status,
-                        reason: "not an implementation task".to_string(),
-                    });
-                    continue;
-                }
-
-                match task.status {
-                    DevflowTaskStatus::Planned => {
-                        let dependencies = unresolved_dependencies(&store, &task);
-                        if dependencies.is_empty() {
-                            if task_requires_plan_artifact(task.risk_level)
-                                && !task_has_plan_artifact(&store, &task)
-                            {
+                match task.kind {
+                    DevflowTaskKind::Implementation => match task.status {
+                        DevflowTaskStatus::Planned => {
+                            let dependencies = unresolved_dependencies(&store, &task);
+                            if dependencies.is_empty() {
+                                if task_requires_plan_artifact(task.risk_level)
+                                    && !task_has_plan_artifact(&store, &task)
+                                {
+                                    blocked.push(DevflowTaskDispatchBlocked {
+                                        task_id: task.id.clone(),
+                                        title: task.title.clone(),
+                                        dependencies: Vec::new(),
+                                        reason: "missing required plan artifact".to_string(),
+                                    });
+                                    if let Some(task_view) = store.tasks.get_mut(&task.id) {
+                                        task_view.status = DevflowTaskStatus::Blocked;
+                                        task_view.updated_at = now;
+                                        blocked_notifications.push(task_view.clone());
+                                    }
+                                } else if ready_tasks.len() < limit {
+                                    ready_tasks.push(task);
+                                } else {
+                                    skipped.push(DevflowTaskDispatchSkipped {
+                                        task_id: task.id,
+                                        title: task.title,
+                                        status: task.status,
+                                        reason: format!("dispatch limit reached ({limit})"),
+                                    });
+                                }
+                            } else {
                                 blocked.push(DevflowTaskDispatchBlocked {
                                     task_id: task.id.clone(),
                                     title: task.title.clone(),
-                                    dependencies: Vec::new(),
-                                    reason: "missing required plan artifact".to_string(),
+                                    dependencies,
+                                    reason: "unresolved dependencies".to_string(),
                                 });
                                 if let Some(task_view) = store.tasks.get_mut(&task.id) {
                                     task_view.status = DevflowTaskStatus::Blocked;
                                     task_view.updated_at = now;
                                     blocked_notifications.push(task_view.clone());
                                 }
-                            } else if ready_tasks.len() < limit {
+                            }
+                        }
+                        DevflowTaskStatus::Running => {
+                            skipped.push(DevflowTaskDispatchSkipped {
+                                task_id: task.id,
+                                title: task.title,
+                                status: task.status,
+                                reason: "already running".to_string(),
+                            });
+                        }
+                        DevflowTaskStatus::Blocked => {
+                            let dependencies = unresolved_dependencies(&store, &task);
+                            let repair_eligible =
+                                requested_task_ids.as_ref().is_some_and(|task_ids| {
+                                    task_ids.contains(&task.id)
+                                        && dependencies.is_empty()
+                                        && latest_integrator_conflict_report(&store, &task)
+                                            .is_some()
+                                });
+                            if repair_eligible && ready_tasks.len() < limit {
                                 ready_tasks.push(task);
-                            } else {
+                            } else if repair_eligible {
                                 skipped.push(DevflowTaskDispatchSkipped {
                                     task_id: task.id,
                                     title: task.title,
                                     status: task.status,
                                     reason: format!("dispatch limit reached ({limit})"),
                                 });
+                            } else {
+                                blocked.push(DevflowTaskDispatchBlocked {
+                                    task_id: task.id.clone(),
+                                    title: task.title.clone(),
+                                    dependencies,
+                                    reason: "already blocked; requires dependency resolution, approval, or explicit conflict-repair dispatch"
+                                        .to_string(),
+                                });
                             }
-                        } else {
-                            blocked.push(DevflowTaskDispatchBlocked {
-                                task_id: task.id.clone(),
-                                title: task.title.clone(),
-                                dependencies,
-                                reason: "unresolved dependencies".to_string(),
+                        }
+                        DevflowTaskStatus::Paused
+                        | DevflowTaskStatus::ReadyForReview
+                        | DevflowTaskStatus::ReadyToMerge
+                        | DevflowTaskStatus::Failed
+                        | DevflowTaskStatus::Cancelled => {
+                            skipped.push(DevflowTaskDispatchSkipped {
+                                task_id: task.id,
+                                title: task.title,
+                                status: task.status,
+                                reason: "not ready for automatic dispatch".to_string(),
                             });
-                            if let Some(task_view) = store.tasks.get_mut(&task.id) {
-                                task_view.status = DevflowTaskStatus::Blocked;
-                                task_view.updated_at = now;
-                                blocked_notifications.push(task_view.clone());
+                        }
+                    },
+                    DevflowTaskKind::Review => {
+                        let dependencies = unresolved_dependencies(&store, &task);
+                        match task.status {
+                            DevflowTaskStatus::Planned => {
+                                if dependencies.is_empty() {
+                                    if ready_tasks.len() < limit {
+                                        ready_tasks.push(task);
+                                    } else {
+                                        skipped.push(DevflowTaskDispatchSkipped {
+                                            task_id: task.id,
+                                            title: task.title,
+                                            status: task.status,
+                                            reason: format!("dispatch limit reached ({limit})"),
+                                        });
+                                    }
+                                } else {
+                                    skipped.push(DevflowTaskDispatchSkipped {
+                                        task_id: task.id,
+                                        title: task.title,
+                                        status: task.status,
+                                        reason: "waiting for dependency workstreams to merge"
+                                            .to_string(),
+                                    });
+                                }
+                            }
+                            DevflowTaskStatus::Blocked => {
+                                if dependencies.is_empty()
+                                    && requested_task_ids
+                                        .as_ref()
+                                        .is_some_and(|task_ids| task_ids.contains(&task.id))
+                                {
+                                    if ready_tasks.len() < limit {
+                                        ready_tasks.push(task);
+                                    } else {
+                                        skipped.push(DevflowTaskDispatchSkipped {
+                                            task_id: task.id,
+                                            title: task.title,
+                                            status: task.status,
+                                            reason: format!("dispatch limit reached ({limit})"),
+                                        });
+                                    }
+                                } else {
+                                    blocked.push(DevflowTaskDispatchBlocked {
+                                        task_id: task.id.clone(),
+                                        title: task.title.clone(),
+                                        dependencies,
+                                        reason: "blocked review task still depends on unfinished workstreams"
+                                            .to_string(),
+                                    });
+                                }
+                            }
+                            DevflowTaskStatus::Running => {
+                                skipped.push(DevflowTaskDispatchSkipped {
+                                    task_id: task.id,
+                                    title: task.title,
+                                    status: task.status,
+                                    reason: "already running".to_string(),
+                                });
+                            }
+                            DevflowTaskStatus::Paused
+                            | DevflowTaskStatus::ReadyForReview
+                            | DevflowTaskStatus::ReadyToMerge
+                            | DevflowTaskStatus::Failed
+                            | DevflowTaskStatus::Cancelled => {
+                                skipped.push(DevflowTaskDispatchSkipped {
+                                    task_id: task.id,
+                                    title: task.title,
+                                    status: task.status,
+                                    reason: "not ready for automatic dispatch".to_string(),
+                                });
                             }
                         }
                     }
-                    DevflowTaskStatus::Running => {
-                        skipped.push(DevflowTaskDispatchSkipped {
-                            task_id: task.id,
-                            title: task.title,
-                            status: task.status,
-                            reason: "already running".to_string(),
-                        });
-                    }
-                    DevflowTaskStatus::Blocked => {
-                        let dependencies = unresolved_dependencies(&store, &task);
-                        blocked.push(DevflowTaskDispatchBlocked {
-                            task_id: task.id.clone(),
-                            title: task.title,
-                            dependencies,
-                            reason: "already blocked; requires dependency resolution, approval, or conflict recovery"
-                                .to_string(),
-                        });
-                    }
-                    DevflowTaskStatus::Paused
-                    | DevflowTaskStatus::ReadyForReview
-                    | DevflowTaskStatus::ReadyToMerge
-                    | DevflowTaskStatus::Failed
-                    | DevflowTaskStatus::Cancelled => {
+                    DevflowTaskKind::Report
+                    | DevflowTaskKind::Diagnostic
+                    | DevflowTaskKind::Automation => {
                         skipped.push(DevflowTaskDispatchSkipped {
                             task_id: task.id,
                             title: task.title,
@@ -1915,15 +2029,12 @@ impl DevflowRequestProcessor {
 
         let mut started = Vec::new();
         for task in ready_tasks {
-            match self
-                .start_task_run(
-                    &task.id,
-                    None,
-                    0,
-                    DevflowIntegratorMergePolicy::AutoWhenReady,
-                )
-                .await
-            {
+            let merge_policy = if task.kind == DevflowTaskKind::Implementation {
+                DevflowIntegratorMergePolicy::AutoWhenReady
+            } else {
+                DevflowIntegratorMergePolicy::Manual
+            };
+            match self.start_task_run(&task.id, None, 0, merge_policy).await {
                 Ok(response) => started.push(DevflowTaskDispatchStarted {
                     task: response.task,
                     run: response.run,
@@ -3288,7 +3399,7 @@ impl DevflowRequestProcessor {
         }
 
         let now = Utc::now().timestamp();
-        let managed_worktree = if task.kind == DevflowTaskKind::Implementation
+        let mut managed_worktree = if task.kind == DevflowTaskKind::Implementation
             && get_git_repo_root(Path::new(&task.project_id)).is_some()
         {
             Some(self.ensure_managed_worktree(&task.id).await?)
@@ -3298,6 +3409,33 @@ impl DevflowRequestProcessor {
         if let Some(worktree) = managed_worktree.as_ref() {
             task.worktree_id = Some(worktree.id.clone());
         }
+        let mut conflict_repair_base_refreshed = false;
+        let conflict_repair_worktree = if task.kind == DevflowTaskKind::Implementation
+            && task.status == DevflowTaskStatus::Blocked
+            && self
+                .latest_integrator_conflict_report(&task)
+                .await
+                .is_some()
+        {
+            managed_worktree.clone()
+        } else {
+            None
+        };
+        if let Some(worktree) = conflict_repair_worktree
+            && let Some(worktree) = self
+                .refresh_conflict_repair_worktree_base(&task, &worktree)
+                .await?
+            {
+                self.outgoing
+                    .send_server_notification(ServerNotification::DevflowWorktreeStatusChanged(
+                        DevflowWorktreeStatusChangedNotification {
+                            worktree: worktree.clone(),
+                        },
+                    ))
+                    .await;
+                managed_worktree = Some(worktree);
+                conflict_repair_base_refreshed = true;
+            }
         let agent_id = task
             .assigned_agent_id
             .clone()
@@ -3311,7 +3449,10 @@ impl DevflowRequestProcessor {
             (DevflowTaskKind::Report, "claude-writer")
                 | (DevflowTaskKind::Review, "claude-reviewer")
         );
-        let input = prompt_override.unwrap_or_else(|| devflow_turn_prompt(&task));
+        let input = self
+            .build_devflow_task_input(&task, prompt_override)
+            .await
+            .map_err(|err| internal_error(format!("failed to build devflow task prompt: {err}")))?;
         let run_id = Uuid::new_v4().to_string();
         let internal_connection_id = ConnectionId(
             self.next_internal_connection_id
@@ -3370,6 +3511,64 @@ impl DevflowRequestProcessor {
                     requested_stop: None,
                 },
             );
+        }
+
+        if conflict_repair_base_refreshed && let Some(worktree) = managed_worktree.as_ref() {
+            match worktree_diff(self.config.codex_home.as_path(), &worktree.id).await {
+                Ok((_, diff)) => {
+                    match self
+                        .write_or_update_diff_artifact(&task.id, &run.id, &diff)
+                        .await
+                    {
+                        Ok(artifact) => {
+                            self.outgoing
+                                .send_server_notification(
+                                    ServerNotification::DevflowRunDiffUpdated(
+                                        DevflowRunDiffUpdatedNotification {
+                                            project_id: task.project_id.clone(),
+                                            task_id: task.id.clone(),
+                                            run_id: run.id.clone(),
+                                            artifact_id: artifact.id.clone(),
+                                            diff: diff.clone(),
+                                        },
+                                    ),
+                                )
+                                .await;
+                            self.outgoing
+                                .send_server_notification(
+                                    ServerNotification::DevflowWorktreeDiffUpdated(
+                                        DevflowWorktreeDiffUpdatedNotification {
+                                            project_id: task.project_id.clone(),
+                                            task_id: task.id.clone(),
+                                            run_id: run.id.clone(),
+                                            worktree_id: Some(worktree.id.clone()),
+                                            artifact_id: artifact.id,
+                                            diff,
+                                        },
+                                    ),
+                                )
+                                .await;
+                        }
+                        Err(err) => {
+                            tracing::warn!(
+                                task_id = task.id,
+                                run_id = run.id,
+                                error = %err,
+                                "failed to persist conflict repair base diff artifact"
+                            );
+                        }
+                    }
+                }
+                Err(err) => {
+                    tracing::warn!(
+                        task_id = task.id,
+                        run_id = run.id,
+                        worktree_id = worktree.id,
+                        error = %err,
+                        "failed to compute conflict repair base diff"
+                    );
+                }
+            }
         }
 
         if uses_legacy_automation_agent {
@@ -4074,6 +4273,173 @@ impl DevflowRequestProcessor {
         self.finalize_ready_for_review(&run.id).await;
     }
 
+    async fn build_devflow_task_input(
+        &self,
+        task: &DevflowTask,
+        prompt_override: Option<String>,
+    ) -> Result<String, String> {
+        if let Some(prompt) = prompt_override {
+            return Ok(prompt);
+        }
+
+        if task.kind == DevflowTaskKind::Implementation
+            && task.status == DevflowTaskStatus::Blocked
+            && let Some(conflict_report) = self.latest_integrator_conflict_report(task).await
+        {
+            let task_context = self.build_task_context_sections(task).await?;
+            let conflict_output = fs::read_to_string(&conflict_report.path)
+                .await
+                .unwrap_or_else(|_| conflict_report.summary.clone());
+            let mut prompt = format!(
+                "You are executing a Devflow conflict repair task.\n\nProject root: {}\nTask title: {}\nObjective: {}\n\nThe Integrator blocked this worktree merge. Repair the blocked diff inside the current managed worktree, rerun the most relevant focused verification you can, and leave the result ready for review.\n\n## Integrator Merge Report\n```json\n{}\n```\n",
+                task.project_id, task.title, task.objective, conflict_output
+            );
+            if !task_context.is_empty() {
+                prompt.push('\n');
+                prompt.push_str(&task_context);
+            }
+            return Ok(prompt);
+        }
+
+        let mut prompt = devflow_turn_prompt(task);
+        if matches!(
+            task.kind,
+            DevflowTaskKind::Review | DevflowTaskKind::Report | DevflowTaskKind::Automation
+        ) {
+            let task_context = self.build_task_context_sections(task).await?;
+            if !task_context.is_empty() {
+                prompt.push_str("\n\n");
+                prompt.push_str(&task_context);
+            }
+        }
+
+        Ok(prompt)
+    }
+
+    async fn build_task_context_sections(&self, task: &DevflowTask) -> Result<String, String> {
+        let (task_artifacts, dependency_records) = {
+            let store = self.store.lock().await;
+            let task_artifacts = task
+                .artifact_ids
+                .iter()
+                .filter_map(|artifact_id| store.artifacts.get(artifact_id).cloned())
+                .collect::<Vec<_>>();
+            let dependency_records = task
+                .dependencies
+                .iter()
+                .filter_map(|dependency_id| {
+                    let dependency_task = store.tasks.get(dependency_id)?.clone();
+                    let dependency_artifacts = dependency_task
+                        .artifact_ids
+                        .iter()
+                        .filter_map(|artifact_id| store.artifacts.get(artifact_id).cloned())
+                        .collect::<Vec<_>>();
+                    Some((dependency_task, dependency_artifacts))
+                })
+                .collect::<Vec<_>>();
+            (task_artifacts, dependency_records)
+        };
+
+        let mut sections = Vec::new();
+        for artifact in task_artifacts {
+            let body = fs::read_to_string(&artifact.path)
+                .await
+                .unwrap_or_else(|_| artifact.summary.clone());
+            sections.push(format!(
+                "## Task Artifact\n- Artifact ID: {}\n- Title: {}\n- Kind: {:?}\n- Run ID: {}\n\n```text\n{}\n```",
+                artifact.id,
+                artifact.title,
+                artifact.kind,
+                artifact.run_id,
+                truncate(&body, 12_000)
+            ));
+        }
+
+        for (dependency_task, dependency_artifacts) in dependency_records {
+            let mut section = format!(
+                "## Dependency Task\n- Task ID: {}\n- Title: {}\n- Kind: {:?}\n- Status: {:?}\n",
+                dependency_task.id,
+                dependency_task.title,
+                dependency_task.kind,
+                dependency_task.status
+            );
+            for artifact in dependency_artifacts {
+                if !should_include_dependency_artifact(task.kind, artifact.kind) {
+                    continue;
+                }
+                let body = fs::read_to_string(&artifact.path)
+                    .await
+                    .unwrap_or_else(|_| artifact.summary.clone());
+                section.push_str(&format!(
+                    "\n### {} ({:?})\n```text\n{}\n```\n",
+                    artifact.title,
+                    artifact.kind,
+                    truncate(&body, 12_000)
+                ));
+            }
+            sections.push(section);
+        }
+
+        if sections.is_empty() {
+            return Ok(String::new());
+        }
+
+        Ok(sections.join("\n\n"))
+    }
+
+    async fn latest_integrator_conflict_report(
+        &self,
+        task: &DevflowTask,
+    ) -> Option<DevflowArtifact> {
+        let store = self.store.lock().await;
+        task.artifact_ids
+            .iter()
+            .rev()
+            .filter_map(|artifact_id| store.artifacts.get(artifact_id))
+            .find(|artifact| {
+                artifact.title.starts_with("Integrator merge report")
+                    && artifact.summary.starts_with("Integrator blocked ")
+            })
+            .cloned()
+    }
+
+    async fn refresh_conflict_repair_worktree_base(
+        &self,
+        task: &DevflowTask,
+        worktree: &DevflowWorktree,
+    ) -> Result<Option<DevflowWorktree>, JSONRPCErrorError> {
+        let Some(repo_root) = get_git_repo_root(Path::new(&task.project_id)) else {
+            return Ok(None);
+        };
+        let Some(base_commit) = get_head_commit_hash(&repo_root).await.map(|sha| sha.0) else {
+            tracing::warn!(
+                task_id = task.id,
+                project_id = task.project_id,
+                "unable to resolve current repo HEAD for conflict repair base refresh"
+            );
+            return Ok(None);
+        };
+
+        match refresh_managed_worktree_base(
+            self.config.codex_home.as_path(),
+            &worktree.id,
+            base_commit,
+        )
+        .await
+        {
+            Ok(worktree) => Ok(Some(worktree)),
+            Err(err) => {
+                tracing::warn!(
+                    task_id = task.id,
+                    worktree_id = worktree.id,
+                    error = %err,
+                    "failed to refresh managed worktree base for conflict repair"
+                );
+                Ok(None)
+            }
+        }
+    }
+
     async fn build_claude_task_prompt(
         &self,
         task: &DevflowTask,
@@ -4712,6 +5078,43 @@ impl DevflowRequestProcessor {
                 return;
             }
             if review_requested && original_turn_id.as_deref() != Some(payload.turn.id.as_str()) {
+                self.finalize_ready_for_review(&run_id).await;
+                return;
+            }
+            if task_kind == codex_app_server_protocol::DevflowTaskKind::Review {
+                let review = payload
+                    .turn
+                    .items
+                    .iter()
+                    .filter_map(|item| match item {
+                        ThreadItem::AgentMessage { text, .. } if !text.trim().is_empty() => {
+                            Some(text.as_str())
+                        }
+                        ThreadItem::ExitedReviewMode { review, .. }
+                            if !review.trim().is_empty() =>
+                        {
+                            Some(review.as_str())
+                        }
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n\n");
+                let review = if review.trim().is_empty() {
+                    "Codex reviewer completed without structured findings.".to_string()
+                } else {
+                    review
+                };
+                let artifact = match self
+                    .write_review_artifact(&task_id, &run_id, &review, None)
+                    .await
+                {
+                    Ok(artifact) => artifact,
+                    Err(err) => {
+                        tracing::warn!(error = %err, "failed to persist devflow review artifact");
+                        return;
+                    }
+                };
+                self.send_artifact_created(artifact).await;
                 self.finalize_ready_for_review(&run_id).await;
                 return;
             }
@@ -6557,7 +6960,42 @@ impl DevflowRequestProcessor {
 
     fn agent_by_id(&self, agent_id: &str) -> Result<DevflowAgent, JSONRPCErrorError> {
         match agent_id {
-            "codex-main" => Ok(self.codex_agent(None)),
+            "codex-main" => Ok(self.codex_agent(
+                CodexAgentProfile {
+                    id: "codex-main",
+                    name: "Codex",
+                    roles: &["planner", "worker", "reviewer", "integrator"],
+                    capabilities: &["coding", "testing", "review", "turn-runtime"],
+                },
+                None,
+            )),
+            "codex-worker" => Ok(self.codex_agent(
+                CodexAgentProfile {
+                    id: "codex-worker",
+                    name: "Codex Worker",
+                    roles: &["worker", "implementation"],
+                    capabilities: &["coding", "testing", "turn-runtime"],
+                },
+                None,
+            )),
+            "codex-reviewer" => Ok(self.codex_agent(
+                CodexAgentProfile {
+                    id: "codex-reviewer",
+                    name: "Codex Reviewer",
+                    roles: &["reviewer", "review"],
+                    capabilities: &["review", "turn-runtime"],
+                },
+                None,
+            )),
+            "codex-integrator" => Ok(self.codex_agent(
+                CodexAgentProfile {
+                    id: "codex-integrator",
+                    name: "Codex Integrator",
+                    roles: &["integrator", "integration"],
+                    capabilities: &["integration", "conflict-resolution", "turn-runtime"],
+                },
+                None,
+            )),
             "claude-writer" => Ok(self.local_agent(StaticAgentDescriptor {
                 id: "claude-writer",
                 name: "Claude Code",
@@ -6596,7 +7034,42 @@ impl DevflowRequestProcessor {
 
     fn detect_agents(&self, params: DevflowAgentDetectParams) -> Vec<DevflowAgent> {
         vec![
-            self.codex_agent(params.codex_root.as_deref()),
+            self.codex_agent(
+                CodexAgentProfile {
+                    id: "codex-main",
+                    name: "Codex",
+                    roles: &["planner", "worker", "reviewer", "integrator"],
+                    capabilities: &["coding", "testing", "review", "turn-runtime"],
+                },
+                params.codex_root.as_deref(),
+            ),
+            self.codex_agent(
+                CodexAgentProfile {
+                    id: "codex-worker",
+                    name: "Codex Worker",
+                    roles: &["worker", "implementation"],
+                    capabilities: &["coding", "testing", "turn-runtime"],
+                },
+                params.codex_root.as_deref(),
+            ),
+            self.codex_agent(
+                CodexAgentProfile {
+                    id: "codex-reviewer",
+                    name: "Codex Reviewer",
+                    roles: &["reviewer", "review"],
+                    capabilities: &["review", "turn-runtime"],
+                },
+                params.codex_root.as_deref(),
+            ),
+            self.codex_agent(
+                CodexAgentProfile {
+                    id: "codex-integrator",
+                    name: "Codex Integrator",
+                    roles: &["integrator", "integration"],
+                    capabilities: &["integration", "conflict-resolution", "turn-runtime"],
+                },
+                params.codex_root.as_deref(),
+            ),
             self.local_agent(StaticAgentDescriptor {
                 id: "claude-writer",
                 name: "Claude Code",
@@ -6630,7 +7103,11 @@ impl DevflowRequestProcessor {
         ]
     }
 
-    fn codex_agent(&self, override_root: Option<&str>) -> DevflowAgent {
+    fn codex_agent(
+        &self,
+        profile: CodexAgentProfile<'_>,
+        override_root: Option<&str>,
+    ) -> DevflowAgent {
         let root_path = override_root.map(str::to_owned).or_else(|| {
             self.arg0_paths
                 .codex_self_exe
@@ -6639,26 +7116,22 @@ impl DevflowRequestProcessor {
         });
 
         DevflowAgent {
-            id: "codex-main".to_string(),
-            name: "Codex".to_string(),
+            id: profile.id.to_string(),
+            name: profile.name.to_string(),
             runtime: DevflowAgentRuntime::Codex,
             lane: DevflowAgentLane::Main,
-            roles: vec![
-                "implementation".to_string(),
-                "review".to_string(),
-                "integration".to_string(),
-            ],
+            roles: profile.roles.iter().map(ToString::to_string).collect(),
             root_path: root_path.clone(),
             launch_command: Some("codex".to_string()),
             status: DevflowAgentStatus::Available,
-            capabilities: vec![
-                "coding".to_string(),
-                "testing".to_string(),
-                "review".to_string(),
-                "turn-runtime".to_string(),
-            ],
+            capabilities: profile
+                .capabilities
+                .iter()
+                .map(ToString::to_string)
+                .collect(),
             diagnostics: vec![format!(
-                "codex runtime ready{}",
+                "codex runtime ready for {}{}",
+                profile.id,
                 root_path
                     .as_ref()
                     .map(|value| format!(" at {value}"))
@@ -6921,6 +7394,124 @@ fn devflow_turn_prompt(task: &DevflowTask) -> String {
     }
 }
 
+fn build_planner_dag_artifact(
+    tasks: &mut [DevflowTask],
+    title: &str,
+    objective: &str,
+    now: i64,
+) -> Result<(DevflowArtifact, String), String> {
+    let artifact_id = Uuid::new_v4().to_string();
+    let run_id = format!("planner-dag-{artifact_id}");
+    let implementation_task_ids = tasks
+        .iter()
+        .filter(|task| task.kind == DevflowTaskKind::Implementation)
+        .map(|task| task.id.clone())
+        .collect::<Vec<_>>();
+    let (review_task_id, project_id, review_task_title) = {
+        let review_task = tasks
+            .iter_mut()
+            .find(|task| task.kind == DevflowTaskKind::Review)
+            .ok_or_else(|| "planner DAG requires a fan-in review task".to_string())?;
+        if !review_task.artifact_ids.contains(&artifact_id) {
+            review_task.artifact_ids.push(artifact_id.clone());
+        }
+        (
+            review_task.id.clone(),
+            review_task.project_id.clone(),
+            review_task.title.clone(),
+        )
+    };
+    let artifact = DevflowArtifact {
+        id: artifact_id.clone(),
+        task_id: review_task_id.clone(),
+        run_id: run_id.clone(),
+        kind: DevflowArtifactKind::Report,
+        title: format!("Planner DAG for {title}"),
+        path: artifact_file_path(
+            &project_id,
+            &run_id,
+            &format!("planner-dag-{artifact_id}"),
+            "json",
+        )
+        .display()
+        .to_string(),
+        mime_type: "application/json".to_string(),
+        summary: format!(
+            "Planner DAG with {} implementation workstreams and a Codex reviewer fan-in task",
+            implementation_task_ids.len()
+        ),
+        created_at: now,
+    };
+    let nodes = tasks
+        .iter()
+        .map(|task| {
+            let role = match task.kind {
+                DevflowTaskKind::Implementation => "worker",
+                DevflowTaskKind::Review => "reviewer",
+                DevflowTaskKind::Report => "reporter",
+                DevflowTaskKind::Diagnostic => "qa",
+                DevflowTaskKind::Automation => "automation",
+            };
+            serde_json::json!({
+                "taskId": task.id,
+                "title": task.title,
+                "kind": task.kind,
+                "status": task.status,
+                "role": role,
+                "assignedAgentId": task.assigned_agent_id,
+                "dependencies": task.dependencies,
+                "artifactIds": task.artifact_ids,
+                "worktreeId": task.worktree_id,
+            })
+        })
+        .collect::<Vec<_>>();
+    let edges = tasks
+        .iter()
+        .flat_map(|task| {
+            task.dependencies.iter().map(|dependency_id| {
+                let relation = if task.kind == DevflowTaskKind::Review {
+                    "fan_in_review"
+                } else {
+                    "task_dependency"
+                };
+                serde_json::json!({
+                    "fromTaskId": dependency_id,
+                    "toTaskId": task.id,
+                    "relation": relation,
+                })
+            })
+        })
+        .collect::<Vec<_>>();
+    let content = serde_json::to_string_pretty(&serde_json::json!({
+        "schemaVersion": 1,
+        "runner": "codex-devflow-planner",
+        "status": "planned",
+        "title": title,
+        "objective": objective,
+        "projectId": project_id,
+        "plannerAgentId": "codex-main",
+        "workerAgentId": "codex-worker",
+        "reviewerAgentId": "codex-reviewer",
+        "integratorAgentId": "codex-integrator",
+        "implementationTaskIds": implementation_task_ids,
+        "reviewTaskId": review_task_id,
+        "reviewTaskTitle": review_task_title,
+        "nodes": nodes,
+        "edges": edges,
+        "nextAction": "dispatch_ready_implementation_workstreams",
+        "policy": {
+            "plannerDag": "The planner emits a durable DAG artifact whose nodes are Codex-owned tasks and whose edges are task dependencies.",
+            "parallelWorkers": "Implementation nodes are assigned to codex-worker and run as independent Codex threads in isolated managed worktrees.",
+            "reviewFanIn": "The fan-in review node is assigned to codex-reviewer and starts after implementation dependencies have Integrator merge evidence.",
+            "integratorMerge": "codex-integrator applies each ready worktree diff through the Devflow Integrator merge path and records conflict or release-prep evidence.",
+            "legacyBoundary": "Claude and Hermes adapters are not part of this main-lane DAG unless a task is explicitly reassigned to a legacy agent."
+        },
+        "createdAt": now,
+    }))
+    .map_err(|err| format!("failed to serialize planner DAG artifact: {err}"))?;
+    Ok((artifact, content))
+}
+
 fn build_task_plan_steps(title: &str, objective: &str, max_tasks: Option<u32>) -> Vec<String> {
     let max_tasks = max_tasks.unwrap_or(3).clamp(1, 6) as usize;
     let mut steps = objective
@@ -6965,6 +7556,21 @@ fn unresolved_dependencies(store: &DevflowStore, task: &DevflowTask) -> Vec<Stri
             None => Some(dependency_id.clone()),
         })
         .collect()
+}
+
+fn latest_integrator_conflict_report(
+    store: &DevflowStore,
+    task: &DevflowTask,
+) -> Option<DevflowArtifact> {
+    task.artifact_ids
+        .iter()
+        .rev()
+        .filter_map(|artifact_id| store.artifacts.get(artifact_id))
+        .find(|artifact| {
+            artifact.title.starts_with("Integrator merge report")
+                && artifact.summary.starts_with("Integrator blocked ")
+        })
+        .cloned()
 }
 
 fn completed_task_status(

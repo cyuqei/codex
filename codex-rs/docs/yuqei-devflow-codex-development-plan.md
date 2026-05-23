@@ -453,8 +453,10 @@ cargo test -p codex-app-server-protocol
 
 当前进度：
 
-- `devflowTask/dispatch` 已批量启动 ready implementation workstream，并写入 Integrator dispatch report。
-- dispatch 启动的 implementation task 现在会在 `ready_to_merge` 且 diff、quality gate、review artifact 都齐备后自动走 `devflowWorktree/merge` 同一条 Integrator 路径。
+- `devflowTask/plan` 已生成可恢复 Planner DAG artifact：implementation workstream 分配给 `codex-worker`，fan-in review task 分配给 `codex-reviewer`，artifact 中明确 `codex-main`/`codex-worker`/`codex-reviewer`/`codex-integrator` 的 main-lane role map、nodes、edges 和 nextAction。
+- `devflowTask/dispatch` 已批量启动 ready implementation workstream，并写入 Integrator dispatch report；dispatch 启动的 implementation task 现在会在 `ready_to_merge` 且 diff、quality gate、review artifact 都齐备后自动走 `devflowWorktree/merge` 同一条 Integrator 路径。
+- implementation workstream 成功合并后，若所有 Planner DAG 依赖均满足，后续 project dispatch 会启动 fan-in `codex-reviewer` task，并把 Planner DAG artifact 与 dependency artifacts 注入 Review prompt；review task 完成后会写入自己的规范化 `ReviewReport` artifact，形成 Codex-owned 复审证据闭环。
+- 有冲突时 Integrator 仍将 task 标记为 `blocked` 并写入 conflict report；primary worktree 修复后，显式 `devflowTask/dispatch` 指定该 task id 会启动 Codex conflict-repair run，先把 managed worktree 的 `baseCommit` 对齐到当前 primary HEAD，再写入 repair diff artifact，随后重新进入 quality gate、review 和 Integrator merge。
 - 普通 `devflowTask/start` 仍保留显式 merge 语义，避免单任务验证和 cleanup 场景被后台自动改动 primary worktree。
 
 ### Phase 8：发布准备和硬化
