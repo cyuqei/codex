@@ -1911,6 +1911,45 @@ async fn devflow_legacy_report_task_requires_explicit_migration_trigger_source()
             assigned_agent_id: Some("claude-writer".to_string()),
         })
         .await?;
+    let create_error: JSONRPCError = timeout(
+        DEFAULT_TIMEOUT,
+        mcp.read_stream_until_error_message(RequestId::Integer(create_request_id)),
+    )
+    .await??;
+    assert_eq!(create_error.error.code, INVALID_REQUEST_ERROR_CODE);
+    assert!(
+        create_error
+            .error
+            .message
+            .contains("explicit migration triggerSource"),
+        "unexpected create error: {}",
+        create_error.error.message
+    );
+    Ok(())
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn devflow_legacy_agent_assignment_requires_explicit_migration_trigger_source() -> Result<()>
+{
+    let codex_home = TempDir::new()?;
+    let project_root = TempDir::new()?;
+
+    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
+
+    let create_request_id = mcp
+        .send_devflow_task_create_request(DevflowTaskCreateParams {
+            project_root: project_root.path().display().to_string(),
+            title: "Plain report task".to_string(),
+            objective: "Create a normal report task first.".to_string(),
+            kind: DevflowTaskKind::Report,
+            risk_level: DevflowTaskRiskLevel::Low,
+            trigger_source: None,
+            dependencies: None,
+            assigned_agent_id: None,
+        })
+        .await?;
     let create_response: JSONRPCResponse = timeout(
         DEFAULT_TIMEOUT,
         mcp.read_stream_until_response_message(RequestId::Integer(create_request_id)),
@@ -1924,24 +1963,25 @@ async fn devflow_legacy_report_task_requires_explicit_migration_trigger_source()
     .await??;
     assert!(task.trigger_source.is_none());
 
-    let start_request_id = mcp
-        .send_devflow_task_start_request(DevflowTaskStartParams {
+    let assign_request_id = mcp
+        .send_devflow_task_assign_request(DevflowTaskAssignParams {
             id: task.id.clone(),
+            assigned_agent_id: Some("claude-writer".to_string()),
         })
         .await?;
-    let start_error: JSONRPCError = timeout(
+    let assign_error: JSONRPCError = timeout(
         DEFAULT_TIMEOUT,
-        mcp.read_stream_until_error_message(RequestId::Integer(start_request_id)),
+        mcp.read_stream_until_error_message(RequestId::Integer(assign_request_id)),
     )
     .await??;
-    assert_eq!(start_error.error.code, INVALID_REQUEST_ERROR_CODE);
+    assert_eq!(assign_error.error.code, INVALID_REQUEST_ERROR_CODE);
     assert!(
-        start_error
+        assign_error
             .error
             .message
             .contains("explicit migration triggerSource"),
-        "unexpected start error: {}",
-        start_error.error.message
+        "unexpected assign error: {}",
+        assign_error.error.message
     );
     Ok(())
 }

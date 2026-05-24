@@ -1703,6 +1703,11 @@ impl DevflowRequestProcessor {
         if params.objective.trim().is_empty() {
             return Err(invalid_request("objective is required".to_string()));
         }
+        validate_legacy_agent_boundary(
+            params.assigned_agent_id.as_deref(),
+            params.trigger_source.as_deref(),
+            "creating a task with a legacy agent",
+        )?;
 
         let now = Utc::now().timestamp();
         let task = DevflowTask {
@@ -3939,13 +3944,11 @@ impl DevflowRequestProcessor {
                 | (DevflowTaskKind::Review, "claude-reviewer")
         );
         if uses_legacy_automation_agent || uses_legacy_text_agent {
-            let trigger_source = task.trigger_source.as_deref();
-            if !is_migration_trigger_source(trigger_source) {
-                return Err(invalid_request(format!(
-                    "legacy devflow tasks must declare an explicit migration triggerSource before start: {}",
-                    task.id
-                )));
-            }
+            validate_legacy_agent_boundary(
+                Some(agent_id.as_str()),
+                task.trigger_source.as_deref(),
+                "starting a legacy task",
+            )?;
         }
         let input = self
             .build_devflow_task_input(&task, prompt_override)
@@ -4404,6 +4407,11 @@ impl DevflowRequestProcessor {
             let task = store.tasks.get_mut(&params.id).ok_or_else(|| {
                 invalid_request(format!("unknown devflow task id: {}", params.id))
             })?;
+            validate_legacy_agent_boundary(
+                params.assigned_agent_id.as_deref(),
+                task.trigger_source.as_deref(),
+                "assigning a legacy agent",
+            )?;
             task.assigned_agent_id = params.assigned_agent_id;
             task.updated_at = Utc::now().timestamp();
             task.clone()
@@ -8353,6 +8361,29 @@ fn is_migration_trigger_source(trigger_source: Option<&str>) -> bool {
     trigger_source.is_some_and(|trigger_source| {
         trigger_source.starts_with("legacy:") || trigger_source.starts_with("hermes:")
     })
+}
+
+fn is_legacy_agent_id(agent_id: &str) -> bool {
+    matches!(
+        agent_id,
+        "claude-writer" | "claude-reviewer" | "hermes-automation"
+    )
+}
+
+fn validate_legacy_agent_boundary(
+    assigned_agent_id: Option<&str>,
+    trigger_source: Option<&str>,
+    context: &str,
+) -> Result<(), JSONRPCErrorError> {
+    if let Some(assigned_agent_id) = assigned_agent_id
+        && is_legacy_agent_id(assigned_agent_id)
+        && !is_migration_trigger_source(trigger_source)
+    {
+        return Err(invalid_request(format!(
+            "legacy devflow tasks must declare an explicit migration triggerSource when {context}: {assigned_agent_id}"
+        )));
+    }
+    Ok(())
 }
 
 fn approval_decision_accepts(decision: DevflowApprovalDecision) -> bool {
