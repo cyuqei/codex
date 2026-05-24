@@ -2767,7 +2767,7 @@ async fn devflow_artifact_list_read_and_export_roundtrip() -> Result<()> {
     assert_eq!(destination_path, export_path.display().to_string());
     assert!(std::fs::read_to_string(export_path)?.contains("Hermes Exportable Report"));
 
-    let hermes_args_before_codex_delivery = std::fs::read_to_string(&args_path)?;
+    let codex_args_before_external_delivery = std::fs::read_to_string(&args_path)?;
     let codex_deliver_request_id = mcp
         .send_devflow_artifact_deliver_request(DevflowArtifactDeliverParams {
             id: report_artifact.id.clone(),
@@ -2799,10 +2799,10 @@ async fn devflow_artifact_list_read_and_export_roundtrip() -> Result<()> {
     assert_eq!(receipt_artifact.kind, DevflowArtifactKind::DeliveryReceipt);
     assert_eq!(target_agent_id, "codex-main");
     assert_eq!(destination, "local:warp");
-    assert_eq!(command, "codex artifact handoff <local-devflow-artifact>");
+    assert_eq!(command, "codex artifact deliver <devflow-artifact>");
     assert_eq!(exit_code, Some(0));
     assert_eq!(status, DevflowArtifactDeliveryStatus::Delivered);
-    assert!(output_summary.contains("Codex local artifact handoff recorded"));
+    assert!(output_summary.contains("Codex local artifact delivery recorded"));
     assert!(output_summary.contains("local:warp"));
     assert!(output_summary.contains(&report_artifact.path));
     assert!(output_summary.contains("Hand this report to the local Warp handoff path."));
@@ -2815,68 +2815,15 @@ async fn devflow_artifact_list_read_and_export_roundtrip() -> Result<()> {
     assert!(codex_receipt.contains(&report_artifact.path));
     assert_eq!(
         std::fs::read_to_string(&args_path)?,
-        hermes_args_before_codex_delivery
+        codex_args_before_external_delivery
     );
-
-    let deliver_request_id = mcp
-        .send_devflow_artifact_deliver_request(DevflowArtifactDeliverParams {
-            id: report_artifact.id.clone(),
-            target_agent_id: "hermes-automation".to_string(),
-            destination: "local".to_string(),
-            message: Some("Post this report to the local delivery log.".to_string()),
-        })
-        .await?;
-    let deliver_response: JSONRPCResponse = timeout(
-        DEFAULT_TIMEOUT,
-        mcp.read_stream_until_response_message(RequestId::Integer(deliver_request_id)),
-    )
-    .await??;
-    let DevflowArtifactDeliverResponse {
-        artifact: delivered_artifact,
-        receipt_artifact,
-        approval,
-        target_agent_id,
-        destination,
-        command,
-        exit_code,
-        status,
-        output_summary,
-        delivered_at,
-    } = to_response(deliver_response)?;
-    assert_eq!(delivered_artifact.id, report_artifact.id);
-    assert_eq!(approval, None);
-    let receipt_artifact = receipt_artifact.expect("local delivery should create a receipt");
-    assert_eq!(receipt_artifact.kind, DevflowArtifactKind::DeliveryReceipt);
-    assert_eq!(target_agent_id, "hermes-automation");
-    assert_eq!(destination, "local");
-    assert_eq!(
-        command,
-        "hermes chat -Q --source devflow --max-turns 5 -q <devflow-artifact-delivery-prompt>"
-    );
-    assert_eq!(exit_code, Some(0));
-    assert_eq!(status, DevflowArtifactDeliveryStatus::Delivered);
-    assert!(output_summary.contains("Hermes Exportable Report"));
-    assert!(delivered_at.expect("delivered at") > 0);
-
-    let receipt = std::fs::read_to_string(&receipt_artifact.path)?;
-    assert!(receipt.contains("Delivery receipt"));
-    assert!(receipt.contains("Destination: local"));
-    assert!(receipt.contains("Hermes Exportable Report"));
-
-    let hermes_args = std::fs::read_to_string(&args_path)?;
-    assert!(hermes_args.contains("chat"));
-    assert!(hermes_args.contains("--source"));
-    assert!(hermes_args.contains("devflow"));
-    assert!(hermes_args.contains("--max-turns"));
-    assert!(hermes_args.contains("Post this report to the local delivery log."));
-    assert!(hermes_args.contains(&report_artifact.path));
 
     let external_deliver_request_id = mcp
         .send_devflow_artifact_deliver_request(DevflowArtifactDeliverParams {
             id: report_artifact.id.clone(),
-            target_agent_id: "hermes-automation".to_string(),
+            target_agent_id: "codex-main".to_string(),
             destination: "slack:#devflow".to_string(),
-            message: Some("Send this report externally.".to_string()),
+            message: Some("Send this report through the Codex delivery outbox.".to_string()),
         })
         .await?;
     let external_deliver_response: JSONRPCResponse = timeout(
@@ -2898,12 +2845,9 @@ async fn devflow_artifact_list_read_and_export_roundtrip() -> Result<()> {
     } = to_response(external_deliver_response)?;
     assert_eq!(pending_artifact.id, report_artifact.id);
     assert_eq!(receipt_artifact, None);
-    assert_eq!(target_agent_id, "hermes-automation");
+    assert_eq!(target_agent_id, "codex-main");
     assert_eq!(destination, "slack:#devflow");
-    assert_eq!(
-        command,
-        "hermes chat -Q --source devflow --max-turns 5 -q <devflow-artifact-delivery-prompt>"
-    );
+    assert_eq!(command, "codex artifact deliver <devflow-artifact>");
     assert_eq!(exit_code, None);
     assert_eq!(status, DevflowArtifactDeliveryStatus::PendingApproval);
     assert!(output_summary.contains("waiting for devflow approval"));
@@ -2925,7 +2869,10 @@ async fn devflow_artifact_list_read_and_export_roundtrip() -> Result<()> {
     let approval_payload: DevflowApprovalRequestedNotification =
         serde_json::from_value(approval_notification.params.expect("approval params"))?;
     assert_eq!(approval_payload.approval.id, approval.id);
-    assert_eq!(std::fs::read_to_string(&args_path)?, hermes_args);
+    assert_eq!(
+        std::fs::read_to_string(&args_path)?,
+        codex_args_before_external_delivery
+    );
 
     let approve_request_id = mcp
         .send_devflow_approval_respond_request(DevflowApprovalRespondParams {
@@ -2962,9 +2909,35 @@ async fn devflow_artifact_list_read_and_export_roundtrip() -> Result<()> {
     })
     .await??;
     assert!(external_receipt.1.contains("Destination: slack:#devflow"));
-    let external_hermes_args = std::fs::read_to_string(args_path)?;
-    assert!(external_hermes_args.contains("slack:#devflow"));
-    assert!(external_hermes_args.contains("Send this report externally."));
+    assert!(external_receipt.1.contains("approval-gated outbox"));
+    assert!(external_receipt.1.contains("No external adapter was used"));
+    assert_eq!(
+        std::fs::read_to_string(&args_path)?,
+        codex_args_before_external_delivery
+    );
+
+    let hermes_deliver_request_id = mcp
+        .send_devflow_artifact_deliver_request(DevflowArtifactDeliverParams {
+            id: report_artifact.id.clone(),
+            target_agent_id: "hermes-automation".to_string(),
+            destination: "local".to_string(),
+            message: Some("Post this report to the local delivery log.".to_string()),
+        })
+        .await?;
+    let hermes_deliver_error: JSONRPCError = timeout(
+        DEFAULT_TIMEOUT,
+        mcp.read_stream_until_error_message(RequestId::Integer(hermes_deliver_request_id)),
+    )
+    .await??;
+    assert_eq!(hermes_deliver_error.error.code, INVALID_REQUEST_ERROR_CODE);
+    assert!(
+        hermes_deliver_error
+            .error
+            .message
+            .contains("only supports codex-main"),
+        "unexpected delivery error: {}",
+        hermes_deliver_error.error.message
+    );
     Ok(())
 }
 

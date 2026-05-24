@@ -63,7 +63,7 @@ Codex 不负责：
 - `codex-rs/app-server/src/request_processors/devflow_approval.rs`
 - `codex-rs/app-server/tests/suite/v2/devflow.rs`
 
-需要注意：当前部分 Devflow 代码还保留 Claude / Hermes runtime，以及外部 artifact delivery / agent adapter 设计。新路线中这些外部消息能力应被迁移、废弃或隔离为 legacy；Codex 主路径可以保留本地 handoff / receipt，但不应把外发消息能力当成主链路必需项。legacy Claude/Hermes 任务如果要从 `devflowTask/start` 进入，必须携带显式 migration trigger source（例如 `legacy:manual` 或 `hermes:*`），不能只靠 agent id 自动落到主链路。
+需要注意：当前部分 Devflow 代码还保留 Claude / Hermes runtime，以及少量 legacy agent adapter 设计。新路线中这些外部消息能力应被迁移、废弃或隔离为 legacy；Codex 主路径保留本地 handoff / receipt 和 approval-gated outbox 交付，但不应把外发消息能力当成主链路必需项。legacy Claude/Hermes 任务如果要从 `devflowTask/start` 进入，必须携带显式 migration trigger source（例如 `legacy:manual` 或 `hermes:*`），不能只靠 agent id 自动落到主链路。
 
 ## 4. 核心原则
 
@@ -290,7 +290,7 @@ devflowWatchdog/alerts
 
 - 盘点 `DevflowAgentRuntime::Claude` / `Hermes` 使用点。
 - 将新文档和协议明确为 Codex-only 主路径。
-- 标记外部 artifact delivery / external agent adapter 为 legacy 或后续可选功能；本地 handoff/receipt 仍可保留在 Codex 主路径内。
+- 标记外部 agent adapter 为 legacy 或后续可选功能；本地 handoff/receipt 和 approval-gated outbox 交付保留在 Codex 主路径内。
 - 定义 Superpowers/gstack 的 pack schema。
 - 更新 `app-server/README.md` 中的 Devflow 说明。
 
@@ -476,7 +476,7 @@ cargo test -p codex-app-server-protocol
 当前实现进展：
 
 - `devflowReleasePrep/create`、support bundle、大输出归档已接入 app-server v2；release prep 的 commit message / PR body / release note artifacts 以及长输出 `output_archive` 已纳入可重启恢复的 artifact store。
-- `devflowReleasePrep/submit` 已补上发布执行层：它会先复用 release-prep gate，再在 `release_publish` 审批通过后执行 `git add` / `git commit`，并在 `commit_and_push` 模式下继续 `git push origin <currentBranch>`；`devflowReleasePrep/create` 仍然只做只读 gate，不直接 mutate Git。
+- `devflowReleasePrep/submit` 已补上发布执行层：它会先复用 release-prep gate，再在 `release_publish` 审批通过后执行 `git add` / `git commit`，并在 `commit_and_push` 模式下继续 `git push origin <currentBranch>`，随后用 `gh pr view` / `gh pr create` 生成或复用 PR；`devflowReleasePrep/create` 仍然只做只读 gate，不直接 mutate Git。
 - release prep 的 finish-branch gate 已接入 Integrator 证据和 Devflow store persistence 健康检查：有 managed worktree 的 implementation task 必须存在成功 merge report，当前 store snapshot load/persist error 会 fail-closed 阻止发布准备，PR body 会输出 Integrator、Persistence 和 finish-branch blockers，展示已合并/待合并任务以及发布前持久化健康状态。
 - support bundle 已输出 release prep 复现入口、release prep artifact 元数据、Integrator merge evidence 摘要，以及 persistence health 区块；该区块会列出 snapshot 路径、snapshot 文件 metadata、load/persist error、可恢复索引和仍保持进程内语义的易失状态。带 task scope 的 bundle 也会登记为可恢复的 `report` artifact 并推送 `devflowArtifact/created`，方便把发布阻塞原因导出给 Warp 或在 app-server 重启后继续排障。
 - task/run/quality gate/approval audit/artifact/watchdog runtime store 已快照到 `CODEX_HOME/devflow/store/state.json`，app-server 重启时会恢复这些索引。
