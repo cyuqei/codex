@@ -791,12 +791,13 @@ impl DevflowRequestProcessor {
         let queue_status = watchdog_status_label(snapshot.status);
         let dimensions = gstack_watchdog_queue_dimensions(&snapshot);
         let summary = format!(
-            "gstack watchdogQueue completed: status {queue_status}; {} running, {} no-progress, {} timed-out, {} recovering, {} blocked, {} alerts",
+            "gstack watchdogQueue completed: status {queue_status}; {} running, {} no-progress, {} timed-out, {} recovering, {} blocked, {} repairable conflicts, {} alerts",
             snapshot.counts.running,
             snapshot.counts.no_progress,
             snapshot.counts.timed_out,
             snapshot.counts.recovering,
             snapshot.counts.blocked,
+            snapshot.counts.repairable_conflicts,
             snapshot.counts.alerts
         );
         let report = serde_json::json!({
@@ -815,14 +816,16 @@ impl DevflowRequestProcessor {
                     "timedOut": "Watchdog alerts with timed_out status, projected back to their task/run when available.",
                     "recovering": "Watchdog alerts with recovering status, including startup recovery failures that may not belong to a single project.",
                     "blocked": "Tasks explicitly marked blocked by dependencies, approvals, or recovery.",
+                    "repairableBlockedConflictTasks": "Blocked implementation tasks with resolved dependencies and an Integrator conflict report; these can be sent to devflowWatchdog/reconcile.",
                 },
+                "recoveryAction": "The queue view is read-only, but when repairable blocked conflict tasks exist it includes a reconcileAction object for the explicit devflowWatchdog/reconcile endpoint.",
                 "scope": {
                     "projectRoot": target.project_root,
                     "cwd": target.cwd_path.display().to_string(),
                     "worktreeId": target.worktree_id.clone(),
                     "writes": "Only this Devflow artifact file is written by the capability runner.",
                 },
-                "artifactFormat": "application/json; schemaVersion=1; queue contains status, counts, running, noProgress, timedOut, recovering, blocked, alerts, and checkedAt.",
+                "artifactFormat": "application/json; schemaVersion=1; queue contains status, counts, running, noProgress, timedOut, recovering, blocked, repairableBlockedConflictTasks, reconcileAction, alerts, and checkedAt.",
             },
             "dimensions": &dimensions,
             "queue": &snapshot,
@@ -994,6 +997,24 @@ fn gstack_watchdog_queue_dimensions(
             )
         },
     };
+    let repairable_conflict_dimension = if snapshot.counts.repairable_conflicts == 0 {
+        PackDashboardDimension {
+            name: "repairableConflictQueue".to_string(),
+            status: "completed".to_string(),
+            score: Some(10),
+            details: "no blocked conflict tasks are ready for watchdog reconcile".to_string(),
+        }
+    } else {
+        PackDashboardDimension {
+            name: "repairableConflictQueue".to_string(),
+            status: "failed".to_string(),
+            score: Some(0),
+            details: format!(
+                "{} blocked conflict tasks can be sent to devflowWatchdog/reconcile",
+                snapshot.counts.repairable_conflicts
+            ),
+        }
+    };
     let alert_backlog_dimension = PackDashboardDimension {
         name: "alertBacklog".to_string(),
         status: "completed".to_string(),
@@ -1013,6 +1034,7 @@ fn gstack_watchdog_queue_dimensions(
         timed_out_dimension,
         recovering_dimension,
         blocked_dimension,
+        repairable_conflict_dimension,
         alert_backlog_dimension,
     ]
 }
@@ -1864,7 +1886,7 @@ fn default_capability_packs() -> Vec<DevflowCapabilityPack> {
             .map(String::from)
             .collect(),
         diagnostics: vec![
-            "The gstack engineering capability pack is intentionally frozen to the wired Codex-owned runner set: health, browseQa, review, benchmark, canary, and watchdogQueue. Any other capability name is rejected rather than reported as skipped; health, browseQa, benchmark, and canary can create watchdog alerts and failed quality gates, review records a static diff-intake artifact, watchdogQueue projects running/no-progress/timed-out/blocked queue summaries, and devflowWatchdog/reconcile provides the bounded recovery action for repairable Integrator conflicts."
+            "The gstack engineering capability pack is intentionally frozen to the wired Codex-owned runner set: health, browseQa, review, benchmark, canary, and watchdogQueue. Any other capability name is rejected rather than reported as skipped; health, browseQa, benchmark, and canary can create watchdog alerts and failed quality gates, review records a static diff-intake artifact, watchdogQueue projects running/no-progress/timed-out/blocked queue summaries plus repairable conflict tasks and their reconcileAction bridge, and devflowWatchdog/reconcile provides the bounded recovery action for repairable Integrator conflicts."
                 .to_string(),
         ],
     }]

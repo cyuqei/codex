@@ -6819,6 +6819,77 @@ async fn devflow_worktree_merge_applies_clean_diff_and_blocks_conflicts() -> Res
         &["commit", "-m", "resolve mainline conflict"],
     )?;
 
+    let watchdog_queue_request_id = mcp
+        .send_devflow_capability_pack_run_request(DevflowCapabilityPackRunParams {
+            id: "gstack-engineering".to_string(),
+            capability: Some("watchdogQueue".to_string()),
+            task_id: None,
+            project_root: Some(project_root.path().display().to_string()),
+        })
+        .await?;
+    let watchdog_queue_response: JSONRPCResponse = timeout(
+        DEFAULT_TIMEOUT,
+        mcp.read_stream_until_response_message(RequestId::Integer(watchdog_queue_request_id)),
+    )
+    .await??;
+    let DevflowCapabilityPackRunResponse {
+        status,
+        summary,
+        artifact,
+        ..
+    } = to_response(watchdog_queue_response)?;
+    assert_eq!(status, DevflowCapabilityPackRunStatus::Completed);
+    assert!(summary.contains("1 repairable conflict"));
+    let watchdog_queue_artifact =
+        artifact.expect("watchdogQueue should produce repairable conflict artifact");
+    let watchdog_queue_artifact_read_request_id = mcp
+        .send_devflow_artifact_read_request(DevflowArtifactReadParams {
+            id: watchdog_queue_artifact.id,
+        })
+        .await?;
+    let watchdog_queue_artifact_read_response: JSONRPCResponse = timeout(
+        DEFAULT_TIMEOUT,
+        mcp.read_stream_until_response_message(RequestId::Integer(
+            watchdog_queue_artifact_read_request_id,
+        )),
+    )
+    .await??;
+    let DevflowArtifactReadResponse {
+        contents: watchdog_queue_contents,
+        ..
+    } = to_response(watchdog_queue_artifact_read_response)?;
+    let watchdog_queue_report: serde_json::Value = serde_json::from_str(&watchdog_queue_contents)?;
+    assert_eq!(
+        watchdog_queue_report["queue"]["counts"]["repairableConflicts"].as_u64(),
+        Some(1)
+    );
+    assert_eq!(
+        watchdog_queue_report["queue"]["reconcileAction"]["method"].as_str(),
+        Some("devflowWatchdog/reconcile")
+    );
+    assert_eq!(
+        watchdog_queue_report["queue"]["reconcileAction"]["projectId"].as_str(),
+        Some(project_root.path().to_str().expect("utf-8 path"))
+    );
+    assert!(
+        watchdog_queue_report["queue"]["repairableBlockedConflictTasks"]
+            .as_array()
+            .is_some_and(|items| items.iter().any(|item| {
+                item["taskId"].as_str() == Some(blocked_task.id.as_str())
+                    && item["reason"]
+                        .as_str()
+                        .is_some_and(|reason| reason.contains("devflowWatchdog/reconcile"))
+            }))
+    );
+    assert!(
+        watchdog_queue_report["dimensions"]
+            .as_array()
+            .is_some_and(|dimensions| dimensions.iter().any(|dimension| {
+                dimension["name"].as_str() == Some("repairableConflictQueue")
+                    && dimension["status"].as_str() == Some("failed")
+            }))
+    );
+
     let repair_reconcile_request_id = mcp
         .send_devflow_watchdog_reconcile_request(DevflowWatchdogReconcileParams {
             project_id: project_root.path().display().to_string(),

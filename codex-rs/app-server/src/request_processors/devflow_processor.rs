@@ -480,6 +480,8 @@ pub(super) struct DevflowWatchdogQueueSnapshot {
     pub(super) timed_out: Vec<DevflowWatchdogQueueItem>,
     pub(super) recovering: Vec<DevflowWatchdogQueueItem>,
     pub(super) blocked: Vec<DevflowWatchdogQueueItem>,
+    pub(super) repairable_blocked_conflict_tasks: Vec<DevflowWatchdogQueueItem>,
+    pub(super) reconcile_action: Option<DevflowWatchdogQueueRecoveryAction>,
     pub(super) alerts: Vec<DevflowWatchdogAlert>,
     pub(super) checked_at: i64,
 }
@@ -492,6 +494,7 @@ pub(super) struct DevflowWatchdogQueueCounts {
     pub(super) timed_out: usize,
     pub(super) recovering: usize,
     pub(super) blocked: usize,
+    pub(super) repairable_conflicts: usize,
     pub(super) alerts: usize,
 }
 
@@ -508,6 +511,15 @@ pub(super) struct DevflowWatchdogQueueItem {
     pub(super) updated_at: Option<i64>,
     pub(super) alert_id: Option<String>,
     pub(super) alert_severity: Option<DevflowWatchdogAlertSeverity>,
+    pub(super) reason: String,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct DevflowWatchdogQueueRecoveryAction {
+    pub(super) method: String,
+    pub(super) project_id: String,
+    pub(super) limit: u32,
     pub(super) reason: String,
 }
 
@@ -7058,6 +7070,7 @@ impl DevflowRequestProcessor {
 
         let mut running = Vec::new();
         let mut blocked = Vec::new();
+        let mut repairable_blocked_conflict_tasks = Vec::new();
         let mut tasks = store
             .tasks
             .values()
@@ -7090,11 +7103,19 @@ impl DevflowRequestProcessor {
                 ));
             }
             if task.status == DevflowTaskStatus::Blocked {
-                blocked.push(watchdog_queue_item_for_task(
+                let queue_item = watchdog_queue_item_for_task(
                     task,
                     latest_run.as_ref(),
                     "task is blocked on dependencies, approval, or recovery".to_string(),
-                ));
+                );
+                if conflict_repair_eligible(&store, task) {
+                    repairable_blocked_conflict_tasks.push(watchdog_queue_item_for_task(
+                        task,
+                        latest_run.as_ref(),
+                        "blocked implementation task can be re-dispatched through devflowWatchdog/reconcile".to_string(),
+                    ));
+                }
+                blocked.push(queue_item);
             }
         }
 
@@ -7119,9 +7140,22 @@ impl DevflowRequestProcessor {
             timed_out: timed_out.len(),
             recovering: recovering.len(),
             blocked: blocked.len(),
+            repairable_conflicts: repairable_blocked_conflict_tasks.len(),
             alerts: alerts.len(),
         };
         let status = watchdog_status_for_queue_snapshot(&alerts, !running.is_empty());
+        let reconcile_action = project_id.and_then(|project_id| {
+            (!repairable_blocked_conflict_tasks.is_empty()).then(|| {
+                DevflowWatchdogQueueRecoveryAction {
+                    method: "devflowWatchdog/reconcile".to_string(),
+                    project_id: project_id.to_string(),
+                    limit: repairable_blocked_conflict_tasks
+                        .len()
+                        .min(DEVFLOW_DISPATCH_DEFAULT_LIMIT) as u32,
+                    reason: "repairable blocked conflict tasks can be re-dispatched through devflowWatchdog/reconcile".to_string(),
+                }
+            })
+        });
         DevflowWatchdogQueueSnapshot {
             status,
             counts,
@@ -7130,6 +7164,8 @@ impl DevflowRequestProcessor {
             timed_out,
             recovering,
             blocked,
+            repairable_blocked_conflict_tasks,
+            reconcile_action,
             alerts,
             checked_at: Utc::now().timestamp(),
         }

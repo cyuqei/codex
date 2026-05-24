@@ -457,7 +457,7 @@ cargo test -p codex-app-server-protocol
 - `devflowTask/dispatch` 已批量启动 ready implementation workstream，并写入 Integrator dispatch report；dispatch 启动的 implementation task 现在会在 `ready_to_merge` 且 diff、quality gate、review artifact 都齐备后自动走 `devflowWorktree/merge` 同一条 Integrator 路径。
 - implementation workstream 成功合并后，若所有 Planner DAG 依赖均满足，后续 project dispatch 会启动 fan-in `codex-reviewer` task，并把 Planner DAG artifact 与 dependency artifacts 注入 Review prompt；review task 完成后会写入自己的规范化 `ReviewReport` artifact，形成 Codex-owned 复审证据闭环。
 - 有冲突时 Integrator 仍将 task 标记为 `blocked` 并写入 conflict report；primary worktree 修复后，显式 `devflowTask/dispatch` 指定该 task id 会启动 Codex conflict-repair run，先把 managed worktree 的 `baseCommit` 对齐到当前 primary HEAD，再写入 repair diff artifact，随后重新进入 quality gate、review 和 Integrator merge。
-- `devflowWatchdog/reconcile` 已补上 bounded recovery action：它会从项目队列里找出带 Integrator conflict report 且依赖已解开的 blocked implementation task，再通过显式 conflict-repair dispatch 重启它们；`watchdogQueue` 仍然只负责只读投影。
+- `devflowWatchdog/reconcile` 已补上 bounded recovery action：它会从项目队列里找出带 Integrator conflict report 且依赖已解开的 blocked implementation task，再通过显式 conflict-repair dispatch 重启它们；`watchdogQueue` 仍然只负责只读投影，但会把 repairable conflict tasks 和对应 reconcileAction 一起投出，方便 Warp 直接进入恢复动作。
 - 普通 `devflowTask/start` 仍保留显式 merge 语义，避免单任务验证和 cleanup 场景被后台自动改动 primary worktree。
 
 ### Phase 8：发布准备和硬化
@@ -482,7 +482,7 @@ cargo test -p codex-app-server-protocol
 - task/run/quality gate/approval audit/artifact/watchdog runtime store 已快照到 `CODEX_HOME/devflow/store/state.json`，app-server 重启时会恢复这些索引。
 - 如果 `CODEX_HOME/devflow/store/state.json` 损坏或不可读，app-server 会以空 Devflow store 启动，同时写入 critical `recovering` Watchdog alert，并通过 support bundle 导出 store snapshot load error，避免恢复失败变成静默丢状态。
 - 如果后续 `state.json` best-effort 写入失败，app-server 会记住最近一次 store snapshot persist error，并将其作为非持久化 critical `recovering` Watchdog alert 投射到 read/list/queue/support bundle 视图，提示近期 task/run/gate/artifact 状态可能无法跨重启保留；后续快照写入恢复成功后，该错误会自动清除，避免 support bundle/UI 持续展示过期故障。
-- `watchdogQueue` 已把 `recovering` 纳入 counts、queue item 和 dashboard dimension；全局恢复告警和 store snapshot persist failure 合成告警也会进入项目级 queue report，避免 dashboard 摘要漏掉启动恢复失败或持久化风险。
+- `watchdogQueue` 已把 `recovering` 纳入 counts、queue item 和 dashboard dimension；全局恢复告警和 store snapshot persist failure 合成告警也会进入项目级 queue report，repairable blocked conflict task 还会透出 `reconcileAction`，避免 dashboard 摘要漏掉启动恢复失败、持久化风险或可直接恢复的冲突任务。
 - 不能重连的 queued/running run 或 gate 采用 fail-closed 恢复语义：run/gate 标记 failed，仍在 running 的 task 标记 blocked，等待用户重新 dispatch/start/rerun。
 - 重启时仍为 pending 的 approval 会恢复成 responded/cancelled 审计记录；approval grant、活跃 approval callback、活跃 thread subscription 仍保持进程内语义，不在重启后伪造安全授权。
 - Devflow approval policy 已通过 `CODEX_HOME/devflow/approval-policy.json` 持久化，重启后继续按 task risk level 生效，并随 support bundle 导出用于排障；损坏或不可读的策略文件会 fail-closed，避免静默退回默认策略。
