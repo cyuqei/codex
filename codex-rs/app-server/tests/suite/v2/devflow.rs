@@ -626,15 +626,16 @@ async fn devflow_codex_only_packs_and_watchdog_roundtrip() -> Result<()> {
     } = to_response(capability_list_response)?;
     assert_eq!(capability_packs.len(), 1);
     assert_eq!(capability_packs[0].id, "gstack-engineering");
-    assert!(
-        capability_packs[0]
-            .capabilities
-            .contains(&"watchdogQueue".to_string())
-    );
-    assert!(
-        capability_packs[0]
-            .capabilities
-            .contains(&"browseQa".to_string())
+    assert_eq!(
+        capability_packs[0].capabilities,
+        vec![
+            "health".to_string(),
+            "browseQa".to_string(),
+            "review".to_string(),
+            "benchmark".to_string(),
+            "canary".to_string(),
+            "watchdogQueue".to_string(),
+        ]
     );
 
     let capability_read_request_id = mcp
@@ -649,6 +650,32 @@ async fn devflow_codex_only_packs_and_watchdog_roundtrip() -> Result<()> {
     .await??;
     let DevflowCapabilityPackReadResponse { pack } = to_response(capability_read_response)?;
     assert_eq!(pack, capability_packs[0]);
+
+    let unknown_capability_request_id = mcp
+        .send_devflow_capability_pack_run_request(DevflowCapabilityPackRunParams {
+            id: "gstack-engineering".to_string(),
+            capability: Some("artifactDeliver".to_string()),
+            task_id: None,
+            project_root: None,
+        })
+        .await?;
+    let unknown_capability_error: JSONRPCError = timeout(
+        DEFAULT_TIMEOUT,
+        mcp.read_stream_until_error_message(RequestId::Integer(unknown_capability_request_id)),
+    )
+    .await??;
+    assert_eq!(
+        unknown_capability_error.error.code,
+        INVALID_REQUEST_ERROR_CODE
+    );
+    assert!(
+        unknown_capability_error
+            .error
+            .message
+            .contains("unknown capability"),
+        "unexpected capability error: {}",
+        unknown_capability_error.error.message
+    );
 
     let project_root = TempDir::new()?;
     init_git_repo(project_root.path())?;

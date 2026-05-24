@@ -55,6 +55,14 @@ const GSTACK_BROWSE_GOTO_TIMEOUT_SECS: u64 = 20;
 const GSTACK_BROWSE_SCREENSHOT_TIMEOUT_SECS: u64 = 20;
 const GSTACK_REVIEW_GIT_TIMEOUT_SECS: u64 = 30;
 const COMMAND_OUTPUT_TAIL_LIMIT: usize = 4000;
+const GSTACK_ENGINEERING_CAPABILITIES: [&str; 6] = [
+    "health",
+    "browseQa",
+    "review",
+    "benchmark",
+    "canary",
+    "watchdogQueue",
+];
 
 #[derive(Clone)]
 pub(super) struct AllowedPackCommand {
@@ -215,14 +223,10 @@ impl DevflowRequestProcessor {
             "canary" => self.run_gstack_canary_capability(&target).await?,
             "watchdogQueue" => self.run_gstack_watchdog_queue_capability(&target).await?,
             _ => {
-                return Ok(DevflowCapabilityPackRunResponse {
-                    pack,
-                    status: DevflowCapabilityPackRunStatus::Skipped,
-                    summary: format!(
-                        "Capability `{capability}` is registered but not wired into the Codex-owned pack runner yet."
-                    ),
-                    artifact: None,
-                });
+                return Err(invalid_request(format!(
+                    "capability `{capability}` is registered by devflow capability pack {} but has no Codex-owned runner",
+                    pack.id
+                )));
             }
         };
         Ok(DevflowCapabilityPackRunResponse {
@@ -1855,16 +1859,12 @@ fn default_capability_packs() -> Vec<DevflowCapabilityPack> {
         name: "gstack Engineering Capabilities".to_string(),
         source_path: Some(DEFAULT_GSTACK_ROOT.to_string()),
         status: path_pack_status(DEFAULT_GSTACK_ROOT),
-        capabilities: vec![
-            "health".to_string(),
-            "browseQa".to_string(),
-            "review".to_string(),
-            "benchmark".to_string(),
-            "canary".to_string(),
-            "watchdogQueue".to_string(),
-        ],
+        capabilities: GSTACK_ENGINEERING_CAPABILITIES
+            .into_iter()
+            .map(String::from)
+            .collect(),
         diagnostics: vec![
-            "health, browseQa, review, benchmark, canary, and watchdogQueue are wired through the Codex-owned pack runner; health, browseQa, benchmark, and canary can create watchdog alerts and failed quality gates, review records a static diff-intake artifact, watchdogQueue projects running/no-progress/timed-out/blocked queue summaries, and devflowWatchdog/reconcile provides the bounded recovery action for repairable Integrator conflicts."
+            "The gstack engineering capability pack is intentionally frozen to the wired Codex-owned runner set: health, browseQa, review, benchmark, canary, and watchdogQueue. Any other capability name is rejected rather than reported as skipped; health, browseQa, benchmark, and canary can create watchdog alerts and failed quality gates, review records a static diff-intake artifact, watchdogQueue projects running/no-progress/timed-out/blocked queue summaries, and devflowWatchdog/reconcile provides the bounded recovery action for repairable Integrator conflicts."
                 .to_string(),
         ],
     }]

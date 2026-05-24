@@ -422,7 +422,7 @@ cargo test -p codex-app-server-protocol
 
 当前实现进展：
 
-- `health`、`browseQa`、`review`、`watchdogQueue` 已接入 Codex-owned runner。
+- CapabilityPack 范围已冻结为第一批已接线能力：`health`、`browseQa`、`review`、`benchmark`、`canary`、`watchdogQueue`。这些名字都会进入 Codex-owned runner；其他 capability 名称会 fail-closed 为 invalid request，不再保留“registered but not wired”的 skipped 状态。
 - `health`、`browseQa`、`review`、`benchmark`、`canary` 的 completed/failed 结果都会投影为 task-scoped quality gate，并把 report artifact 作为 gate evidence；`watchdogQueue` 保持只读 dashboard artifact，不伪造成验证 gate。
 - `benchmark` 已先落成静态资产预算 runner：不启动 shell/browser/package script/network，只读取本地静态资产元数据并写 report artifact；预算失败会生成 `gstack_benchmark` quality gate 和 Watchdog alert。
 - `canary` 已先落成本地安全探针 runner：自动选择 localhost/127.0.0.1 或静态 file target，不启动部署、不启动 package script、不打外网；浏览器 daemon 生命周期交给 gstack browse，goto/screenshot 失败、超时或截图缺失会生成 `gstack_canary` quality gate 和 Watchdog alert。
