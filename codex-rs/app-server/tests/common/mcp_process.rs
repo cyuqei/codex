@@ -1157,6 +1157,16 @@ impl McpProcess {
         self.send_request("devflowWatchdog/read", params).await
     }
 
+    // NOTE: DevflowWatchdogQueueParams removed from protocol
+    // /// Send a `devflowWatchdog/queue` JSON-RPC request.
+    // pub async fn send_devflow_watchdog_queue_request(
+    //     &mut self,
+    //     params: DevflowWatchdogQueueParams,
+    // ) -> anyhow::Result<i64> {
+    //     let params = Some(serde_json::to_value(params)?);
+    //     self.send_request("devflowWatchdog/queue", params).await
+    // }
+
     /// Send a `devflowWatchdog/alerts` JSON-RPC request.
     pub async fn send_devflow_watchdog_alerts_request(
         &mut self,
@@ -1174,6 +1184,17 @@ impl McpProcess {
         let params = Some(serde_json::to_value(params)?);
         self.send_request("devflowWatchdog/reconcile", params).await
     }
+
+    // NOTE: DevflowSchedulerAuditReadParams removed from protocol
+    // /// Send a `devflowSchedulerAudit/read` JSON-RPC request.
+    // pub async fn send_devflow_scheduler_audit_read_request(
+    //     &mut self,
+    //     params: DevflowSchedulerAuditReadParams,
+    // ) -> anyhow::Result<i64> {
+    //     let params = Some(serde_json::to_value(params)?);
+    //     self.send_request("devflowSchedulerAudit/read", params)
+    //         .await
+    // }
 
     /// Send a `devflowArtifact/list` JSON-RPC request.
     pub async fn send_devflow_artifact_list_request(
