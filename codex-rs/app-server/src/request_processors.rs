@@ -473,7 +473,7 @@ mod devflow_root_cause;
 mod devflow_store_persistence;
 mod devflow_support_bundle;
 mod devflow_worktree;
-mod device_key_processor;
+// mod device_key_processor;  // Requires codex_device_key crate which doesn't exist in upstream
 mod environment_processor;
 mod external_agent_config_processor;
 mod feedback_doctor_report;
@@ -499,7 +499,7 @@ pub(crate) use catalog_processor::CatalogRequestProcessor;
 pub(crate) use command_exec_processor::CommandExecRequestProcessor;
 pub(crate) use config_processor::ConfigRequestProcessor;
 pub(crate) use devflow_processor::DevflowRequestProcessor;
-pub(crate) use device_key_processor::DeviceKeyRequestProcessor;
+// pub(crate) use device_key_processor::DeviceKeyRequestProcessor;  // Disabled - requires missing crate
 pub(crate) use environment_processor::EnvironmentRequestProcessor;
 pub(crate) use external_agent_config_processor::ExternalAgentConfigRequestProcessor;
 pub(crate) use feedback_processor::FeedbackRequestProcessor;

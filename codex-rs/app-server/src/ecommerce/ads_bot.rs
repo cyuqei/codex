@@ -359,7 +359,7 @@ async fn step_ads_input_parser(
     ctx: &mut WorkflowContext,
     llm: &LlmClient,
 ) -> Result<StepOutput, JSONRPCErrorError> {
-    let _user_input = ctx_str(ctx, "user_input");
+    let user_input = ctx_str(ctx, "user_input");
 
     let user_message = format!("用户需求: {}", user_input);
     let response = llm

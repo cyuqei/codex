@@ -1095,6 +1095,18 @@ client_request_definitions! {
         response: v2::DevflowArtifactDeliverResponse,
     },
 
+    EcommerceAgentSubmit => "ecommerceAgent/submit" {
+        params: v2::EcommerceAgentSubmitParams,
+        serialization: None,
+        response: v2::EcommerceAgentSubmitResponse,
+    },
+
+    EcommerceAgentRead => "ecommerceAgent/read" {
+        params: v2::EcommerceAgentReadParams,
+        serialization: None,
+        response: v2::EcommerceAgentReadResponse,
+    },
+
     ModelList => "model/list" {
         params: v2::ModelListParams,
         serialization: None,

@@ -22,7 +22,7 @@ use crate::request_processors::CatalogRequestProcessor;
 use crate::request_processors::CommandExecRequestProcessor;
 use crate::request_processors::ConfigRequestProcessor;
 use crate::request_processors::DevflowRequestProcessor;
-use crate::request_processors::DeviceKeyRequestProcessor;
+// use crate::request_processors::DeviceKeyRequestProcessor;  // Disabled - requires missing crate
 use crate::request_processors::EnvironmentRequestProcessor;
 use crate::request_processors::ExternalAgentConfigRequestProcessor;
 use crate::request_processors::FeedbackRequestProcessor;
@@ -171,7 +171,7 @@ pub(crate) struct MessageProcessor {
     command_exec_processor: CommandExecRequestProcessor,
     process_exec_processor: ProcessExecRequestProcessor,
     config_processor: ConfigRequestProcessor,
-    device_key_processor: DeviceKeyRequestProcessor,
+    // device_key_processor: DeviceKeyRequestProcessor,  // Disabled - requires missing crate
     devflow_processor: DevflowRequestProcessor,
     environment_processor: EnvironmentRequestProcessor,
     external_agent_config_processor: ExternalAgentConfigRequestProcessor,
@@ -471,7 +471,7 @@ impl MessageProcessor {
             auth_manager.clone(),
             thread_manager.clone(),
             analytics_events_client.clone(),
-            remote_control_handle,
+            // remote_control_handle,  // Removed in upstream
         );
         let provider_processor = ProviderRequestProcessor::new(
             config_manager.clone(),
@@ -489,6 +489,7 @@ impl MessageProcessor {
             analytics_events_client,
             thread_watch_manager,
             Arc::clone(&thread_list_state_permit),
+            Arc::clone(&skills_watcher),
         );
         let external_agent_config_processor = ExternalAgentConfigRequestProcessor::new(
             outgoing.clone(),
@@ -519,7 +520,7 @@ impl MessageProcessor {
             command_exec_processor,
             process_exec_processor,
             config_processor,
-            device_key_processor,
+            // device_key_processor,  // Disabled - requires missing crate
             devflow_processor,
             environment_processor,
             external_agent_config_processor,
@@ -1717,6 +1718,17 @@ impl MessageProcessor {
             }
             ClientRequest::FeedbackUpload { params, .. } => {
                 self.feedback_processor.feedback_upload(params).await
+            }
+            ClientRequest::EcommerceAgentSubmit { params, .. } => {
+                self.devflow_processor.ecommerce_agent_submit(params).await.map(|r| Some(r.into()))
+            }
+            ClientRequest::EcommerceAgentRead { params, .. } => {
+                // TODO: Implement read endpoint
+                Err(JSONRPCErrorError {
+                    code: -32601,
+                    message: "EcommerceAgentRead not yet implemented".to_string(),
+                    data: None,
+                })
             }
         };
 

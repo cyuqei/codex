@@ -36,17 +36,6 @@ use tokio::task;
 use toml::Value as TomlValue;
 use toml_edit::Item as TomlItem;
 
-enum WritableConfigTarget {
-    User {
-        config_path: AbsolutePathBuf,
-    },
-    Project {
-        config_path: AbsolutePathBuf,
-        dot_codex_folder: AbsolutePathBuf,
-        cwd: AbsolutePathBuf,
-    },
-}
-
 #[derive(Debug, Error)]
 pub(crate) enum ConfigManagerError {
     #[error("{message}")]
@@ -136,7 +125,6 @@ impl ConfigManager {
         };
 
         let effective = layers.effective_config();
-
         let effective_config_toml: ConfigToml = effective
             .try_into()
             .map_err(|err| ConfigManagerError::toml("invalid configuration", err))?;
@@ -207,44 +195,33 @@ impl ConfigManager {
         expected_version: Option<String>,
         edits: Vec<(String, JsonValue, MergeStrategy)>,
     ) -> Result<ConfigWriteResponse, ConfigManagerError> {
-        let user_config_path =
-            AbsolutePathBuf::resolve_path_against_base(CONFIG_TOML_FILE, self.codex_home());
+        let allowed_path = self
+            .user_config_path()
+            .map_err(|err| ConfigManagerError::io("failed to resolve user config path", err))?;
         let provided_path = match file_path {
             Some(path) => AbsolutePathBuf::from_absolute_path(PathBuf::from(path))
                 .map_err(|err| ConfigManagerError::io("failed to resolve user config path", err))?,
-            None => user_config_path.clone(),
+            None => allowed_path.clone(),
         };
 
-        let target = writable_config_target(&user_config_path, &provided_path)?;
-        let layers = match &target {
-            WritableConfigTarget::User { .. } => self
-                .load_thread_agnostic_config()
-                .await
-                .map_err(|err| ConfigManagerError::io("failed to load configuration", err))?,
-            WritableConfigTarget::Project { cwd, .. } => self
-                .load_config_layers_for_cwd(cwd.clone())
-                .await
-                .map_err(|err| ConfigManagerError::io("failed to load configuration", err))?,
-        };
-        let target_layer = match &target {
-            WritableConfigTarget::User { config_path } => match layers.get_user_layer() {
-                Some(layer) => Cow::Borrowed(layer),
-                None => Cow::Owned(create_empty_user_layer(config_path).await?),
-            },
-            WritableConfigTarget::Project {
-                config_path,
-                dot_codex_folder,
-                ..
-            } => match layers.get_project_layer(dot_codex_folder) {
-                Some(layer) => Cow::Borrowed(layer),
-                None => {
-                    Cow::Owned(create_empty_project_layer(dot_codex_folder, config_path).await?)
-                }
-            },
+        if !paths_match(&allowed_path, &provided_path) {
+            return Err(ConfigManagerError::write(
+                ConfigWriteErrorCode::ConfigLayerReadonly,
+                "Only writes to the user config are allowed",
+            ));
+        }
+
+        let layers = self
+            .load_thread_agnostic_config()
+            .await
+            .map_err(|err| ConfigManagerError::io("failed to load configuration", err))?;
+        let user_layer = match layers.get_active_user_layer() {
+            Some(layer) => Cow::Borrowed(layer),
+            None => Cow::Owned(create_empty_user_layer(&allowed_path).await?),
         };
 
         if let Some(expected) = expected_version.as_deref()
-            && expected != target_layer.version
+            && expected != user_layer.version
         {
             return Err(ConfigManagerError::write(
                 ConfigWriteErrorCode::ConfigVersionConflict,
@@ -252,7 +229,7 @@ impl ConfigManager {
             ));
         }
 
-        let mut target_config = target_layer.config.clone();
+        let mut user_config = user_layer.config.clone();
         let mut parsed_segments = Vec::new();
         let mut config_edits = Vec::new();
 
@@ -260,24 +237,38 @@ impl ConfigManager {
             let segments = parse_key_path(&key_path).map_err(|message| {
                 ConfigManagerError::write(ConfigWriteErrorCode::ConfigValidationError, message)
             })?;
-            let original_value = value_at_path(&target_config, &segments).cloned();
+            if !value.is_null() {
+                match segments.as_slice() {
+                    [segment] if segment == "profile" => {
+                        return Err(ConfigManagerError::write(
+                            ConfigWriteErrorCode::ConfigValidationError,
+                            "`profile` is a legacy config selector and can no longer be written; use `--profile <name>` with `<name>.config.toml` instead",
+                        ));
+                    }
+                    [segment, ..] if segment == "profiles" => {
+                        return Err(ConfigManagerError::write(
+                            ConfigWriteErrorCode::ConfigValidationError,
+                            "`profiles` contains legacy config profile tables and can no longer be written; use `--profile <name>` with `<name>.config.toml` instead",
+                        ));
+                    }
+                    _ => {}
+                }
+            }
+            let original_value = value_at_path(&user_config, &segments).cloned();
             let parsed_value = parse_value(value).map_err(|message| {
                 ConfigManagerError::write(ConfigWriteErrorCode::ConfigValidationError, message)
             })?;
 
-            apply_merge(
-                &mut target_config,
-                &segments,
-                parsed_value.as_ref(),
-                strategy,
-            )
-            .map_err(|err| match err {
-                MergeError::Validation(message) => {
-                    ConfigManagerError::write(ConfigWriteErrorCode::ConfigValidationError, message)
-                }
-            })?;
+            apply_merge(&mut user_config, &segments, parsed_value.as_ref(), strategy).map_err(
+                |err| match err {
+                    MergeError::Validation(message) => ConfigManagerError::write(
+                        ConfigWriteErrorCode::ConfigValidationError,
+                        message,
+                    ),
+                },
+            )?;
 
-            let updated_value = value_at_path(&target_config, &segments).cloned();
+            let updated_value = value_at_path(&user_config, &segments).cloned();
             if original_value != updated_value {
                 let edit = match updated_value {
                     Some(value) => ConfigEdit::SetPath {
@@ -296,20 +287,14 @@ impl ConfigManager {
             parsed_segments.push(segments);
         }
 
-        validate_config(&target_config).map_err(|err| {
+        validate_config(&user_config).map_err(|err| {
             ConfigManagerError::write(
                 ConfigWriteErrorCode::ConfigValidationError,
                 format!("Invalid configuration: {err}"),
             )
         })?;
-        let target_base_dir = match &target {
-            WritableConfigTarget::User { .. } => self.codex_home(),
-            WritableConfigTarget::Project {
-                dot_codex_folder, ..
-            } => dot_codex_folder.as_path(),
-        };
-        let target_config_toml =
-            deserialize_config_toml_with_base(target_config.clone(), target_base_dir).map_err(
+        let user_config_toml =
+            deserialize_config_toml_with_base(user_config.clone(), self.codex_home()).map_err(
                 |err| {
                     ConfigManagerError::write(
                         ConfigWriteErrorCode::ConfigValidationError,
@@ -318,7 +303,7 @@ impl ConfigManager {
                 },
             )?;
         validate_feature_requirements_for_config_toml(
-            &target_config_toml,
+            &user_config_toml,
             layers.requirements().feature_requirements.as_ref(),
         )
         .map_err(|err| {
@@ -327,18 +312,7 @@ impl ConfigManager {
                 format!("Invalid configuration: {err}"),
             )
         })?;
-        let updated_layers = match &target {
-            WritableConfigTarget::User { config_path } => {
-                layers.with_user_config(config_path, target_config.clone())
-            }
-            WritableConfigTarget::Project {
-                dot_codex_folder, ..
-            } => layers
-                .with_project_config(dot_codex_folder, target_config.clone())
-                .map_err(|err| {
-                    ConfigManagerError::io("failed to update project config layer ordering", err)
-                })?,
-        };
+        let updated_layers = layers.with_user_config(&provided_path, user_config.clone());
         let effective = updated_layers.effective_config();
         validate_config(&effective).map_err(|err| {
             ConfigManagerError::write(
@@ -348,20 +322,11 @@ impl ConfigManager {
         })?;
 
         if !config_edits.is_empty() {
-            match &target {
-                WritableConfigTarget::User { .. } => {
-                    ConfigEditsBuilder::new(self.codex_home())
-                        .with_edits(config_edits)
-                        .apply()
-                        .await
-                        .map_err(|err| {
-                            ConfigManagerError::anyhow("failed to persist config.toml", err)
-                        })?;
-                }
-                WritableConfigTarget::Project { config_path, .. } => {
-                    persist_project_config(config_path, &target_config).await?;
-                }
-            }
+            ConfigEditsBuilder::for_config_path(provided_path.as_path())
+                .with_edits(config_edits)
+                .apply()
+                .await
+                .map_err(|err| ConfigManagerError::anyhow("failed to persist config.toml", err))?;
         }
 
         let overridden = first_overridden_edit(&updated_layers, &effective, &parsed_segments);
@@ -373,33 +338,16 @@ impl ConfigManager {
         Ok(ConfigWriteResponse {
             status,
             version: updated_layers
-                .get_layers(
-                    ConfigLayerStackOrdering::HighestPrecedenceFirst,
-                    /*include_disabled*/ true,
-                )
-                .into_iter()
-                .find(|layer| match &target {
-                    WritableConfigTarget::User { config_path } => {
-                        matches!(&layer.name, ConfigLayerSource::User { file } if file == config_path)
-                    }
-                    WritableConfigTarget::Project {
-                        dot_codex_folder, ..
-                    } => matches!(
-                        &layer.name,
-                        ConfigLayerSource::Project {
-                            dot_codex_folder: current
-                        } if current == dot_codex_folder
-                    ),
-                })
+                .get_active_user_layer()
                 .ok_or_else(|| {
                     ConfigManagerError::write(
                         ConfigWriteErrorCode::UserLayerNotFound,
-                        "updated config layer not found",
+                        "user layer not found in updated layers",
                     )
                 })?
                 .version
                 .clone(),
-            file_path: provided_path.clone(),
+            file_path: provided_path,
             overridden_metadata: overridden,
         })
     }
@@ -444,6 +392,7 @@ async fn create_empty_user_layer(
     Ok(ConfigLayerEntry::new(
         ConfigLayerSource::User {
             file: config_toml.clone(),
+            profile: None,
         },
         toml_value,
     ))
@@ -454,118 +403,6 @@ async fn write_empty_user_config(write_path: PathBuf) -> Result<(), ConfigManage
         .await
         .map_err(|err| ConfigManagerError::anyhow("config persistence task panicked", err.into()))?
         .map_err(|err| ConfigManagerError::io("failed to create empty user config.toml", err))
-}
-
-async fn create_empty_project_layer(
-    dot_codex_folder: &AbsolutePathBuf,
-    config_toml: &AbsolutePathBuf,
-) -> Result<ConfigLayerEntry, ConfigManagerError> {
-    let SymlinkWritePaths {
-        read_path,
-        write_path,
-    } = resolve_symlink_write_paths(config_toml.as_path())
-        .map_err(|err| ConfigManagerError::io("failed to resolve project config path", err))?;
-    let toml_value = match read_path {
-        Some(path) => match tokio::fs::read_to_string(&path).await {
-            Ok(contents) => toml::from_str(&contents).map_err(|e| {
-                ConfigManagerError::toml("failed to parse existing project config.toml", e)
-            })?,
-            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-                if let Some(parent) = write_path.parent() {
-                    tokio::fs::create_dir_all(parent)
-                        .await
-                        .map_err(|create_err| {
-                            ConfigManagerError::io(
-                                "failed to create project config directory",
-                                create_err,
-                            )
-                        })?;
-                }
-                write_empty_user_config(write_path.clone()).await?;
-                TomlValue::Table(toml::map::Map::new())
-            }
-            Err(err) => {
-                return Err(ConfigManagerError::io(
-                    "failed to read project config.toml",
-                    err,
-                ));
-            }
-        },
-        None => {
-            if let Some(parent) = write_path.parent() {
-                tokio::fs::create_dir_all(parent)
-                    .await
-                    .map_err(|create_err| {
-                        ConfigManagerError::io(
-                            "failed to create project config directory",
-                            create_err,
-                        )
-                    })?;
-            }
-            write_empty_user_config(write_path).await?;
-            TomlValue::Table(toml::map::Map::new())
-        }
-    };
-    Ok(ConfigLayerEntry::new(
-        ConfigLayerSource::Project {
-            dot_codex_folder: dot_codex_folder.clone(),
-        },
-        toml_value,
-    ))
-}
-
-async fn persist_project_config(
-    config_path: &AbsolutePathBuf,
-    config: &TomlValue,
-) -> Result<(), ConfigManagerError> {
-    let config_text = toml::to_string_pretty(config).map_err(|err| {
-        ConfigManagerError::anyhow("failed to serialize project config.toml", err.into())
-    })?;
-    let write_path = config_path.to_path_buf();
-    task::spawn_blocking(move || write_atomically(&write_path, &config_text))
-        .await
-        .map_err(|err| ConfigManagerError::anyhow("config persistence task panicked", err.into()))?
-        .map_err(|err| ConfigManagerError::io("failed to persist project config.toml", err))
-}
-
-fn writable_config_target(
-    user_config_path: &AbsolutePathBuf,
-    provided_path: &AbsolutePathBuf,
-) -> Result<WritableConfigTarget, ConfigManagerError> {
-    if paths_match(user_config_path, provided_path) {
-        return Ok(WritableConfigTarget::User {
-            config_path: user_config_path.clone(),
-        });
-    }
-
-    let parent = provided_path.parent().ok_or_else(|| {
-        ConfigManagerError::write(
-            ConfigWriteErrorCode::ConfigLayerReadonly,
-            "Only writes to the user config or project config are allowed",
-        )
-    })?;
-    if parent.file_name().and_then(|name| name.to_str()) != Some(".codex")
-        || provided_path.file_name().and_then(|name| name.to_str()) != Some(CONFIG_TOML_FILE)
-    {
-        return Err(ConfigManagerError::write(
-            ConfigWriteErrorCode::ConfigLayerReadonly,
-            "Only writes to the user config or project config are allowed",
-        ));
-    }
-
-    let cwd = parent.parent().ok_or_else(|| {
-        ConfigManagerError::write(
-            ConfigWriteErrorCode::ConfigLayerReadonly,
-            "Project config path must live inside a project folder",
-        )
-    })?;
-    let cwd = AbsolutePathBuf::from_absolute_path(cwd.to_path_buf())
-        .map_err(|err| ConfigManagerError::io("failed to resolve project cwd", err))?;
-    Ok(WritableConfigTarget::Project {
-        config_path: provided_path.clone(),
-        dot_codex_folder: parent,
-        cwd,
-    })
 }
 
 fn parse_value(value: JsonValue) -> Result<Option<TomlValue>, String> {
@@ -582,10 +419,47 @@ fn parse_key_path(path: &str) -> Result<Vec<String>, String> {
     if path.trim().is_empty() {
         return Err("keyPath must not be empty".to_string());
     }
-    Ok(path
-        .split('.')
-        .map(std::string::ToString::to_string)
-        .collect())
+
+    let mut segments = Vec::new();
+    let mut segment = String::new();
+    let mut chars = path.chars();
+    let mut quoted = false;
+
+    // Split on dots unless they appear inside a quoted segment. Bare segments
+    // intentionally stay permissive so existing paths like `sample@catalog`
+    // remain valid.
+    while let Some(ch) = chars.next() {
+        match ch {
+            '"' if segment.is_empty() && !quoted => quoted = true,
+            '"' if quoted => quoted = false,
+            '\\' if quoted => {
+                // Quoted segments may escape punctuation that would otherwise
+                // participate in parsing, such as `.` or `"`.
+                let Some(escaped) = chars.next() else {
+                    return Err("unterminated escape in keyPath".to_string());
+                };
+                segment.push(escaped);
+            }
+            '.' if !quoted => {
+                if segment.is_empty() {
+                    return Err("keyPath segments must not be empty".to_string());
+                }
+                segments.push(std::mem::take(&mut segment));
+            }
+            '"' => return Err("invalid quoted keyPath segment".to_string()),
+            _ => segment.push(ch),
+        }
+    }
+
+    if quoted {
+        return Err("unterminated quoted keyPath segment".to_string());
+    }
+    if segment.is_empty() {
+        return Err("keyPath segments must not be empty".to_string());
+    }
+
+    segments.push(segment);
+    Ok(segments)
 }
 
 #[derive(Debug)]
@@ -750,12 +624,15 @@ fn override_message(layer: &ConfigLayerSource) -> String {
         ConfigLayerSource::System { file } => {
             format!("Overridden by managed config (system): {}", file.display())
         }
+        ConfigLayerSource::EnterpriseManaged { id: _, name } => {
+            format!("Overridden by enterprise-managed config: {name}")
+        }
         ConfigLayerSource::Project { dot_codex_folder } => format!(
             "Overridden by project config: {}/{CONFIG_TOML_FILE}",
             dot_codex_folder.display(),
         ),
         ConfigLayerSource::SessionFlags => "Overridden by session flags".to_string(),
-        ConfigLayerSource::User { file } => {
+        ConfigLayerSource::User { file, .. } => {
             format!("Overridden by user config: {}", file.display())
         }
         ConfigLayerSource::LegacyManagedConfigTomlFromFile { file } => {
@@ -775,7 +652,7 @@ fn compute_override_metadata(
     effective: &TomlValue,
     segments: &[String],
 ) -> Option<OverriddenMetadata> {
-    let user_value = match layers.get_user_layer() {
+    let user_value = match layers.get_active_user_layer() {
         Some(user_layer) => value_at_path(&user_layer.config, segments),
         None => return None,
     };

@@ -8,6 +8,8 @@ use std::sync::atomic::Ordering;
 
 use chrono::Utc;
 use codex_analytics::AnalyticsEventsClient;
+use crate::skills_watcher::SkillsWatcher;
+use codex_app_server_protocol::EcommerceAgentStepResult;
 use codex_app_server_protocol::CommandExecutionApprovalDecision;
 use codex_app_server_protocol::CommandExecutionRequestApprovalParams;
 use codex_app_server_protocol::CommandExecutionRequestApprovalResponse;
@@ -704,6 +706,7 @@ pub(crate) struct DevflowRequestProcessor {
     analytics_events_client: AnalyticsEventsClient,
     thread_watch_manager: ThreadWatchManager,
     thread_list_state_permit: Arc<Semaphore>,
+    skills_watcher: Arc<SkillsWatcher>,
     store: Arc<Mutex<DevflowStore>>,
     store_snapshot_load_error: Option<String>,
     store_snapshot_persist_error: Arc<Mutex<Option<String>>>,
@@ -723,6 +726,7 @@ impl DevflowRequestProcessor {
         analytics_events_client: AnalyticsEventsClient,
         thread_watch_manager: ThreadWatchManager,
         thread_list_state_permit: Arc<Semaphore>,
+        skills_watcher: Arc<SkillsWatcher>,
     ) -> Self {
         let mut store_snapshot_load_error = None;
         let store = match load_devflow_store_snapshot(config.codex_home.as_path()) {
@@ -772,6 +776,7 @@ impl DevflowRequestProcessor {
             analytics_events_client,
             thread_watch_manager,
             thread_list_state_permit,
+            skills_watcher,
             store: Arc::new(Mutex::new(store)),
             store_snapshot_load_error,
             store_snapshot_persist_error: Arc::new(Mutex::new(None)),
@@ -4054,7 +4059,7 @@ impl DevflowRequestProcessor {
         };
 
         self.thread_state_manager
-            .connection_initialized(internal_connection_id)
+            .connection_initialized(internal_connection_id, crate::thread_state::ConnectionCapabilities { request_attestation: false })
             .await;
 
         let new_thread = match self.thread_manager.start_thread(config).await {
@@ -4108,6 +4113,8 @@ impl DevflowRequestProcessor {
                 environments: None,
                 final_output_json_schema: None,
                 responsesapi_client_metadata: None,
+                additional_context: Default::default(),
+                thread_settings: Default::default(),
             })
             .await
         {
@@ -7486,11 +7493,11 @@ impl DevflowRequestProcessor {
             thread_state_manager: self.thread_state_manager.clone(),
             outgoing: Arc::clone(&self.outgoing),
             pending_thread_unloads: Arc::clone(&self.pending_thread_unloads),
-            analytics_events_client: self.analytics_events_client.clone(),
             thread_watch_manager: self.thread_watch_manager.clone(),
             thread_list_state_permit: Arc::clone(&self.thread_list_state_permit),
             fallback_model_provider: self.config.model_provider_id.clone(),
             codex_home: self.config.codex_home.to_path_buf(),
+            skills_watcher: Arc::clone(&self.skills_watcher),
         }
     }
 

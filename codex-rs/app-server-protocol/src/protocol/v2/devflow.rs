@@ -1670,3 +1670,74 @@ pub struct DevflowAgentStatusChangedNotification {
 pub struct DevflowApprovalRequestedNotification {
     pub approval: DevflowApproval,
 }
+
+// ---------------------------------------------------------------------------
+// Ecommerce Agent Types
+// ---------------------------------------------------------------------------
+
+use std::collections::HashMap;
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, JsonSchema, TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(export_to = "v2/")]
+pub enum EcommerceAgentType {
+    ListingBot,
+    CustomerBot,
+    ResearchBot,
+    AdsBot,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export_to = "v2/")]
+pub struct EcommerceAgentSubmitParams {
+    pub agent_type: EcommerceAgentType,
+    pub user_input: String,
+    pub platform: Option<String>,
+    pub market: Option<String>,
+    pub context: Option<HashMap<String, String>>,
+    pub thread_id: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export_to = "v2/")]
+pub struct EcommerceAgentStepResult {
+    pub step_name: String,
+    pub model: Option<String>,
+    pub duration_ms: Option<i64>,
+    pub output_preview: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export_to = "v2/")]
+pub struct EcommerceAgentSubmitResponse {
+    pub request_id: String,
+    pub agent_type: EcommerceAgentType,
+    pub status: String,
+    pub result: Option<serde_json::Value>,
+    pub output_markdown: Option<String>,
+    pub intermediate_steps: Vec<EcommerceAgentStepResult>,
+    pub error: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export_to = "v2/")]
+pub struct EcommerceAgentReadParams {
+    pub request_id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export_to = "v2/")]
+pub struct EcommerceAgentReadResponse {
+    pub request_id: String,
+    pub agent_type: EcommerceAgentType,
+    pub status: String,
+    pub result: Option<serde_json::Value>,
+    pub output_markdown: Option<String>,
+    pub intermediate_steps: Vec<EcommerceAgentStepResult>,
+    pub error: Option<String>,
+}
