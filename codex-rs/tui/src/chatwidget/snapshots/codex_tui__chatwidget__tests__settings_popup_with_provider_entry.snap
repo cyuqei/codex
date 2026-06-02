@@ -1,0 +1,13 @@
+---
+source: tui/src/chatwidget/tests/popups_and_settings.rs
+assertion_line: 2328
+expression: popup
+---
+  Settings
+  Configure settings for Codex.
+
+› 1. Providers   Default: deepseek
+  2. Microphone  Current: System default
+  3. Speaker     Current: System default
+
+  Press enter to confirm or esc to go back

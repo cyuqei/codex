@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "artifactId": {
+      "type": "string"
+    },
+    "diff": {
+      "type": "string"
+    },
+    "projectId": {
+      "type": "string"
+    },
+    "runId": {
+      "type": "string"
+    },
+    "taskId": {
+      "type": "string"
+    },
+    "worktreeId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "artifactId",
+    "diff",
+    "projectId",
+    "runId",
+    "taskId"
+  ],
+  "title": "DevflowWorktreeDiffUpdatedNotification",
+  "type": "object"
+}

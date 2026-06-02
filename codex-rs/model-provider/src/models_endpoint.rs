@@ -78,6 +78,18 @@ impl ModelsEndpointClient for OpenAiModelsEndpoint {
             .is_some_and(CodexAuth::uses_codex_backend)
     }
 
+    async fn should_refresh_models(&self) -> bool {
+        self.provider_info.has_command_auth()
+            || self.auth().await.is_some()
+            || self
+                .provider_info
+                .experimental_bearer_token
+                .as_ref()
+                .is_some_and(|value| !value.trim().is_empty())
+            || self.provider_info.env_key.is_some()
+            || !self.provider_info.requires_openai_auth
+    }
+
     async fn list_models(
         &self,
         client_version: &str,

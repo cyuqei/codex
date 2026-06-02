@@ -20,6 +20,7 @@ base_url = "http://localhost:11434/v1"
         auth: None,
         aws: None,
         wire_api: WireApi::Responses,
+        auth_style: AuthStyle::Bearer,
         query_params: None,
         http_headers: None,
         env_http_headers: None,
@@ -52,6 +53,7 @@ query_params = { api-version = "2025-04-01-preview" }
         auth: None,
         aws: None,
         wire_api: WireApi::Responses,
+        auth_style: AuthStyle::Bearer,
         query_params: Some(maplit::hashmap! {
             "api-version".to_string() => "2025-04-01-preview".to_string(),
         }),
@@ -87,6 +89,7 @@ env_http_headers = { "X-Example-Env-Header" = "EXAMPLE_ENV_VAR" }
         auth: None,
         aws: None,
         wire_api: WireApi::Responses,
+        auth_style: AuthStyle::Bearer,
         query_params: None,
         http_headers: Some(maplit::hashmap! {
             "X-Example-Header".to_string() => "example-value".to_string(),
@@ -104,6 +107,20 @@ env_http_headers = { "X-Example-Env-Header" = "EXAMPLE_ENV_VAR" }
 
     let provider: ModelProviderInfo = toml::from_str(azure_provider_toml).unwrap();
     assert_eq!(expected_provider, provider);
+}
+
+#[test]
+fn test_deserialize_chat_completions_wire_api() {
+    let provider_toml = r#"
+name = "DeepSeek"
+base_url = "https://api.deepseek.com/v1"
+env_key = "DEEPSEEK_API_KEY"
+wire_api = "chat_completions"
+        "#;
+
+    let provider: ModelProviderInfo = toml::from_str(provider_toml).unwrap();
+    assert_eq!(provider.wire_api, WireApi::ChatCompletions);
+    assert_eq!(provider.wire_api.to_string(), "chat_completions");
 }
 
 #[test]
@@ -150,6 +167,7 @@ fn test_supports_remote_compaction_for_azure_name() {
         auth: None,
         aws: None,
         wire_api: WireApi::Responses,
+        auth_style: AuthStyle::Bearer,
         query_params: None,
         http_headers: None,
         env_http_headers: None,
@@ -175,6 +193,7 @@ fn test_supports_remote_compaction_for_non_openai_non_azure_provider() {
         auth: None,
         aws: None,
         wire_api: WireApi::Responses,
+        auth_style: AuthStyle::Bearer,
         query_params: None,
         http_headers: None,
         env_http_headers: None,
@@ -255,6 +274,7 @@ fn test_create_amazon_bedrock_provider() {
                 region: None,
             }),
             wire_api: WireApi::Responses,
+            auth_style: AuthStyle::Bearer,
             query_params: None,
             http_headers: Some(maplit::hashmap! {
                 AMAZON_BEDROCK_MANTLE_CLIENT_AGENT_HEADER.to_string() =>

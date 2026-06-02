@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowQualityGateKind": {
+      "enum": [
+        "format",
+        "lint",
+        "typecheck",
+        "targeted_test",
+        "integration_test",
+        "snapshot",
+        "build",
+        "review",
+        "gstack_health",
+        "gstack_browser_qa",
+        "gstack_benchmark",
+        "gstack_canary",
+        "gstack_watchdog"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "commandOverride": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "kind": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DevflowQualityGateKind"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "taskId": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "taskId"
+  ],
+  "title": "DevflowQualityGateRunParams",
+  "type": "object"
+}

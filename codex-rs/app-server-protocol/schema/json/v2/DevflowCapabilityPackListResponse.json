@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowCapabilityPack": {
+      "properties": {
+        "capabilities": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "diagnostics": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "sourcePath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "$ref": "#/definitions/DevflowPackStatus"
+        }
+      },
+      "required": [
+        "capabilities",
+        "diagnostics",
+        "id",
+        "name",
+        "status"
+      ],
+      "type": "object"
+    },
+    "DevflowPackStatus": {
+      "enum": [
+        "available",
+        "missing",
+        "disabled"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "data": {
+      "items": {
+        "$ref": "#/definitions/DevflowCapabilityPack"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "title": "DevflowCapabilityPackListResponse",
+  "type": "object"
+}

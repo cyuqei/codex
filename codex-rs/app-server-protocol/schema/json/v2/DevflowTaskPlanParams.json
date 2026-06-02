@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowTaskRiskLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "maxTasks": {
+      "format": "uint32",
+      "minimum": 0.0,
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "objective": {
+      "type": "string"
+    },
+    "projectRoot": {
+      "type": "string"
+    },
+    "riskLevel": {
+      "$ref": "#/definitions/DevflowTaskRiskLevel"
+    },
+    "title": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "objective",
+    "projectRoot",
+    "riskLevel",
+    "title"
+  ],
+  "title": "DevflowTaskPlanParams",
+  "type": "object"
+}

@@ -1,0 +1,166 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ProviderAuthStyle": {
+      "enum": [
+        "bearer",
+        "x_api_key"
+      ],
+      "type": "string"
+    },
+    "ProviderConfigParams": {
+      "properties": {
+        "apiKey": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "authStyle": {
+          "$ref": "#/definitions/ProviderAuthStyle"
+        },
+        "baseUrl": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "envHeaders": {
+          "items": {
+            "$ref": "#/definitions/ProviderEnvHeaderInput"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "envKey": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "headers": {
+          "items": {
+            "$ref": "#/definitions/ProviderHeaderInput"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "requestMaxRetries": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "requiresOpenaiAuth": {
+          "default": false,
+          "type": "boolean"
+        },
+        "streamIdleTimeoutMs": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "streamMaxRetries": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "supportsWebsockets": {
+          "default": false,
+          "type": "boolean"
+        },
+        "websocketConnectTimeoutMs": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "wireApi": {
+          "$ref": "#/definitions/ProviderWireApi"
+        }
+      },
+      "required": [
+        "authStyle",
+        "baseUrl",
+        "displayName",
+        "wireApi"
+      ],
+      "type": "object"
+    },
+    "ProviderEnvHeaderInput": {
+      "properties": {
+        "envVar": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "envVar",
+        "name"
+      ],
+      "type": "object"
+    },
+    "ProviderHeaderInput": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "type": "object"
+    },
+    "ProviderWireApi": {
+      "enum": [
+        "responses",
+        "anthropic_messages",
+        "chat_completions"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "defaultModel": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "id": {
+      "type": "string"
+    },
+    "provider": {
+      "$ref": "#/definitions/ProviderConfigParams"
+    },
+    "setDefault": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "id",
+    "provider"
+  ],
+  "title": "ProviderUpdateParams",
+  "type": "object"
+}

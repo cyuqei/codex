@@ -13,6 +13,7 @@ use crate::protocol::v2::DynamicToolCallStatus;
 use crate::protocol::v2::McpToolCallError;
 use crate::protocol::v2::McpToolCallResult;
 use crate::protocol::v2::McpToolCallStatus;
+use crate::protocol::v2::ReviewOutput;
 use crate::protocol::v2::ThreadItem;
 use crate::protocol::v2::Turn;
 use crate::protocol::v2::TurnError as V2TurnError;
@@ -875,9 +876,11 @@ impl ThreadHistoryBuilder {
             .map(render_review_output_text)
             .unwrap_or_else(|| REVIEW_FALLBACK_MESSAGE.to_string());
         let id = self.next_item_id();
-        self.ensure_turn()
-            .items
-            .push(ThreadItem::ExitedReviewMode { id, review });
+        self.ensure_turn().items.push(ThreadItem::ExitedReviewMode {
+            id,
+            review,
+            review_output: payload.review_output.as_ref().map(ReviewOutput::from),
+        });
     }
 
     fn handle_error(&mut self, payload: &ErrorEvent) {

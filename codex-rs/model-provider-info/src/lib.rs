@@ -34,32 +34,33 @@ const MAX_REQUEST_MAX_RETRIES: u64 = 100;
 
 const OPENAI_PROVIDER_NAME: &str = "OpenAI";
 pub const OPENAI_PROVIDER_ID: &str = "openai";
-pub const CHATGPT_CODEX_BASE_URL: &str = "https://chatgpt.com/backend-api/codex";
 const AMAZON_BEDROCK_PROVIDER_NAME: &str = "Amazon Bedrock";
 pub const AMAZON_BEDROCK_PROVIDER_ID: &str = "amazon-bedrock";
-pub const AMAZON_BEDROCK_GPT_5_5_MODEL_ID: &str = "openai.gpt-5.5";
-pub const AMAZON_BEDROCK_GPT_5_4_MODEL_ID: &str = "openai.gpt-5.4";
 pub const AMAZON_BEDROCK_DEFAULT_BASE_URL: &str =
     "https://bedrock-mantle.us-east-1.api.aws/openai/v1";
-const AMAZON_BEDROCK_MANTLE_CLIENT_AGENT_HEADER: &str = "x-amzn-mantle-client-agent";
-const AMAZON_BEDROCK_MANTLE_CLIENT_AGENT_VALUE: &str = "codex";
-const CHAT_WIRE_API_REMOVED_ERROR: &str = "`wire_api = \"chat\"` is no longer supported.\nHow to fix: set `wire_api = \"responses\"` in your provider config.\nMore info: https://github.com/openai/codex/discussions/7782";
+const CHAT_WIRE_API_REMOVED_ERROR: &str = "`wire_api = \"chat\"` is no longer supported.\nHow to fix: set `wire_api = \"chat_completions\"` for OpenAI Chat Completions-compatible providers, or `wire_api = \"responses\"` for OpenAI Responses-compatible providers.\nMore info: https://github.com/openai/codex/discussions/7782";
 pub const LEGACY_OLLAMA_CHAT_PROVIDER_ID: &str = "ollama-chat";
 pub const OLLAMA_CHAT_PROVIDER_REMOVED_ERROR: &str = "`ollama-chat` is no longer supported.\nHow to fix: replace `ollama-chat` with `ollama` in `model_provider`, `oss_provider`, or `--local-provider`.\nMore info: https://github.com/openai/codex/discussions/7782";
 
 /// Wire protocol that the provider speaks.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, JsonSchema)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 pub enum WireApi {
-    /// The Responses API exposed by OpenAI at `/v1/responses`.
+    /// The Responses API exposed by OpenAI-compatible providers at `/v1/responses`.
     #[default]
     Responses,
+    /// The Anthropic Messages API exposed by Claude-compatible providers at `/v1/messages`.
+    AnthropicMessages,
+    /// The OpenAI Chat Completions API exposed by compatible providers at `/v1/chat/completions`.
+    ChatCompletions,
 }
 
 impl fmt::Display for WireApi {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let value = match self {
             Self::Responses => "responses",
+            Self::AnthropicMessages => "anthropic_messages",
+            Self::ChatCompletions => "chat_completions",
         };
         f.write_str(value)
     }
@@ -73,10 +74,26 @@ impl<'de> Deserialize<'de> for WireApi {
         let value = String::deserialize(deserializer)?;
         match value.as_str() {
             "responses" => Ok(Self::Responses),
+            "anthropic_messages" => Ok(Self::AnthropicMessages),
+            "chat_completions" => Ok(Self::ChatCompletions),
             "chat" => Err(serde::de::Error::custom(CHAT_WIRE_API_REMOVED_ERROR)),
-            _ => Err(serde::de::Error::unknown_variant(&value, &["responses"])),
+            _ => Err(serde::de::Error::unknown_variant(
+                &value,
+                &["responses", "anthropic_messages", "chat_completions"],
+            )),
         }
     }
+}
+
+/// Header style used for API-key authentication.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum AuthStyle {
+    /// Send API keys as `Authorization: Bearer <token>`.
+    #[default]
+    Bearer,
+    /// Send API keys as `x-api-key: <token>`.
+    XApiKey,
 }
 
 /// Serializable representation of a provider definition.
@@ -105,6 +122,9 @@ pub struct ModelProviderInfo {
     /// Which wire protocol this provider expects.
     #[serde(default)]
     pub wire_api: WireApi,
+    /// Which HTTP header style to use when `env_key` supplies an API key.
+    #[serde(default)]
+    pub auth_style: AuthStyle,
     /// Optional query parameters to append to the base URL.
     pub query_params: Option<HashMap<String, String>>,
     /// Additional HTTP headers to include in requests to this provider where
@@ -148,6 +168,13 @@ pub struct ModelProviderAwsAuthInfo {
 
 impl ModelProviderInfo {
     pub fn validate(&self) -> std::result::Result<(), String> {
+        if self.auth_style == AuthStyle::XApiKey && self.requires_openai_auth {
+            return Err(
+                "provider auth_style = \"x_api_key\" cannot be combined with requires_openai_auth"
+                    .to_string(),
+            );
+        }
+
         if self.aws.is_some() {
             if self.supports_websockets {
                 // TODO(celia-oai): Support AWS SigV4 signing for WebSocket
@@ -239,7 +266,7 @@ impl ModelProviderInfo {
             auth_mode,
             Some(AuthMode::Chatgpt | AuthMode::ChatgptAuthTokens | AuthMode::AgentIdentity)
         ) {
-            CHATGPT_CODEX_BASE_URL
+            "https://chatgpt.com/backend-api/codex"
         } else {
             "https://api.openai.com/v1"
         };
@@ -326,6 +353,7 @@ impl ModelProviderInfo {
             auth: None,
             aws: None,
             wire_api: WireApi::Responses,
+            auth_style: AuthStyle::Bearer,
             query_params: None,
             http_headers: Some(
                 [("version".to_string(), env!("CARGO_PKG_VERSION").to_string())]
@@ -368,11 +396,9 @@ impl ModelProviderInfo {
                 region: None,
             })),
             wire_api: WireApi::Responses,
+            auth_style: AuthStyle::Bearer,
             query_params: None,
-            http_headers: Some(HashMap::from([(
-                AMAZON_BEDROCK_MANTLE_CLIENT_AGENT_HEADER.to_string(),
-                AMAZON_BEDROCK_MANTLE_CLIENT_AGENT_VALUE.to_string(),
-            )])),
+            http_headers: None,
             env_http_headers: None,
             request_max_retries: None,
             stream_max_retries: None,
@@ -502,6 +528,7 @@ pub fn create_oss_provider_with_base_url(base_url: &str, wire_api: WireApi) -> M
         auth: None,
         aws: None,
         wire_api,
+        auth_style: AuthStyle::Bearer,
         query_params: None,
         http_headers: None,
         env_http_headers: None,

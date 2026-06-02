@@ -23,6 +23,13 @@
         "integer",
         "null"
       ]
+    },
+    "providerId": {
+      "description": "When set, list models for the specified provider id instead of the currently selected one.",
+      "type": [
+        "string",
+        "null"
+      ]
     }
   },
   "title": "ModelListParams",

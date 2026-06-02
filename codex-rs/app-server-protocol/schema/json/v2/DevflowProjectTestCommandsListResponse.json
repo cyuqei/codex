@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "commands": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "projectId": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "commands",
+    "projectId"
+  ],
+  "title": "DevflowProjectTestCommandsListResponse",
+  "type": "object"
+}

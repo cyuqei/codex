@@ -23,6 +23,65 @@ use codex_app_server_protocol::CommandExecWriteParams;
 use codex_app_server_protocol::ConfigBatchWriteParams;
 use codex_app_server_protocol::ConfigReadParams;
 use codex_app_server_protocol::ConfigValueWriteParams;
+use codex_app_server_protocol::DevflowAgentCapabilitiesReadParams;
+use codex_app_server_protocol::DevflowAgentDetectParams;
+use codex_app_server_protocol::DevflowAgentDiagnoseParams;
+use codex_app_server_protocol::DevflowAgentListParams;
+use codex_app_server_protocol::DevflowAgentReadParams;
+use codex_app_server_protocol::DevflowAgentRestartParams;
+use codex_app_server_protocol::DevflowAgentStartParams;
+use codex_app_server_protocol::DevflowAgentStopParams;
+use codex_app_server_protocol::DevflowApprovalListParams;
+use codex_app_server_protocol::DevflowApprovalPolicyReadParams;
+use codex_app_server_protocol::DevflowApprovalPolicyUpdateParams;
+use codex_app_server_protocol::DevflowApprovalRespondParams;
+use codex_app_server_protocol::DevflowArtifactDeliverParams;
+use codex_app_server_protocol::DevflowArtifactExportParams;
+use codex_app_server_protocol::DevflowArtifactListParams;
+use codex_app_server_protocol::DevflowArtifactOpenParams;
+use codex_app_server_protocol::DevflowArtifactReadParams;
+use codex_app_server_protocol::DevflowCapabilityPackListParams;
+use codex_app_server_protocol::DevflowCapabilityPackReadParams;
+use codex_app_server_protocol::DevflowCapabilityPackRunParams;
+use codex_app_server_protocol::DevflowPolicyPackApplyParams;
+use codex_app_server_protocol::DevflowPolicyPackListParams;
+use codex_app_server_protocol::DevflowPolicyPackReadParams;
+use codex_app_server_protocol::DevflowProjectDiagnoseParams;
+use codex_app_server_protocol::DevflowProjectListParams;
+use codex_app_server_protocol::DevflowProjectMemoryReadParams;
+use codex_app_server_protocol::DevflowProjectMemoryWriteParams;
+use codex_app_server_protocol::DevflowProjectOpenParams;
+use codex_app_server_protocol::DevflowProjectReadParams;
+use codex_app_server_protocol::DevflowProjectTestCommandsListParams;
+use codex_app_server_protocol::DevflowProjectTrustParams;
+use codex_app_server_protocol::DevflowQualityGateListParams;
+use codex_app_server_protocol::DevflowQualityGateReadParams;
+use codex_app_server_protocol::DevflowQualityGateRerunParams;
+use codex_app_server_protocol::DevflowQualityGateRunParams;
+use codex_app_server_protocol::DevflowQualityGateWaiveParams;
+use codex_app_server_protocol::DevflowReleasePrepCreateParams;
+use codex_app_server_protocol::DevflowReleaseSubmitParams;
+use codex_app_server_protocol::DevflowSupportBundleCreateParams;
+use codex_app_server_protocol::DevflowTaskAssignParams;
+use codex_app_server_protocol::DevflowTaskCancelParams;
+use codex_app_server_protocol::DevflowTaskCreateParams;
+use codex_app_server_protocol::DevflowTaskDependenciesUpdateParams;
+use codex_app_server_protocol::DevflowTaskDispatchParams;
+use codex_app_server_protocol::DevflowTaskListParams;
+use codex_app_server_protocol::DevflowTaskPauseParams;
+use codex_app_server_protocol::DevflowTaskPlanParams;
+use codex_app_server_protocol::DevflowTaskReadParams;
+use codex_app_server_protocol::DevflowTaskResumeParams;
+use codex_app_server_protocol::DevflowTaskStartParams;
+use codex_app_server_protocol::DevflowWatchdogAlertsParams;
+use codex_app_server_protocol::DevflowWatchdogReadParams;
+use codex_app_server_protocol::DevflowWatchdogReconcileParams;
+use codex_app_server_protocol::DevflowWorktreeCleanupParams;
+use codex_app_server_protocol::DevflowWorktreeCreateParams;
+use codex_app_server_protocol::DevflowWorktreeDiffParams;
+use codex_app_server_protocol::DevflowWorktreeListParams;
+use codex_app_server_protocol::DevflowWorktreeMergeParams;
+use codex_app_server_protocol::DevflowWorktreeReadParams;
 use codex_app_server_protocol::ExperimentalFeatureListParams;
 use codex_app_server_protocol::FeedbackUploadParams;
 use codex_app_server_protocol::FsCopyParams;
@@ -56,9 +115,7 @@ use codex_app_server_protocol::McpServerToolCallParams;
 use codex_app_server_protocol::MockExperimentalMethodParams;
 use codex_app_server_protocol::ModelListParams;
 use codex_app_server_protocol::ModelProviderCapabilitiesReadParams;
-use codex_app_server_protocol::PermissionProfileListParams;
 use codex_app_server_protocol::PluginInstallParams;
-use codex_app_server_protocol::PluginInstalledParams;
 use codex_app_server_protocol::PluginListParams;
 use codex_app_server_protocol::PluginReadParams;
 use codex_app_server_protocol::PluginSkillReadParams;
@@ -67,12 +124,18 @@ use codex_app_server_protocol::ProcessKillParams;
 use codex_app_server_protocol::ProcessResizePtyParams;
 use codex_app_server_protocol::ProcessSpawnParams;
 use codex_app_server_protocol::ProcessWriteStdinParams;
-use codex_app_server_protocol::RemoteControlPairingStartParams;
+use codex_app_server_protocol::ProviderCreateParams;
+use codex_app_server_protocol::ProviderDeleteParams;
+use codex_app_server_protocol::ProviderListParams;
+use codex_app_server_protocol::ProviderPreferencesReadParams;
+use codex_app_server_protocol::ProviderPreferencesUpdateParams;
+use codex_app_server_protocol::ProviderReadParams;
+use codex_app_server_protocol::ProviderTestConnectionParams;
+use codex_app_server_protocol::ProviderUpdateParams;
 use codex_app_server_protocol::RequestId;
 use codex_app_server_protocol::ReviewStartParams;
 use codex_app_server_protocol::SendAddCreditsNudgeEmailParams;
 use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::SkillsExtraRootsSetParams;
 use codex_app_server_protocol::SkillsListParams;
 use codex_app_server_protocol::ThreadArchiveParams;
 use codex_app_server_protocol::ThreadCompactStartParams;
@@ -90,12 +153,9 @@ use codex_app_server_protocol::ThreadRealtimeStartParams;
 use codex_app_server_protocol::ThreadRealtimeStopParams;
 use codex_app_server_protocol::ThreadResumeParams;
 use codex_app_server_protocol::ThreadRollbackParams;
-use codex_app_server_protocol::ThreadSearchParams;
 use codex_app_server_protocol::ThreadSetNameParams;
-use codex_app_server_protocol::ThreadSettingsUpdateParams;
 use codex_app_server_protocol::ThreadShellCommandParams;
 use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadTurnsItemsListParams;
 use codex_app_server_protocol::ThreadTurnsListParams;
 use codex_app_server_protocol::ThreadUnarchiveParams;
 use codex_app_server_protocol::ThreadUnsubscribeParams;
@@ -107,7 +167,7 @@ use codex_app_server_protocol::WindowsSandboxSetupStartParams;
 use codex_login::default_client::CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR;
 use tokio::process::Command;
 
-pub struct TestAppServer {
+pub struct McpProcess {
     next_request_id: AtomicI64,
     /// Retain this child process until the client is dropped. The Tokio runtime
     /// will make a "best effort" to reap the process after it exits, but it is
@@ -123,7 +183,7 @@ pub const DEFAULT_CLIENT_NAME: &str = "codex-app-server-tests";
 pub const DISABLE_PLUGIN_STARTUP_TASKS_ARG: &str = "--disable-plugin-startup-tasks-for-tests";
 const DISABLE_MANAGED_CONFIG_ENV_VAR: &str = "CODEX_APP_SERVER_DISABLE_MANAGED_CONFIG";
 
-impl TestAppServer {
+impl McpProcess {
     pub async fn new(codex_home: &Path) -> anyhow::Result<Self> {
         Self::new_with_env_and_args(codex_home, &[], &[DISABLE_PLUGIN_STARTUP_TASKS_ARG]).await
     }
@@ -175,20 +235,6 @@ impl TestAppServer {
         .await
     }
 
-    pub async fn new_with_program_and_env(
-        codex_home: &Path,
-        program: &Path,
-        env_overrides: &[(&str, Option<&str>)],
-    ) -> anyhow::Result<Self> {
-        Self::new_with_program_env_and_args(
-            codex_home,
-            program,
-            env_overrides,
-            &[DISABLE_PLUGIN_STARTUP_TASKS_ARG],
-        )
-        .await
-    }
-
     async fn new_with_env_and_args(
         codex_home: &Path,
         env_overrides: &[(&str, Option<&str>)],
@@ -196,15 +242,6 @@ impl TestAppServer {
     ) -> anyhow::Result<Self> {
         let program = codex_utils_cargo_bin::cargo_bin("codex-app-server")
             .context("should find binary for codex-app-server")?;
-        Self::new_with_program_env_and_args(codex_home, &program, env_overrides, args).await
-    }
-
-    async fn new_with_program_env_and_args(
-        codex_home: &Path,
-        program: &Path,
-        env_overrides: &[(&str, Option<&str>)],
-        args: &[&str],
-    ) -> anyhow::Result<Self> {
         let mut cmd = Command::new(program);
 
         cmd.stdin(Stdio::piped());
@@ -471,15 +508,6 @@ impl TestAppServer {
         self.send_request("thread/metadata/update", params).await
     }
 
-    /// Send a `thread/settings/update` JSON-RPC request.
-    pub async fn send_thread_settings_update_request(
-        &mut self,
-        params: ThreadSettingsUpdateParams,
-    ) -> anyhow::Result<i64> {
-        let params = Some(serde_json::to_value(params)?);
-        self.send_request("thread/settings/update", params).await
-    }
-
     /// Send a `thread/unsubscribe` JSON-RPC request.
     pub async fn send_thread_unsubscribe_request(
         &mut self,
@@ -534,15 +562,6 @@ impl TestAppServer {
         self.send_request("thread/list", params).await
     }
 
-    /// Send a `thread/search` JSON-RPC request.
-    pub async fn send_thread_search_request(
-        &mut self,
-        params: ThreadSearchParams,
-    ) -> anyhow::Result<i64> {
-        let params = Some(serde_json::to_value(params)?);
-        self.send_request("thread/search", params).await
-    }
-
     /// Send a `thread/loaded/list` JSON-RPC request.
     pub async fn send_thread_loaded_list_request(
         &mut self,
@@ -570,15 +589,6 @@ impl TestAppServer {
         self.send_request("thread/turns/list", params).await
     }
 
-    /// Send a `thread/turns/items/list` JSON-RPC request.
-    pub async fn send_thread_turns_items_list_request(
-        &mut self,
-        params: ThreadTurnsItemsListParams,
-    ) -> anyhow::Result<i64> {
-        let params = Some(serde_json::to_value(params)?);
-        self.send_request("thread/turns/items/list", params).await
-    }
-
     /// Send a `model/list` JSON-RPC request.
     pub async fn send_list_models_request(
         &mut self,
@@ -598,6 +608,639 @@ impl TestAppServer {
             .await
     }
 
+    /// Send a `provider/list` JSON-RPC request.
+    pub async fn send_provider_list_request(
+        &mut self,
+        params: ProviderListParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("provider/list", params).await
+    }
+
+    /// Send a `provider/read` JSON-RPC request.
+    pub async fn send_provider_read_request(
+        &mut self,
+        params: ProviderReadParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("provider/read", params).await
+    }
+
+    /// Send a `provider/create` JSON-RPC request.
+    pub async fn send_provider_create_request(
+        &mut self,
+        params: ProviderCreateParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("provider/create", params).await
+    }
+
+    /// Send a `provider/update` JSON-RPC request.
+    pub async fn send_provider_update_request(
+        &mut self,
+        params: ProviderUpdateParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("provider/update", params).await
+    }
+
+    /// Send a `provider/delete` JSON-RPC request.
+    pub async fn send_provider_delete_request(
+        &mut self,
+        params: ProviderDeleteParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("provider/delete", params).await
+    }
+
+    /// Send a `provider/testConnection` JSON-RPC request.
+    pub async fn send_provider_test_connection_request(
+        &mut self,
+        params: ProviderTestConnectionParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("provider/testConnection", params).await
+    }
+
+    /// Send a `providerPreferences/read` JSON-RPC request.
+    pub async fn send_provider_preferences_read_request(
+        &mut self,
+        params: ProviderPreferencesReadParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("providerPreferences/read", params).await
+    }
+
+    /// Send a `providerPreferences/update` JSON-RPC request.
+    pub async fn send_provider_preferences_update_request(
+        &mut self,
+        params: ProviderPreferencesUpdateParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("providerPreferences/update", params)
+            .await
+    }
+
+    /// Send a `devflowAgent/detect` JSON-RPC request.
+    pub async fn send_devflow_agent_detect_request(
+        &mut self,
+        params: DevflowAgentDetectParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowAgent/detect", params).await
+    }
+
+    /// Send a `devflowAgent/list` JSON-RPC request.
+    pub async fn send_devflow_agent_list_request(
+        &mut self,
+        params: DevflowAgentListParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowAgent/list", params).await
+    }
+
+    /// Send a `devflowAgent/read` JSON-RPC request.
+    pub async fn send_devflow_agent_read_request(
+        &mut self,
+        params: DevflowAgentReadParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowAgent/read", params).await
+    }
+
+    /// Send a `devflowAgent/capabilities` JSON-RPC request.
+    pub async fn send_devflow_agent_capabilities_read_request(
+        &mut self,
+        params: DevflowAgentCapabilitiesReadParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowAgent/capabilities", params).await
+    }
+
+    /// Send a `devflowAgent/diagnose` JSON-RPC request.
+    pub async fn send_devflow_agent_diagnose_request(
+        &mut self,
+        params: DevflowAgentDiagnoseParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowAgent/diagnose", params).await
+    }
+
+    /// Send a `devflowAgent/start` JSON-RPC request.
+    pub async fn send_devflow_agent_start_request(
+        &mut self,
+        params: DevflowAgentStartParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowAgent/start", params).await
+    }
+
+    /// Send a `devflowAgent/stop` JSON-RPC request.
+    pub async fn send_devflow_agent_stop_request(
+        &mut self,
+        params: DevflowAgentStopParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowAgent/stop", params).await
+    }
+
+    /// Send a `devflowAgent/restart` JSON-RPC request.
+    pub async fn send_devflow_agent_restart_request(
+        &mut self,
+        params: DevflowAgentRestartParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowAgent/restart", params).await
+    }
+
+    /// Send a `devflowProjectMemory/read` JSON-RPC request.
+    pub async fn send_devflow_project_memory_read_request(
+        &mut self,
+        params: DevflowProjectMemoryReadParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowProjectMemory/read", params).await
+    }
+
+    /// Send a `devflowProjectMemory/write` JSON-RPC request.
+    pub async fn send_devflow_project_memory_write_request(
+        &mut self,
+        params: DevflowProjectMemoryWriteParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowProjectMemory/write", params)
+            .await
+    }
+
+    /// Send a `devflowProject/list` JSON-RPC request.
+    pub async fn send_devflow_project_list_request(
+        &mut self,
+        params: DevflowProjectListParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowProject/list", params).await
+    }
+
+    /// Send a `devflowProject/read` JSON-RPC request.
+    pub async fn send_devflow_project_read_request(
+        &mut self,
+        params: DevflowProjectReadParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowProject/read", params).await
+    }
+
+    /// Send a `devflowProject/open` JSON-RPC request.
+    pub async fn send_devflow_project_open_request(
+        &mut self,
+        params: DevflowProjectOpenParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowProject/open", params).await
+    }
+
+    /// Send a `devflowProject/diagnose` JSON-RPC request.
+    pub async fn send_devflow_project_diagnose_request(
+        &mut self,
+        params: DevflowProjectDiagnoseParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowProject/diagnose", params).await
+    }
+
+    /// Send a `devflowSupportBundle/create` JSON-RPC request.
+    pub async fn send_devflow_support_bundle_create_request(
+        &mut self,
+        params: DevflowSupportBundleCreateParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowSupportBundle/create", params)
+            .await
+    }
+
+    /// Send a `devflowReleasePrep/create` JSON-RPC request.
+    pub async fn send_devflow_release_prep_create_request(
+        &mut self,
+        params: DevflowReleasePrepCreateParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowReleasePrep/create", params).await
+    }
+
+    /// Send a `devflowReleasePrep/submit` JSON-RPC request.
+    pub async fn send_devflow_release_prep_submit_request(
+        &mut self,
+        params: DevflowReleaseSubmitParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowReleasePrep/submit", params).await
+    }
+
+    /// Send a `devflowProject/testCommands/list` JSON-RPC request.
+    pub async fn send_devflow_project_test_commands_list_request(
+        &mut self,
+        params: DevflowProjectTestCommandsListParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowProject/testCommands/list", params)
+            .await
+    }
+
+    /// Send a `devflowProject/trust` JSON-RPC request.
+    pub async fn send_devflow_project_trust_request(
+        &mut self,
+        params: DevflowProjectTrustParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowProject/trust", params).await
+    }
+
+    /// Send a `devflowApproval/policy/read` JSON-RPC request.
+    pub async fn send_devflow_approval_policy_read_request(
+        &mut self,
+        params: DevflowApprovalPolicyReadParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowApproval/policy/read", params)
+            .await
+    }
+
+    /// Send a `devflowApproval/policy/update` JSON-RPC request.
+    pub async fn send_devflow_approval_policy_update_request(
+        &mut self,
+        params: DevflowApprovalPolicyUpdateParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowApproval/policy/update", params)
+            .await
+    }
+
+    /// Send a `devflowApproval/list` JSON-RPC request.
+    pub async fn send_devflow_approval_list_request(
+        &mut self,
+        params: DevflowApprovalListParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowApproval/list", params).await
+    }
+
+    /// Send a `devflowApproval/respond` JSON-RPC request.
+    pub async fn send_devflow_approval_respond_request(
+        &mut self,
+        params: DevflowApprovalRespondParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowApproval/respond", params).await
+    }
+
+    /// Send a `devflowTask/create` JSON-RPC request.
+    pub async fn send_devflow_task_create_request(
+        &mut self,
+        params: DevflowTaskCreateParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowTask/create", params).await
+    }
+
+    /// Send a `devflowTask/plan` JSON-RPC request.
+    pub async fn send_devflow_task_plan_request(
+        &mut self,
+        params: DevflowTaskPlanParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowTask/plan", params).await
+    }
+
+    /// Send a `devflowTask/dispatch` JSON-RPC request.
+    pub async fn send_devflow_task_dispatch_request(
+        &mut self,
+        params: DevflowTaskDispatchParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowTask/dispatch", params).await
+    }
+
+    /// Send a `devflowTask/read` JSON-RPC request.
+    pub async fn send_devflow_task_read_request(
+        &mut self,
+        params: DevflowTaskReadParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowTask/read", params).await
+    }
+
+    /// Send a `devflowTask/list` JSON-RPC request.
+    pub async fn send_devflow_task_list_request(
+        &mut self,
+        params: DevflowTaskListParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowTask/list", params).await
+    }
+
+    /// Send a `devflowTask/assign` JSON-RPC request.
+    pub async fn send_devflow_task_assign_request(
+        &mut self,
+        params: DevflowTaskAssignParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowTask/assign", params).await
+    }
+
+    /// Send a `devflowTask/dependencies/update` JSON-RPC request.
+    pub async fn send_devflow_task_dependencies_update_request(
+        &mut self,
+        params: DevflowTaskDependenciesUpdateParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowTask/dependencies/update", params)
+            .await
+    }
+
+    /// Send a `devflowTask/start` JSON-RPC request.
+    pub async fn send_devflow_task_start_request(
+        &mut self,
+        params: DevflowTaskStartParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowTask/start", params).await
+    }
+
+    /// Send a `devflowTask/pause` JSON-RPC request.
+    pub async fn send_devflow_task_pause_request(
+        &mut self,
+        params: DevflowTaskPauseParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowTask/pause", params).await
+    }
+
+    /// Send a `devflowTask/resume` JSON-RPC request.
+    pub async fn send_devflow_task_resume_request(
+        &mut self,
+        params: DevflowTaskResumeParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowTask/resume", params).await
+    }
+
+    /// Send a `devflowTask/cancel` JSON-RPC request.
+    pub async fn send_devflow_task_cancel_request(
+        &mut self,
+        params: DevflowTaskCancelParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowTask/cancel", params).await
+    }
+
+    /// Send a `devflowWorktree/create` JSON-RPC request.
+    pub async fn send_devflow_worktree_create_request(
+        &mut self,
+        params: DevflowWorktreeCreateParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowWorktree/create", params).await
+    }
+
+    /// Send a `devflowWorktree/list` JSON-RPC request.
+    pub async fn send_devflow_worktree_list_request(
+        &mut self,
+        params: DevflowWorktreeListParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowWorktree/list", params).await
+    }
+
+    /// Send a `devflowWorktree/read` JSON-RPC request.
+    pub async fn send_devflow_worktree_read_request(
+        &mut self,
+        params: DevflowWorktreeReadParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowWorktree/read", params).await
+    }
+
+    /// Send a `devflowWorktree/diff` JSON-RPC request.
+    pub async fn send_devflow_worktree_diff_request(
+        &mut self,
+        params: DevflowWorktreeDiffParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowWorktree/diff", params).await
+    }
+
+    /// Send a `devflowWorktree/merge` JSON-RPC request.
+    pub async fn send_devflow_worktree_merge_request(
+        &mut self,
+        params: DevflowWorktreeMergeParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowWorktree/merge", params).await
+    }
+
+    /// Send a `devflowWorktree/cleanup` JSON-RPC request.
+    pub async fn send_devflow_worktree_cleanup_request(
+        &mut self,
+        params: DevflowWorktreeCleanupParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowWorktree/cleanup", params).await
+    }
+
+    /// Send a `devflowQualityGate/list` JSON-RPC request.
+    pub async fn send_devflow_quality_gate_list_request(
+        &mut self,
+        params: DevflowQualityGateListParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowQualityGate/list", params).await
+    }
+
+    /// Send a `devflowQualityGate/read` JSON-RPC request.
+    pub async fn send_devflow_quality_gate_read_request(
+        &mut self,
+        params: DevflowQualityGateReadParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowQualityGate/read", params).await
+    }
+
+    /// Send a `devflowQualityGate/run` JSON-RPC request.
+    pub async fn send_devflow_quality_gate_run_request(
+        &mut self,
+        params: DevflowQualityGateRunParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowQualityGate/run", params).await
+    }
+
+    /// Send a `devflowQualityGate/rerun` JSON-RPC request.
+    pub async fn send_devflow_quality_gate_rerun_request(
+        &mut self,
+        params: DevflowQualityGateRerunParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowQualityGate/rerun", params).await
+    }
+
+    /// Send a `devflowQualityGate/waive` JSON-RPC request.
+    pub async fn send_devflow_quality_gate_waive_request(
+        &mut self,
+        params: DevflowQualityGateWaiveParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowQualityGate/waive", params).await
+    }
+
+    /// Send a `devflowPolicyPack/list` JSON-RPC request.
+    pub async fn send_devflow_policy_pack_list_request(
+        &mut self,
+        params: DevflowPolicyPackListParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowPolicyPack/list", params).await
+    }
+
+    /// Send a `devflowPolicyPack/read` JSON-RPC request.
+    pub async fn send_devflow_policy_pack_read_request(
+        &mut self,
+        params: DevflowPolicyPackReadParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowPolicyPack/read", params).await
+    }
+
+    /// Send a `devflowPolicyPack/apply` JSON-RPC request.
+    pub async fn send_devflow_policy_pack_apply_request(
+        &mut self,
+        params: DevflowPolicyPackApplyParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowPolicyPack/apply", params).await
+    }
+
+    /// Send a `devflowCapabilityPack/list` JSON-RPC request.
+    pub async fn send_devflow_capability_pack_list_request(
+        &mut self,
+        params: DevflowCapabilityPackListParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowCapabilityPack/list", params)
+            .await
+    }
+
+    /// Send a `devflowCapabilityPack/read` JSON-RPC request.
+    pub async fn send_devflow_capability_pack_read_request(
+        &mut self,
+        params: DevflowCapabilityPackReadParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowCapabilityPack/read", params)
+            .await
+    }
+
+    /// Send a `devflowCapabilityPack/run` JSON-RPC request.
+    pub async fn send_devflow_capability_pack_run_request(
+        &mut self,
+        params: DevflowCapabilityPackRunParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowCapabilityPack/run", params).await
+    }
+
+    /// Send a `devflowWatchdog/read` JSON-RPC request.
+    pub async fn send_devflow_watchdog_read_request(
+        &mut self,
+        params: DevflowWatchdogReadParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowWatchdog/read", params).await
+    }
+
+    // NOTE: DevflowWatchdogQueueParams removed from protocol
+    // /// Send a `devflowWatchdog/queue` JSON-RPC request.
+    // pub async fn send_devflow_watchdog_queue_request(
+    //     &mut self,
+    //     params: DevflowWatchdogQueueParams,
+    // ) -> anyhow::Result<i64> {
+    //     let params = Some(serde_json::to_value(params)?);
+    //     self.send_request("devflowWatchdog/queue", params).await
+    // }
+
+    /// Send a `devflowWatchdog/alerts` JSON-RPC request.
+    pub async fn send_devflow_watchdog_alerts_request(
+        &mut self,
+        params: DevflowWatchdogAlertsParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowWatchdog/alerts", params).await
+    }
+
+    /// Send a `devflowWatchdog/reconcile` JSON-RPC request.
+    pub async fn send_devflow_watchdog_reconcile_request(
+        &mut self,
+        params: DevflowWatchdogReconcileParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowWatchdog/reconcile", params).await
+    }
+
+    // NOTE: DevflowSchedulerAuditReadParams removed from protocol
+    // /// Send a `devflowSchedulerAudit/read` JSON-RPC request.
+    // pub async fn send_devflow_scheduler_audit_read_request(
+    //     &mut self,
+    //     params: DevflowSchedulerAuditReadParams,
+    // ) -> anyhow::Result<i64> {
+    //     let params = Some(serde_json::to_value(params)?);
+    //     self.send_request("devflowSchedulerAudit/read", params)
+    //         .await
+    // }
+
+    /// Send a `devflowArtifact/list` JSON-RPC request.
+    pub async fn send_devflow_artifact_list_request(
+        &mut self,
+        params: DevflowArtifactListParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowArtifact/list", params).await
+    }
+
+    /// Send a `devflowArtifact/read` JSON-RPC request.
+    pub async fn send_devflow_artifact_read_request(
+        &mut self,
+        params: DevflowArtifactReadParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowArtifact/read", params).await
+    }
+
+    /// Send a `devflowArtifact/open` JSON-RPC request.
+    pub async fn send_devflow_artifact_open_request(
+        &mut self,
+        params: DevflowArtifactOpenParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowArtifact/open", params).await
+    }
+
+    /// Send a `devflowArtifact/export` JSON-RPC request.
+    pub async fn send_devflow_artifact_export_request(
+        &mut self,
+        params: DevflowArtifactExportParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowArtifact/export", params).await
+    }
+
+    /// Send a `devflowArtifact/deliver` JSON-RPC request.
+    pub async fn send_devflow_artifact_deliver_request(
+        &mut self,
+        params: DevflowArtifactDeliverParams,
+    ) -> anyhow::Result<i64> {
+        let params = Some(serde_json::to_value(params)?);
+        self.send_request("devflowArtifact/deliver", params).await
+    }
+
     /// Send an `experimentalFeature/list` JSON-RPC request.
     pub async fn send_experimental_feature_list_request(
         &mut self,
@@ -607,15 +1250,6 @@ impl TestAppServer {
         self.send_request("experimentalFeature/list", params).await
     }
 
-    /// Send a `permissionProfile/list` JSON-RPC request.
-    pub async fn send_permission_profile_list_request(
-        &mut self,
-        params: PermissionProfileListParams,
-    ) -> anyhow::Result<i64> {
-        let params = Some(serde_json::to_value(params)?);
-        self.send_request("permissionProfile/list", params).await
-    }
-
     /// Send an `experimentalFeature/enablement/set` JSON-RPC request.
     pub async fn send_experimental_feature_enablement_set_request(
         &mut self,
@@ -623,34 +1257,6 @@ impl TestAppServer {
     ) -> anyhow::Result<i64> {
         let params = Some(serde_json::to_value(params)?);
         self.send_request("experimentalFeature/enablement/set", params)
-            .await
-    }
-
-    /// Send a `remoteControl/enable` JSON-RPC request.
-    pub async fn send_remote_control_enable_request(&mut self) -> anyhow::Result<i64> {
-        self.send_request("remoteControl/enable", /*params*/ None)
-            .await
-    }
-
-    /// Send a `remoteControl/disable` JSON-RPC request.
-    pub async fn send_remote_control_disable_request(&mut self) -> anyhow::Result<i64> {
-        self.send_request("remoteControl/disable", /*params*/ None)
-            .await
-    }
-
-    /// Send a `remoteControl/status/read` JSON-RPC request.
-    pub async fn send_remote_control_status_read_request(&mut self) -> anyhow::Result<i64> {
-        self.send_request("remoteControl/status/read", /*params*/ None)
-            .await
-    }
-
-    /// Send a `remoteControl/pairing/start` JSON-RPC request.
-    pub async fn send_remote_control_pairing_start_request(
-        &mut self,
-        params: RemoteControlPairingStartParams,
-    ) -> anyhow::Result<i64> {
-        let params = Some(serde_json::to_value(params)?);
-        self.send_request("remoteControl/pairing/start", params)
             .await
     }
 
@@ -685,15 +1291,6 @@ impl TestAppServer {
     ) -> anyhow::Result<i64> {
         let params = Some(serde_json::to_value(params)?);
         self.send_request("skills/list", params).await
-    }
-
-    /// Send a `skills/extraRoots/set` JSON-RPC request.
-    pub async fn send_skills_extra_roots_set_request(
-        &mut self,
-        params: SkillsExtraRootsSetParams,
-    ) -> anyhow::Result<i64> {
-        let params = Some(serde_json::to_value(params)?);
-        self.send_request("skills/extraRoots/set", params).await
     }
 
     /// Send a `hooks/list` JSON-RPC request.
@@ -757,15 +1354,6 @@ impl TestAppServer {
     ) -> anyhow::Result<i64> {
         let params = Some(serde_json::to_value(params)?);
         self.send_request("plugin/list", params).await
-    }
-
-    /// Send a `plugin/installed` JSON-RPC request.
-    pub async fn send_plugin_installed_request(
-        &mut self,
-        params: PluginInstalledParams,
-    ) -> anyhow::Result<i64> {
-        let params = Some(serde_json::to_value(params)?);
-        self.send_request("plugin/installed", params).await
     }
 
     /// Send a `plugin/read` JSON-RPC request.
@@ -1524,7 +2112,7 @@ impl TestAppServer {
     }
 }
 
-impl Drop for TestAppServer {
+impl Drop for McpProcess {
     fn drop(&mut self) {
         // These tests spawn a `codex-app-server` child process.
         //

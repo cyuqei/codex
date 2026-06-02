@@ -1,0 +1,633 @@
+# Codex provider compatibility and UI-first backend task queue
+# Status values: pending, in_progress, blocked, done
+
+- id: A001
+  title: Fill provider test environment metadata
+  phase: provider-compatibility
+  status: done
+  priority: P0
+  risk: low
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - docs/yuqei-provider-test-results.md
+    - docs/yuqei-codex-dev-log.md
+  validation:
+    - git -C /Users/yuqei/codex branch --show-current
+    - git -C /Users/yuqei/codex rev-parse --short HEAD
+    - rustc --version
+    - cargo --version
+  exit_criteria:
+    - Provider test results document records date, branch, commit, Rust version, Cargo version, and test directory.
+  notes:
+    - Do not write API keys into docs.
+
+- id: A002
+  title: Check current Codex build and test commands
+  phase: provider-compatibility
+  status: done
+  priority: P0
+  risk: low
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - docs/yuqei-codex-dev-log.md
+  validation:
+    - cargo check -p codex-core
+    - cargo test -p codex-core config
+  exit_criteria:
+    - Build or test result is recorded with exact command and outcome.
+    - Any failure has a concrete error summary and next action.
+
+- id: A003
+  title: Test OpenAI provider compatibility
+  phase: provider-compatibility
+  status: done
+  result: OpenAI-compatible custom provider using OPENAI_BASE_URL, OPENAI_API_KEY, model gpt-5.4, wire_api responses, supports_websockets false passed basic smoke test.
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - docs/yuqei-provider-test-results.md
+  validation:
+    - codex exec -c model_provider="openai" -c model="gpt-5.1" "Say hello in one sentence."
+  exit_criteria:
+    - OpenAI has PASS, PARTIAL, FAIL, or BLOCKED result with evidence.
+  notes:
+    - If OPENAI_API_KEY is missing, mark BLOCKED. Do not ask for or guess keys.
+
+- id: A006
+  title: Test Anthropic-compatible provider compatibility
+  phase: provider-compatibility
+  status: done
+  priority: P1
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - docs/yuqei-provider-test-results.md
+  validation:
+    - CODEX_HOME=/tmp/codex-provider-tests/anthropic-v1-home /Users/yuqei/codex/codex-rs/target/debug/codex exec --skip-git-repo-check "Say hello in one sentence." </dev/null
+  exit_criteria:
+    - Anthropic-compatible has PASS, PARTIAL, FAIL, or BLOCKED result with evidence.
+  notes:
+    - PASS with Ark Coding URL plus `/v1`, `wire_api = "anthropic_messages"`, and `auth_style = "x_api_key"`.
+    - Map the existing `ANTHROPIC_AUTH_TOKEN` value into the provider `env_key` used by Codex tests; do not print the token.
+
+- id: A007
+  title: Test OpenRouter provider compatibility
+  phase: provider-compatibility
+  status: done
+  result: OpenRouter Responses API is compatible with Codex, but the requested model anthropic/claude-sonnet-4.5 is region-blocked for this account; alternate model openrouter/owl-alpha passed the text smoke test.
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - docs/yuqei-provider-test-results.md
+  validation:
+    - codex exec -c model_provider="openrouter" -c model="anthropic/claude-sonnet-4.5" "Say hello in one sentence."
+  exit_criteria:
+    - OpenRouter has PASS, PARTIAL, FAIL, or BLOCKED result with evidence.
+  notes:
+    - If OPENROUTER_API_KEY is missing, mark BLOCKED. Do not ask for or guess keys.
+    - 2026-05-09: source-built codex CLI hit `https://openrouter.ai/api/v1/responses` successfully, but `anthropic/claude-sonnet-4.5` returned `403 Forbidden: This model is not available in your region.`
+    - 2026-05-09: alternate model `openrouter/owl-alpha` passed the same text smoke test, so provider compatibility is PARTIAL rather than FAIL.
+
+- id: A008
+  title: Test DeepSeek provider compatibility
+  phase: provider-compatibility
+  status: done
+  result: DeepSeek API key works for /v1/chat/completions, but /v1/responses returns 404, so current Codex responses wire API cannot use DeepSeek directly.
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - docs/yuqei-provider-test-results.md
+  validation:
+    - POST https://api.deepseek.com/v1/responses with deepseek-chat returned HTTP 404.
+    - POST https://api.deepseek.com/v1/chat/completions with deepseek-chat returned HTTP 200.
+  exit_criteria:
+    - DeepSeek has PASS, PARTIAL, FAIL, or BLOCKED result with evidence.
+  notes:
+    - Do not write the DeepSeek key into docs or queue files.
+    - DeepSeek should be treated as NEEDS_ADAPTER unless a Responses-compatible proxy is introduced.
+
+- id: A009
+  title: Summarize ChatCompletions adapter decision
+  phase: provider-compatibility
+  status: done
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: true
+  files_expected:
+    - docs/yuqei-provider-test-results.md
+  validation: []
+  exit_criteria:
+    - Adapter decision is A, B, or C with evidence from provider tests.
+  notes:
+    - Architecture decision needs human confirmation before implementation.
+
+- id: A010
+  title: Design UI-first provider backend API
+  phase: provider-ui-backend
+  status: done
+  result: Provider list/read/write/delete/test-connection API shapes, preferences API, error codes, and API key redaction/storage policy were documented in docs/yuqei-provider-compatibility.md.
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - docs/yuqei-provider-compatibility.md
+    - docs/yuqei-codex-dev-log.md
+  validation: []
+  exit_criteria:
+    - Provider list, read, write, delete, and test-connection API shapes are documented.
+    - API key redaction and storage policy is documented.
+
+- id: A011
+  title: Design Chat Completions adapter
+  phase: provider-compatibility
+  status: done
+  result: Designed WireApi::ChatCompletions adapter after DeepSeek proved /v1/responses is unsupported but /v1/chat/completions works.
+  priority: P0
+  risk: high
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - docs/yuqei-chat-completions-adapter-design.md
+    - docs/yuqei-codex-dev-log.md
+  validation: []
+  exit_criteria:
+    - Adapter scope, core code touchpoints, streaming event mapping, tool-call mapping, DeepSeek MVP, and test plan are documented.
+  notes:
+    - Do not implement until design is reviewed or user asks to proceed.
+    - First implementation target should be DeepSeek `deepseek-chat`.
+
+- id: A012
+  title: Validate Chat Completions adapter against live DeepSeek provider
+  phase: provider-compatibility
+  status: done
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - docs/yuqei-provider-test-results.md
+    - docs/yuqei-codex-dev-log.md
+  validation:
+    - cargo test -p codex-api chat_completions
+    - cargo test -p codex-model-provider-info chat_completions
+    - cargo check -p codex-core
+    - cargo test -p codex-core chat_completions
+    - env CODEX_HOME=/tmp/codex-provider-tests/deepseek-chat-home codex exec -c model_provider="deepseek" -c model="deepseek-chat" --skip-git-repo-check "Say hello in one sentence."
+  exit_criteria:
+    - Local Chat Completions parser and request path validations pass.
+    - Live DeepSeek text smoke test passes through Codex with wire_api chat_completions.
+  notes:
+    - Local validation commands pass, including codex-core regression tests for /chat/completions request shape, local image-input rejection, and a full mock tool-call -> tool-result -> follow-up loop.
+    - 2026-05-09: live DeepSeek smoke passed through the source-built codex-cli using CODEX_HOME=/tmp/codex-provider-tests/deepseek-chat-home with wire_api = "chat_completions"; the command returned `Hey! 👋`.
+    - The bundled app codex binary in /Applications/Codex.app still rejects `wire_api = "chat_completions"`, so A012 verification must target the source-built CLI until the desktop binary is rebuilt from this branch.
+
+- id: A013
+  title: Validate DeepSeek Chat Completions workflow matrix
+  phase: provider-compatibility
+  status: done
+  result: DeepSeek deepseek-chat passed code generation, file writing, shell, streaming, and directory-recognition workflow tests through wire_api chat_completions.
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - docs/yuqei-provider-test-results.md
+    - docs/yuqei-codex-dev-log.md
+  validation:
+    - CODEX_HOME=/tmp/codex-provider-tests/deepseek-chat-home /Users/yuqei/codex/codex-rs/target/debug/codex exec --skip-git-repo-check "Reply with only TypeScript code for a function add(a: number, b: number): number that returns their sum. Do not inspect files. Do not use tools."
+    - CODEX_HOME=/tmp/codex-provider-tests/deepseek-chat-home /Users/yuqei/codex/codex-rs/target/debug/codex exec --skip-git-repo-check --sandbox read-only "Run pwd and summarize the result."
+    - CODEX_HOME=/tmp/codex-provider-tests/deepseek-chat-home /Users/yuqei/codex/codex-rs/target/debug/codex exec --skip-git-repo-check --sandbox workspace-write "Create a file hello.txt containing hello."
+    - CODEX_HOME=/tmp/codex-provider-tests/deepseek-chat-home /Users/yuqei/codex/codex-rs/target/debug/codex exec --skip-git-repo-check "Count from 1 to 30 with commas."
+    - CODEX_HOME=/tmp/codex-provider-tests/deepseek-chat-home /Users/yuqei/codex/codex-rs/target/debug/codex exec --skip-git-repo-check --sandbox read-only "List the files in the current directory and tell me which one looks like the README."
+  exit_criteria:
+    - DeepSeek workflow coverage goes beyond text smoke and proves the adapter on real file-write, shell, streaming, and directory-inspection tasks.
+  notes:
+    - Use a temporary writable workdir under /tmp to avoid touching the repository.
+
+- id: A014
+  title: Validate OpenRouter alternate-model workflow matrix
+  phase: provider-compatibility
+  status: done
+  result: OpenRouter owl-alpha passed file writing, shell, streaming, and directory-recognition workflow tests; provider compatibility is still partial because anthropic/claude-sonnet-4.5 is region-blocked.
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - docs/yuqei-provider-test-results.md
+    - docs/yuqei-codex-dev-log.md
+  validation:
+    - CODEX_HOME=/tmp/codex-provider-tests/openrouter-home /Users/yuqei/codex/codex-rs/target/debug/codex exec -c model="openrouter/owl-alpha" --skip-git-repo-check "Say hello in one sentence."
+    - CODEX_HOME=/tmp/codex-provider-tests/openrouter-home /Users/yuqei/codex/codex-rs/target/debug/codex exec -c model="openrouter/owl-alpha" --skip-git-repo-check --sandbox read-only "Run pwd and summarize the result."
+    - CODEX_HOME=/tmp/codex-provider-tests/openrouter-home /Users/yuqei/codex/codex-rs/target/debug/codex exec -c model="openrouter/owl-alpha" --skip-git-repo-check --sandbox workspace-write "Create a file hello.txt containing hello."
+    - CODEX_HOME=/tmp/codex-provider-tests/openrouter-home /Users/yuqei/codex/codex-rs/target/debug/codex exec -c model="openrouter/owl-alpha" --skip-git-repo-check "Count from 1 to 30 with commas."
+    - CODEX_HOME=/tmp/codex-provider-tests/openrouter-home /Users/yuqei/codex/codex-rs/target/debug/codex exec -c model="openrouter/owl-alpha" --skip-git-repo-check --sandbox read-only "List the files in the current directory and tell me which one looks like the README."
+  exit_criteria:
+    - OpenRouter provider is proven on a region-available model for the same shell, file-write, streaming, and directory-inspection tasks.
+  notes:
+    - Keep A007 as PARTIAL at the provider summary level because the originally targeted model remains unavailable in-region.
+
+- id: A015
+  title: Implement provider list/read backend APIs
+  phase: provider-ui-backend
+  status: done
+  result: app-server v2 now exposes provider/list and provider/read for effective provider config summaries, including builtin/custom source, auth state, wire API, header summaries, and default-provider selection.
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - codex-rs/app-server-protocol/src/protocol/common.rs
+    - codex-rs/app-server-protocol/src/protocol/v2/provider.rs
+    - codex-rs/app-server/src/request_processors/config_processor.rs
+    - codex-rs/app-server/src/message_processor.rs
+    - codex-rs/app-server/tests/suite/v2/provider_read.rs
+    - codex-rs/app-server/README.md
+  validation:
+    - cargo test -p codex-app-server-protocol
+    - cargo test -p codex-app-server provider_read
+    - just write-app-server-schema
+  exit_criteria:
+    - UI/app-server can list effective model providers with builtin/custom metadata and current default selection.
+    - UI/app-server can read a single provider by id without exposing secret values.
+  notes:
+    - API key values must never be returned; only presence and env-key metadata are exposed.
+    - This slice intentionally stops at read-only APIs; write/test-connection belongs to the next task.
+
+- id: A016
+  title: Implement provider write/test-connection backend APIs
+  phase: provider-ui-backend
+  status: done
+  result: app-server v2 now exposes provider/create, provider/update, provider/delete, and provider/testConnection, covering custom-provider persistence plus structured basic/streaming/tool-calling diagnostics for saved and draft providers.
+  priority: P0
+  risk: high
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - codex-rs/app-server-protocol/src/protocol/common.rs
+    - codex-rs/app-server-protocol/src/protocol/v2/provider.rs
+    - codex-rs/app-server/src/request_processors/config_processor.rs
+    - codex-rs/app-server/tests/suite/v2/
+    - codex-rs/app-server/README.md
+  validation:
+    - cargo test -p codex-app-server provider
+    - cargo test -p codex-app-server-protocol
+  exit_criteria:
+    - app-server can create/update/delete custom providers without exposing secrets.
+    - app-server can run a structured test-connection flow and return provider/model/auth/network diagnostics.
+  notes:
+    - Preserve reserved builtin provider IDs.
+    - Separate config save from connection testing.
+
+- id: A017
+  title: Implement provider preferences backend APIs
+  phase: provider-ui-backend
+  status: done
+  result: app-server v2 now exposes providerPreferences/read and providerPreferences/update for default provider/model selection, including project-scope writes to .codex/config.toml.
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - codex-rs/app-server-protocol/src/protocol/common.rs
+    - codex-rs/app-server-protocol/src/protocol/v2/provider.rs
+    - codex-rs/app-server/src/request_processors/
+    - codex-rs/app-server/tests/suite/v2/
+    - codex-rs/app-server/README.md
+  validation:
+    - cargo test -p codex-app-server provider_
+    - cargo test -p codex-app-server-protocol
+  exit_criteria:
+    - app-server can read and update default provider/model preferences for UI use.
+    - provider preferences can be changed without manually editing config.toml.
+  notes:
+    - Keep project-scope vs global-scope behavior explicit in the payload shape.
+
+- id: A018
+  title: Integrate provider preferences into TUI settings
+  phase: provider-ui
+  status: done
+  result: TUI settings popup now exposes a Default provider entry, opening a provider picker and persisting the selected default provider through providerPreferences/update for future sessions.
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - codex-rs/tui/src/app_event.rs
+    - codex-rs/tui/src/app_server_session.rs
+    - codex-rs/tui/src/app/event_dispatch.rs
+    - codex-rs/tui/src/chatwidget.rs
+    - codex-rs/tui/src/chatwidget/tests/popups_and_settings.rs
+    - codex-rs/tui/src/chatwidget/snapshots/
+  validation:
+    - cargo test -p codex-tui popups_and_settings
+    - cargo test -p codex-app-server provider_
+  exit_criteria:
+    - Users can open a TUI provider picker from Settings.
+    - Selecting a provider persists the default provider via app-server and shows clear feedback.
+  notes:
+    - This slice intentionally updates the default provider for future sessions only; it does not hot-swap the currently running thread's provider.
+
+- id: A019
+  title: Add provider list/detail/test flow to TUI
+  phase: provider-ui
+  status: done
+  result: TUI Settings now opens a Providers list page, each provider opens a detail page, and the detail page offers both Set as default and Test connection actions.
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - codex-rs/tui/src/app_event.rs
+    - codex-rs/tui/src/app_server_session.rs
+    - codex-rs/tui/src/app/event_dispatch.rs
+    - codex-rs/tui/src/chatwidget.rs
+    - codex-rs/tui/src/chatwidget/slash_dispatch.rs
+    - codex-rs/tui/src/chatwidget/tests/popups_and_settings.rs
+    - codex-rs/tui/src/chatwidget/snapshots/
+  validation:
+    - cargo test -p codex-tui popups_and_settings
+    - cargo test -p codex-app-server provider_
+  exit_criteria:
+    - TUI has a provider list page reachable from Settings.
+    - Selecting a provider opens a detail page.
+    - The detail page can trigger providerPreferences/update and provider/testConnection.
+  notes:
+    - Test connection currently runs against the current model and is intended as a settings-page health check, not a full workflow benchmark.
+
+- id: A020
+  title: Add custom provider create/edit/delete UI flow
+  phase: provider-ui
+  status: done
+  result: TUI provider management now supports custom provider create, edit, delete, set-default, and test-connection flows through app-server RPCs, completing the provider-management loop without manual config editing.
+  priority: P0
+  risk: high
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - codex-rs/tui/src/
+    - codex-rs/tui/src/chatwidget/tests/
+    - codex-rs/tui/src/chatwidget/snapshots/
+  validation:
+    - cargo test -p codex-tui popups_and_settings
+    - cargo test -p codex-app-server provider_
+  exit_criteria:
+    - Users can create a custom provider from TUI without editing config.toml manually.
+    - Users can edit/delete an existing custom provider from TUI.
+    - UI surfaces validation errors and test-connection diagnostics clearly.
+  notes:
+    - Reuse the app-server provider/create, provider/update, provider/delete, and provider/testConnection APIs.
+    - Builtin providers remain immutable in the UI.
+
+- id: A021
+  title: Add provider-aware model catalog browsing
+  phase: model-catalog
+  status: done
+  result: app-server model/list now returns the targeted provider's raw catalog without mixing in bundled models, and TUI provider detail pages can browse provider-specific model catalogs with capability metadata.
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - codex-rs/app-server/src/models.rs
+    - codex-rs/app-server/src/request_processors/catalog_processor.rs
+    - codex-rs/app-server/tests/suite/v2/model_list.rs
+    - codex-rs/tui/src/app_event.rs
+    - codex-rs/tui/src/app_server_session.rs
+    - codex-rs/tui/src/app/event_dispatch.rs
+    - codex-rs/tui/src/chatwidget.rs
+    - codex-rs/tui/src/chatwidget/tests/popups_and_settings.rs
+    - codex-rs/tui/src/chatwidget/snapshots/
+    - codex-rs/app-server/README.md
+  validation:
+    - cargo test -p codex-app-server model_list
+    - cargo test -p codex-tui popups_and_settings
+  exit_criteria:
+    - `model/list` with `providerId` returns only that provider's catalog instead of a merged bundled list.
+    - TUI provider detail flow can browse provider-specific models and show capability metadata.
+  notes:
+    - For non-default providers, the TUI catalog is intentionally read-only to avoid persisting a mismatched provider/model pair.
+    - Interactive cross-provider model selection remains a later Phase E slice.
+
+- id: A022
+  title: Add combined provider+model preference selection
+  phase: model-catalog
+  status: done
+  result: TUI provider catalogs now let users choose a model for a non-default provider and persist both default provider and default model together for future sessions.
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - codex-rs/tui/src/app_event.rs
+    - codex-rs/tui/src/app/event_dispatch.rs
+    - codex-rs/tui/src/chatwidget.rs
+    - codex-rs/tui/src/chatwidget/tests/popups_and_settings.rs
+    - codex-rs/tui/src/chatwidget/snapshots/
+  validation:
+    - cargo test -p codex-tui popups_and_settings
+  exit_criteria:
+    - Non-default provider model catalogs are interactive instead of read-only.
+    - Selecting a model persists `defaultProvider` and `defaultModel` together.
+  notes:
+    - This slice still updates future-session defaults only; it does not hot-swap the currently running thread's provider.
+    - Provider-specific reasoning selection remains out of scope for now and still follows the existing model-selection flow on the active provider only.
+
+- id: A023
+  title: Add provider-aware reasoning selection
+  phase: model-catalog
+  status: done
+  result: Non-default provider model catalogs now branch into a provider-specific reasoning picker when a model supports multiple reasoning levels, and persist provider, model, and reasoning together for future sessions.
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - codex-rs/tui/src/app_event.rs
+    - codex-rs/tui/src/app/event_dispatch.rs
+    - codex-rs/tui/src/chatwidget.rs
+    - codex-rs/tui/src/chatwidget/tests/popups_and_settings.rs
+  validation:
+    - cargo test -p codex-tui popups_and_settings
+  exit_criteria:
+    - Single-effort provider models persist provider, model, and effort directly.
+    - Multi-effort provider models open a provider-aware reasoning picker before persistence.
+  notes:
+    - Persistence remains future-session-only; current-thread provider/model state is not hot-swapped.
+    - The provider/model write still uses `providerPreferences/update`; reasoning effort piggybacks on the existing config edit path.
+
+- id: A024
+  title: Add provider-aware service-tier selection
+  phase: model-catalog
+  status: done
+  result: Fast-capable provider models now branch into a provider-specific service-tier popup, letting users persist standard vs Fast alongside provider, model, and reasoning defaults for future sessions.
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - codex-rs/tui/src/app_event.rs
+    - codex-rs/tui/src/app/event_dispatch.rs
+    - codex-rs/tui/src/chatwidget.rs
+    - codex-rs/tui/src/chatwidget/tests/popups_and_settings.rs
+    - codex-rs/tui/src/chatwidget/snapshots/
+  validation:
+    - cargo test -p codex-tui popups_and_settings
+  exit_criteria:
+    - Fast-capable provider models open a service-tier popup before persistence.
+    - Service-tier selection persists alongside provider/model/reasoning future defaults.
+  notes:
+    - This slice still updates future-session defaults only; it does not override the currently running thread's service tier.
+    - The future-default write reuses existing config edits rather than widening app-server protocol payloads.
+
+- id: A025
+  title: Add layered model catalog grouping
+  phase: model-catalog
+  status: done
+  result: TUI model catalogs now render grouped sections for Default, Fast, Strong reasoning, and Other models, making capability-oriented browsing denser and easier to scan.
+  priority: P1
+  risk: low
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - codex-rs/tui/src/chatwidget.rs
+    - codex-rs/tui/src/chatwidget/tests/popups_and_settings.rs
+    - codex-rs/tui/src/chatwidget/snapshots/
+  validation:
+    - cargo test -p codex-tui popups_and_settings
+  exit_criteria:
+    - Provider model catalogs render grouped sections instead of a flat list.
+    - The full model picker also shows the same layered grouping.
+  notes:
+    - Grouping is display-only; selection behavior stays unchanged.
+
+- id: A026
+  title: Add provider setup workflow command
+  phase: workflow-productization
+  status: done
+  result: TUI now exposes a `/providers` workflow command that launches provider setup flows from the composer, including list, create, detail, model catalog, and test-entry paths.
+  priority: P0
+  risk: low
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - codex-rs/tui/src/slash_command.rs
+    - codex-rs/tui/src/chatwidget/slash_dispatch.rs
+    - codex-rs/tui/src/bottom_pane/command_popup.rs
+    - codex-rs/tui/src/bottom_pane/chat_composer.rs
+    - codex-rs/tui/src/chatwidget/tests/slash_commands.rs
+    - codex-rs/tui/src/bottom_pane/snapshots/
+  validation:
+    - cargo test -p codex-tui providers
+  exit_criteria:
+    - Users can start provider setup from `/providers`.
+    - Inline variants cover create, current/detail, model catalog, and test flows.
+  notes:
+    - `/providers` is a workflow launcher only; the underlying provider setup UI remains the same Settings/Providers flow built in Phase D and Phase E.
+
+- id: A027
+  title: Add commit drafting workflow command
+  phase: workflow-productization
+  status: done
+  result: TUI now exposes a `/commit` workflow command that gathers git status and diff, then opens an editable commit-drafting prompt instead of directly running git commit.
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - codex-rs/tui/src/slash_command.rs
+    - codex-rs/tui/src/chatwidget/slash_dispatch.rs
+    - codex-rs/tui/src/chatwidget.rs
+    - codex-rs/tui/src/app_event.rs
+    - codex-rs/tui/src/app/event_dispatch.rs
+    - codex-rs/tui/src/get_git_status.rs
+    - codex-rs/tui/src/chatwidget/tests/slash_commands.rs
+    - codex-rs/tui/src/chatwidget/tests/popups_and_settings.rs
+    - codex-rs/tui/src/bottom_pane/command_popup.rs
+    - codex-rs/tui/src/bottom_pane/chat_composer.rs
+    - codex-rs/tui/src/bottom_pane/snapshots/
+    - codex-rs/tui/src/chatwidget/snapshots/
+  validation:
+    - cargo test -p codex-tui commit --no-fail-fast
+  exit_criteria:
+    - Users can launch commit drafting from `/commit`.
+    - The workflow gathers git status and diff before opening an editable prompt.
+    - Submitting the prompt routes through the normal user-message flow without auto-committing.
+  notes:
+    - This slice drafts commit messages only; it never runs `git commit`.
+    - Inline `/commit ...` args are appended as additional drafting instructions.
+
+- id: A028
+  title: Add context save/restore workflow command
+  phase: workflow-productization
+  status: done
+  result: TUI now exposes a `/context` workflow command that surfaces a resumable-context summary and reuses the existing resume flow from a single workflow entrypoint.
+  priority: P0
+  risk: low
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - codex-rs/tui/src/slash_command.rs
+    - codex-rs/tui/src/chatwidget/slash_dispatch.rs
+    - codex-rs/tui/src/chatwidget.rs
+    - codex-rs/tui/src/app_event.rs
+    - codex-rs/tui/src/app/event_dispatch.rs
+    - codex-rs/tui/src/chatwidget/tests/slash_commands.rs
+    - codex-rs/tui/src/chatwidget/tests/popups_and_settings.rs
+    - codex-rs/tui/src/bottom_pane/command_popup.rs
+    - codex-rs/tui/src/bottom_pane/chat_composer.rs
+    - codex-rs/tui/src/bottom_pane/snapshots/
+    - codex-rs/tui/src/chatwidget/snapshots/
+    - codex-rs/tui/src/chatwidget/tests/snapshots/
+  validation:
+    - cargo test -p codex-tui context --no-fail-fast
+  exit_criteria:
+    - Users can launch context workflow from `/context`.
+    - The workflow can show a resumable context summary and open the saved-session picker.
+    - Inline restore supports `/context restore <thread-id-or-name>`.
+  notes:
+    - This slice reuses existing rollout/session persistence; it does not create a new checkpoint format.
+    - `/context save` surfaces resume handles and rollout metadata rather than writing a separate artifact.
+
+- id: A027
+  title: Add commit drafting workflow command
+  phase: workflow-productization
+  status: done
+  result: TUI now exposes a `/commit` workflow command that collects git status and diff, then opens an editable commit-drafting prompt for the agent instead of directly running git commit.
+  priority: P0
+  risk: medium
+  owner: claude
+  requires_human_approval: false
+  files_expected:
+    - codex-rs/tui/src/slash_command.rs
+    - codex-rs/tui/src/chatwidget/slash_dispatch.rs
+    - codex-rs/tui/src/chatwidget.rs
+    - codex-rs/tui/src/app_event.rs
+    - codex-rs/tui/src/app/event_dispatch.rs
+    - codex-rs/tui/src/get_git_status.rs
+    - codex-rs/tui/src/chatwidget/tests/slash_commands.rs
+    - codex-rs/tui/src/chatwidget/tests/popups_and_settings.rs
+    - codex-rs/tui/src/bottom_pane/command_popup.rs
+    - codex-rs/tui/src/bottom_pane/chat_composer.rs
+    - codex-rs/tui/src/bottom_pane/snapshots/
+    - codex-rs/tui/src/chatwidget/snapshots/
+  validation:
+    - cargo test -p codex-tui commit --no-fail-fast
+  exit_criteria:
+    - Users can start commit drafting from `/commit`.
+    - The workflow gathers git status and diff before opening an editable prompt.
+    - Submitting the prompt routes through the normal user-message flow without auto-committing.
+  notes:
+    - This slice drafts commit messages only; it never runs `git commit`.
+    - Extra inline args on `/commit ...` are appended as additional drafting instructions.

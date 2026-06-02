@@ -7,8 +7,10 @@ use codex_api::AuthProvider;
 use codex_api::SharedAuthProvider;
 use codex_login::AuthManager;
 use codex_login::CodexAuth;
+use codex_model_provider_info::AuthStyle;
 use codex_model_provider_info::ModelProviderInfo;
 use http::HeaderMap;
+use http::HeaderName;
 use http::HeaderValue;
 
 use crate::bearer_auth_provider::BearerAuthProvider;
@@ -58,6 +60,26 @@ impl AuthProvider for UnauthenticatedAuthProvider {
     fn add_auth_headers(&self, _headers: &mut HeaderMap) {}
 }
 
+#[derive(Clone, Debug)]
+struct HeaderAuthProvider {
+    header_name: HeaderName,
+    token: String,
+}
+
+impl HeaderAuthProvider {
+    fn new(header_name: HeaderName, token: String) -> Self {
+        Self { header_name, token }
+    }
+}
+
+impl AuthProvider for HeaderAuthProvider {
+    fn add_auth_headers(&self, headers: &mut HeaderMap) {
+        if let Ok(header) = HeaderValue::from_str(&self.token) {
+            let _ = headers.insert(self.header_name.clone(), header);
+        }
+    }
+}
+
 pub fn unauthenticated_auth_provider() -> SharedAuthProvider {
     Arc::new(UnauthenticatedAuthProvider)
 }
@@ -79,8 +101,8 @@ pub(crate) fn resolve_provider_auth(
     auth: Option<&CodexAuth>,
     provider: &ModelProviderInfo,
 ) -> codex_protocol::error::Result<SharedAuthProvider> {
-    if let Some(auth) = bearer_auth_for_provider(provider)? {
-        return Ok(Arc::new(auth));
+    if let Some(auth) = api_key_auth_for_provider(provider)? {
+        return Ok(auth);
     }
 
     Ok(match auth {
@@ -89,18 +111,25 @@ pub(crate) fn resolve_provider_auth(
     })
 }
 
-fn bearer_auth_for_provider(
+fn api_key_auth_for_provider(
     provider: &ModelProviderInfo,
-) -> codex_protocol::error::Result<Option<BearerAuthProvider>> {
-    if let Some(api_key) = provider.api_key()? {
-        return Ok(Some(BearerAuthProvider::new(api_key)));
-    }
+) -> codex_protocol::error::Result<Option<SharedAuthProvider>> {
+    let token = provider
+        .api_key()?
+        .or_else(|| provider.experimental_bearer_token.clone());
 
-    if let Some(token) = provider.experimental_bearer_token.clone() {
-        return Ok(Some(BearerAuthProvider::new(token)));
-    }
+    let Some(token) = token else {
+        return Ok(None);
+    };
 
-    Ok(None)
+    let auth: SharedAuthProvider = match provider.auth_style {
+        AuthStyle::Bearer => Arc::new(BearerAuthProvider::new(token)),
+        AuthStyle::XApiKey => Arc::new(HeaderAuthProvider::new(
+            HeaderName::from_static("x-api-key"),
+            token,
+        )),
+    };
+    Ok(Some(auth))
 }
 
 /// Builds request-header auth for a first-party Codex auth snapshot.
@@ -133,5 +162,24 @@ mod tests {
         let auth = resolve_provider_auth(/*auth*/ None, &provider).expect("auth should resolve");
 
         assert!(auth.to_auth_headers().is_empty());
+    }
+
+    #[test]
+    fn x_api_key_auth_style_adds_x_api_key_header() {
+        let provider = ModelProviderInfo {
+            auth_style: codex_model_provider_info::AuthStyle::XApiKey,
+            experimental_bearer_token: Some("test-token".to_string()),
+            ..create_oss_provider_with_base_url("http://localhost:11434/v1", WireApi::Responses)
+        };
+        let auth = resolve_provider_auth(/*auth*/ None, &provider).expect("auth should resolve");
+        let headers = auth.to_auth_headers();
+
+        assert_eq!(
+            headers
+                .get("x-api-key")
+                .and_then(|value| value.to_str().ok()),
+            Some("test-token")
+        );
+        assert!(!headers.contains_key(http::header::AUTHORIZATION));
     }
 }

@@ -141,6 +141,7 @@ mod paste_burst;
 mod pending_input_preview;
 mod pending_thread_approvals;
 pub(crate) mod popup_consts;
+mod provider_form_view;
 mod scroll_state;
 mod selection_popup_common;
 mod selection_tabs;
@@ -148,6 +149,8 @@ mod textarea;
 mod unified_exec_footer;
 pub(crate) use feedback_view::FeedbackNoteView;
 pub(crate) use hooks_browser_view::HooksBrowserView;
+pub(crate) use provider_form_view::ProviderFormSubmission;
+pub(crate) use provider_form_view::ProviderFormView;
 pub(crate) use selection_tabs::SelectionTab;
 
 /// How long the "press again to quit" hint stays visible.

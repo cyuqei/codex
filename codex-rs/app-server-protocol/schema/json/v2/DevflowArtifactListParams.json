@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowArtifactKind": {
+      "enum": [
+        "context_pack",
+        "diff",
+        "delivery_receipt",
+        "output_archive",
+        "quality_gate_output",
+        "report",
+        "review_report",
+        "run_summary"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "cursor": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "kind": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DevflowArtifactKind"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "limit": {
+      "format": "uint32",
+      "minimum": 0.0,
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "runId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "taskId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "title": "DevflowArtifactListParams",
+  "type": "object"
+}

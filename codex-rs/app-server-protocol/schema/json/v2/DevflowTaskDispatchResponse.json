@@ -1,0 +1,372 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowArtifact": {
+      "properties": {
+        "createdAt": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/DevflowArtifactKind"
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "runId": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "taskId": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "createdAt",
+        "id",
+        "kind",
+        "mimeType",
+        "path",
+        "runId",
+        "summary",
+        "taskId",
+        "title"
+      ],
+      "type": "object"
+    },
+    "DevflowArtifactKind": {
+      "enum": [
+        "context_pack",
+        "diff",
+        "delivery_receipt",
+        "output_archive",
+        "quality_gate_output",
+        "report",
+        "review_report",
+        "run_summary"
+      ],
+      "type": "string"
+    },
+    "DevflowRun": {
+      "properties": {
+        "agentId": {
+          "type": "string"
+        },
+        "artifactIds": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "commandIds": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "completedAt": {
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "exitReason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "input": {
+          "type": "string"
+        },
+        "startedAt": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/definitions/DevflowRunStatus"
+        },
+        "streamSummary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "taskId": {
+          "type": "string"
+        },
+        "threadId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "turnId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "agentId",
+        "artifactIds",
+        "commandIds",
+        "id",
+        "input",
+        "startedAt",
+        "status",
+        "taskId"
+      ],
+      "type": "object"
+    },
+    "DevflowRunStatus": {
+      "enum": [
+        "queued",
+        "running",
+        "cancelled",
+        "ready_for_review",
+        "ready_to_merge",
+        "failed"
+      ],
+      "type": "string"
+    },
+    "DevflowTask": {
+      "properties": {
+        "artifactIds": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "assignedAgentId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "contextPackId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "createdAt": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "dependencies": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/DevflowTaskKind"
+        },
+        "objective": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "string"
+        },
+        "riskLevel": {
+          "$ref": "#/definitions/DevflowTaskRiskLevel"
+        },
+        "runIds": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "status": {
+          "$ref": "#/definitions/DevflowTaskStatus"
+        },
+        "title": {
+          "type": "string"
+        },
+        "triggerSource": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "updatedAt": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "worktreeId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "artifactIds",
+        "createdAt",
+        "dependencies",
+        "id",
+        "kind",
+        "objective",
+        "projectId",
+        "riskLevel",
+        "runIds",
+        "status",
+        "title",
+        "updatedAt"
+      ],
+      "type": "object"
+    },
+    "DevflowTaskDispatchBlocked": {
+      "properties": {
+        "dependencies": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "taskId": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "dependencies",
+        "reason",
+        "taskId",
+        "title"
+      ],
+      "type": "object"
+    },
+    "DevflowTaskDispatchSkipped": {
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/DevflowTaskStatus"
+        },
+        "taskId": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "reason",
+        "status",
+        "taskId",
+        "title"
+      ],
+      "type": "object"
+    },
+    "DevflowTaskDispatchStarted": {
+      "properties": {
+        "run": {
+          "$ref": "#/definitions/DevflowRun"
+        },
+        "task": {
+          "$ref": "#/definitions/DevflowTask"
+        }
+      },
+      "required": [
+        "run",
+        "task"
+      ],
+      "type": "object"
+    },
+    "DevflowTaskKind": {
+      "enum": [
+        "implementation",
+        "review",
+        "report",
+        "diagnostic",
+        "automation"
+      ],
+      "type": "string"
+    },
+    "DevflowTaskRiskLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "type": "string"
+    },
+    "DevflowTaskStatus": {
+      "enum": [
+        "planned",
+        "running",
+        "paused",
+        "ready_for_review",
+        "ready_to_merge",
+        "failed",
+        "blocked",
+        "cancelled"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "blocked": {
+      "items": {
+        "$ref": "#/definitions/DevflowTaskDispatchBlocked"
+      },
+      "type": "array"
+    },
+    "integratorArtifact": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DevflowArtifact"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "skipped": {
+      "items": {
+        "$ref": "#/definitions/DevflowTaskDispatchSkipped"
+      },
+      "type": "array"
+    },
+    "started": {
+      "items": {
+        "$ref": "#/definitions/DevflowTaskDispatchStarted"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "blocked",
+    "skipped",
+    "started"
+  ],
+  "title": "DevflowTaskDispatchResponse",
+  "type": "object"
+}

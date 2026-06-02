@@ -54,6 +54,7 @@ async fn retries_on_early_close() {
         auth: None,
         aws: None,
         wire_api: WireApi::Responses,
+        auth_style: codex_model_provider_info::AuthStyle::Bearer,
         query_params: None,
         http_headers: None,
         env_http_headers: None,

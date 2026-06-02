@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowTask": {
+      "properties": {
+        "artifactIds": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "assignedAgentId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "contextPackId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "createdAt": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "dependencies": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/DevflowTaskKind"
+        },
+        "objective": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "string"
+        },
+        "riskLevel": {
+          "$ref": "#/definitions/DevflowTaskRiskLevel"
+        },
+        "runIds": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "status": {
+          "$ref": "#/definitions/DevflowTaskStatus"
+        },
+        "title": {
+          "type": "string"
+        },
+        "triggerSource": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "updatedAt": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "worktreeId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "artifactIds",
+        "createdAt",
+        "dependencies",
+        "id",
+        "kind",
+        "objective",
+        "projectId",
+        "riskLevel",
+        "runIds",
+        "status",
+        "title",
+        "updatedAt"
+      ],
+      "type": "object"
+    },
+    "DevflowTaskKind": {
+      "enum": [
+        "implementation",
+        "review",
+        "report",
+        "diagnostic",
+        "automation"
+      ],
+      "type": "string"
+    },
+    "DevflowTaskRiskLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "type": "string"
+    },
+    "DevflowTaskStatus": {
+      "enum": [
+        "planned",
+        "running",
+        "paused",
+        "ready_for_review",
+        "ready_to_merge",
+        "failed",
+        "blocked",
+        "cancelled"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "task": {
+      "$ref": "#/definitions/DevflowTask"
+    }
+  },
+  "required": [
+    "task"
+  ],
+  "title": "DevflowTaskStatusChangedNotification",
+  "type": "object"
+}

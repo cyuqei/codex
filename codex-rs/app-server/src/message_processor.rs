@@ -21,6 +21,8 @@ use crate::request_processors::AppsRequestProcessor;
 use crate::request_processors::CatalogRequestProcessor;
 use crate::request_processors::CommandExecRequestProcessor;
 use crate::request_processors::ConfigRequestProcessor;
+use crate::request_processors::DevflowRequestProcessor;
+use crate::request_processors::DeviceKeyRequestProcessor;
 use crate::request_processors::EnvironmentRequestProcessor;
 use crate::request_processors::ExternalAgentConfigRequestProcessor;
 use crate::request_processors::FeedbackRequestProcessor;
@@ -31,6 +33,7 @@ use crate::request_processors::MarketplaceRequestProcessor;
 use crate::request_processors::McpRequestProcessor;
 use crate::request_processors::PluginRequestProcessor;
 use crate::request_processors::ProcessExecRequestProcessor;
+use crate::request_processors::ProviderRequestProcessor;
 use crate::request_processors::RemoteControlRequestProcessor;
 use crate::request_processors::SearchRequestProcessor;
 use crate::request_processors::ThreadGoalRequestProcessor;
@@ -168,6 +171,8 @@ pub(crate) struct MessageProcessor {
     command_exec_processor: CommandExecRequestProcessor,
     process_exec_processor: ProcessExecRequestProcessor,
     config_processor: ConfigRequestProcessor,
+    device_key_processor: DeviceKeyRequestProcessor,
+    devflow_processor: DevflowRequestProcessor,
     environment_processor: EnvironmentRequestProcessor,
     external_agent_config_processor: ExternalAgentConfigRequestProcessor,
     feedback_processor: FeedbackRequestProcessor,
@@ -177,6 +182,7 @@ pub(crate) struct MessageProcessor {
     marketplace_processor: MarketplaceRequestProcessor,
     mcp_processor: McpRequestProcessor,
     plugin_processor: PluginRequestProcessor,
+    provider_processor: ProviderRequestProcessor,
     remote_control_processor: RemoteControlRequestProcessor,
     search_processor: SearchRequestProcessor,
     thread_goal_processor: ThreadGoalRequestProcessor,
@@ -441,10 +447,10 @@ impl MessageProcessor {
             arg0_paths.clone(),
             Arc::clone(&config),
             config_manager.clone(),
-            pending_thread_unloads,
-            thread_state_manager,
-            thread_watch_manager,
-            thread_list_state_permit,
+            Arc::clone(&pending_thread_unloads),
+            thread_state_manager.clone(),
+            thread_watch_manager.clone(),
+            Arc::clone(&thread_list_state_permit),
             Arc::clone(&skills_watcher),
         );
         if matches!(plugin_startup_tasks, crate::PluginStartupTasks::Start) {
@@ -462,9 +468,27 @@ impl MessageProcessor {
         let config_processor = ConfigRequestProcessor::new(
             outgoing.clone(),
             config_manager.clone(),
-            auth_manager,
+            auth_manager.clone(),
             thread_manager.clone(),
+            analytics_events_client.clone(),
+            remote_control_handle,
+        );
+        let provider_processor = ProviderRequestProcessor::new(
+            config_manager.clone(),
+            config_processor.clone(),
+            auth_manager,
+        );
+        let devflow_processor = DevflowRequestProcessor::new(
+            outgoing.clone(),
+            arg0_paths.clone(),
+            Arc::clone(&config),
+            config_manager.clone(),
+            Arc::clone(&thread_manager),
+            thread_state_manager,
+            Arc::clone(&pending_thread_unloads),
             analytics_events_client,
+            thread_watch_manager,
+            Arc::clone(&thread_list_state_permit),
         );
         let external_agent_config_processor = ExternalAgentConfigRequestProcessor::new(
             outgoing.clone(),
@@ -495,6 +519,8 @@ impl MessageProcessor {
             command_exec_processor,
             process_exec_processor,
             config_processor,
+            device_key_processor,
+            devflow_processor,
             environment_processor,
             external_agent_config_processor,
             feedback_processor,
@@ -504,6 +530,7 @@ impl MessageProcessor {
             marketplace_processor,
             mcp_processor,
             plugin_processor,
+            provider_processor,
             remote_control_processor,
             search_processor,
             thread_goal_processor,
@@ -980,6 +1007,46 @@ impl MessageProcessor {
                 .model_provider_capabilities_read()
                 .await
                 .map(|response| Some(response.into())),
+            ClientRequest::ProviderList { params, .. } => self
+                .config_processor
+                .provider_list(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::ProviderRead { params, .. } => self
+                .config_processor
+                .provider_read(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::ProviderCreate { params, .. } => self
+                .provider_processor
+                .create(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::ProviderUpdate { params, .. } => self
+                .provider_processor
+                .update(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::ProviderDelete { params, .. } => self
+                .provider_processor
+                .delete(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::ProviderTestConnection { params, .. } => self
+                .provider_processor
+                .test_connection(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::ProviderPreferencesRead { params, .. } => self
+                .provider_processor
+                .preferences_read(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::ProviderPreferencesUpdate { params, .. } => self
+                .provider_processor
+                .preferences_update(params)
+                .await
+                .map(|response| Some(response.into())),
             ClientRequest::ThreadStart { params, .. } => {
                 self.thread_processor
                     .thread_start(
@@ -1237,6 +1304,301 @@ impl MessageProcessor {
             ClientRequest::ReviewStart { params, .. } => {
                 self.turn_processor.review_start(&request_id, params).await
             }
+            ClientRequest::DevflowAgentDetect { params, .. } => self
+                .devflow_processor
+                .agent_detect(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowAgentList { params, .. } => self
+                .devflow_processor
+                .agent_list(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowAgentRead { params, .. } => self
+                .devflow_processor
+                .agent_read(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowAgentCapabilitiesRead { params, .. } => self
+                .devflow_processor
+                .agent_capabilities_read(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowAgentDiagnose { params, .. } => self
+                .devflow_processor
+                .agent_diagnose(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowAgentStart { params, .. } => self
+                .devflow_processor
+                .agent_start(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowAgentStop { params, .. } => self
+                .devflow_processor
+                .agent_stop(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowAgentRestart { params, .. } => self
+                .devflow_processor
+                .agent_restart(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowProjectList { params, .. } => self
+                .devflow_processor
+                .project_list(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowProjectRead { params, .. } => self
+                .devflow_processor
+                .project_read(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowProjectOpen { params, .. } => self
+                .devflow_processor
+                .project_open(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowProjectMemoryRead { params, .. } => self
+                .devflow_processor
+                .project_memory_read(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowProjectMemoryWrite { params, .. } => self
+                .devflow_processor
+                .project_memory_write(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowProjectDiagnose { params, .. } => self
+                .devflow_processor
+                .project_diagnose(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowSupportBundleCreate { params, .. } => self
+                .devflow_processor
+                .support_bundle_create(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowReleasePrepCreate { params, .. } => self
+                .devflow_processor
+                .release_prep_create(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowReleasePrepSubmit { params, .. } => self
+                .devflow_processor
+                .release_prep_submit(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowProjectTestCommandsList { params, .. } => self
+                .devflow_processor
+                .project_test_commands_list(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowProjectTrust { params, .. } => self
+                .devflow_processor
+                .project_trust(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowApprovalPolicyRead { params, .. } => self
+                .devflow_processor
+                .approval_policy_read(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowApprovalPolicyUpdate { params, .. } => self
+                .devflow_processor
+                .approval_policy_update(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowApprovalList { params, .. } => self
+                .devflow_processor
+                .approval_list(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowApprovalRespond { params, .. } => self
+                .devflow_processor
+                .approval_respond(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowTaskCreate { params, .. } => self
+                .devflow_processor
+                .task_create(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowTaskPlan { params, .. } => self
+                .devflow_processor
+                .task_plan(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowTaskDispatch { params, .. } => self
+                .devflow_processor
+                .task_dispatch(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowTaskStart { params, .. } => self
+                .devflow_processor
+                .task_start(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowTaskPause { params, .. } => self
+                .devflow_processor
+                .task_pause(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowTaskResume { params, .. } => self
+                .devflow_processor
+                .task_resume(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowTaskCancel { params, .. } => self
+                .devflow_processor
+                .task_cancel(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowTaskRead { params, .. } => self
+                .devflow_processor
+                .task_read(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowTaskList { params, .. } => self
+                .devflow_processor
+                .task_list(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowTaskAssign { params, .. } => self
+                .devflow_processor
+                .task_assign(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowTaskDependenciesUpdate { params, .. } => self
+                .devflow_processor
+                .task_dependencies_update(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowWorktreeCreate { params, .. } => self
+                .devflow_processor
+                .worktree_create(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowWorktreeList { params, .. } => self
+                .devflow_processor
+                .worktree_list(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowWorktreeRead { params, .. } => self
+                .devflow_processor
+                .worktree_read(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowWorktreeDiff { params, .. } => self
+                .devflow_processor
+                .worktree_diff(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowWorktreeMerge { params, .. } => self
+                .devflow_processor
+                .worktree_merge(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowWorktreeCleanup { params, .. } => self
+                .devflow_processor
+                .worktree_cleanup(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowQualityGateList { params, .. } => self
+                .devflow_processor
+                .quality_gate_list(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowQualityGateRead { params, .. } => self
+                .devflow_processor
+                .quality_gate_read(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowQualityGateRun { params, .. } => self
+                .devflow_processor
+                .quality_gate_run(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowQualityGateRerun { params, .. } => self
+                .devflow_processor
+                .quality_gate_rerun(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowQualityGateWaive { params, .. } => self
+                .devflow_processor
+                .quality_gate_waive(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowPolicyPackList { params, .. } => self
+                .devflow_processor
+                .policy_pack_list(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowPolicyPackRead { params, .. } => self
+                .devflow_processor
+                .policy_pack_read(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowPolicyPackApply { params, .. } => self
+                .devflow_processor
+                .policy_pack_apply(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowCapabilityPackList { params, .. } => self
+                .devflow_processor
+                .capability_pack_list(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowCapabilityPackRead { params, .. } => self
+                .devflow_processor
+                .capability_pack_read(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowCapabilityPackRun { params, .. } => self
+                .devflow_processor
+                .capability_pack_run(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowWatchdogRead { params, .. } => self
+                .devflow_processor
+                .watchdog_read(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowWatchdogAlerts { params, .. } => self
+                .devflow_processor
+                .watchdog_alerts(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowWatchdogReconcile { params, .. } => self
+                .devflow_processor
+                .watchdog_reconcile(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowArtifactList { params, .. } => self
+                .devflow_processor
+                .artifact_list(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowArtifactRead { params, .. } => self
+                .devflow_processor
+                .artifact_read(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowArtifactOpen { params, .. } => self
+                .devflow_processor
+                .artifact_open(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowArtifactExport { params, .. } => self
+                .devflow_processor
+                .artifact_export(params)
+                .await
+                .map(|response| Some(response.into())),
+            ClientRequest::DevflowArtifactDeliver { params, .. } => self
+                .devflow_processor
+                .artifact_deliver(params)
+                .await
+                .map(|response| Some(response.into())),
             ClientRequest::McpServerOauthLogin { params, .. } => {
                 self.mcp_processor.mcp_server_oauth_login(params).await
             }

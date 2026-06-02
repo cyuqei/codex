@@ -49,6 +49,9 @@ pub struct ModelListParams {
     /// When true, include models that are hidden from the default picker list.
     #[ts(optional = nullable)]
     pub include_hidden: Option<bool>,
+    /// When set, list models for the specified provider id instead of the currently selected one.
+    #[ts(optional = nullable)]
+    pub provider_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]

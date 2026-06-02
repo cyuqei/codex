@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowWorktreeStatus": {
+      "enum": [
+        "active",
+        "dirty",
+        "cleaned",
+        "missing"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "cursor": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "limit": {
+      "format": "uint32",
+      "minimum": 0.0,
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "projectId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DevflowWorktreeStatus"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "taskId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "title": "DevflowWorktreeListParams",
+  "type": "object"
+}

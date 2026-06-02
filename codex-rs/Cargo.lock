@@ -1908,6 +1908,7 @@ dependencies = [
  "chrono",
  "clap",
  "codex-analytics",
+ "codex-api",
  "codex-app-server-protocol",
  "codex-app-server-transport",
  "codex-arg0",

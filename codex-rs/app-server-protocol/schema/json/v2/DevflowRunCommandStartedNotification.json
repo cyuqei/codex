@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "command": {
+      "type": "string"
+    },
+    "commandId": {
+      "type": "string"
+    },
+    "cwd": {
+      "type": "string"
+    },
+    "projectId": {
+      "type": "string"
+    },
+    "runId": {
+      "type": "string"
+    },
+    "taskId": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "command",
+    "commandId",
+    "cwd",
+    "projectId",
+    "runId",
+    "taskId"
+  ],
+  "title": "DevflowRunCommandStartedNotification",
+  "type": "object"
+}

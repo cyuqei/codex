@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowAgent": {
+      "properties": {
+        "capabilities": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "diagnostics": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "lane": {
+          "$ref": "#/definitions/DevflowAgentLane"
+        },
+        "lastError": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "launchCommand": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "roles": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "rootPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "runtime": {
+          "$ref": "#/definitions/DevflowAgentRuntime"
+        },
+        "status": {
+          "$ref": "#/definitions/DevflowAgentStatus"
+        }
+      },
+      "required": [
+        "capabilities",
+        "diagnostics",
+        "id",
+        "lane",
+        "name",
+        "roles",
+        "runtime",
+        "status"
+      ],
+      "type": "object"
+    },
+    "DevflowAgentLane": {
+      "description": "Distinguishes the Codex-owned Devflow main path from legacy compatibility adapters that are exposed for migration and diagnostics.",
+      "enum": [
+        "main",
+        "legacy"
+      ],
+      "type": "string"
+    },
+    "DevflowAgentRuntime": {
+      "enum": [
+        "codex",
+        "claude",
+        "hermes"
+      ],
+      "type": "string"
+    },
+    "DevflowAgentStatus": {
+      "enum": [
+        "available",
+        "missing"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "agent": {
+      "$ref": "#/definitions/DevflowAgent"
+    }
+  },
+  "required": [
+    "agent"
+  ],
+  "title": "DevflowAgentStatusChangedNotification",
+  "type": "object"
+}

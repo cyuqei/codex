@@ -1,0 +1,14 @@
+---
+source: tui/src/chatwidget/tests/popups_and_settings.rs
+expression: popup
+---
+Edit provider
+Editing `openrouter`
+> Display name       [OpenRouter]
+  Base URL           [https://openrouter.ai/api/v1]
+  API key            [Leave blank to keep the saved key]
+  Env key            [OPENROUTER_API_KEY]
+  Wire API           [responses]
+  Auth style         [bearer]
+  Save provider
+tab move | enter next/change | ctrl+s save | esc cancel

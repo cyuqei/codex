@@ -1,0 +1,120 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DevflowQualityGate": {
+      "properties": {
+        "artifactId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "command": {
+          "type": "string"
+        },
+        "createdAt": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "durationMs": {
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "exitCode": {
+          "format": "int32",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/DevflowQualityGateKind"
+        },
+        "runId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/DevflowQualityGateStatus"
+        },
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "taskId": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "waivedReason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "command",
+        "createdAt",
+        "cwd",
+        "id",
+        "kind",
+        "runId",
+        "status",
+        "taskId",
+        "updatedAt"
+      ],
+      "type": "object"
+    },
+    "DevflowQualityGateKind": {
+      "enum": [
+        "format",
+        "lint",
+        "typecheck",
+        "targeted_test",
+        "integration_test",
+        "snapshot",
+        "build",
+        "review",
+        "gstack_health",
+        "gstack_browser_qa",
+        "gstack_benchmark",
+        "gstack_canary",
+        "gstack_watchdog"
+      ],
+      "type": "string"
+    },
+    "DevflowQualityGateStatus": {
+      "enum": [
+        "queued",
+        "running",
+        "passed",
+        "failed",
+        "waived"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "gate": {
+      "$ref": "#/definitions/DevflowQualityGate"
+    }
+  },
+  "required": [
+    "gate"
+  ],
+  "title": "DevflowQualityGateReadResponse",
+  "type": "object"
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "projectRoot": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "projectRoot",
+    "summary"
+  ],
+  "title": "DevflowProjectMemoryWriteParams",
+  "type": "object"
+}

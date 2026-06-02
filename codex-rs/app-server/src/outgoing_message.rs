@@ -19,6 +19,7 @@ use codex_protocol::ThreadId;
 use codex_protocol::protocol::W3cTraceContext;
 use codex_protocol::request_permissions::RequestPermissionsResponse;
 use tokio::sync::Mutex;
+use tokio::sync::broadcast;
 use tokio::sync::mpsc;
 use tokio::sync::oneshot;
 use tracing::Instrument;
@@ -43,6 +44,12 @@ pub(crate) type ClientRequestResult = std::result::Result<Result, JSONRPCErrorEr
 pub(crate) struct ConnectionRequestId {
     pub(crate) connection_id: ConnectionId,
     pub(crate) request_id: RequestId,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct ObservedOutgoingMessage {
+    pub(crate) _connection_id: Option<ConnectionId>,
+    pub(crate) message: OutgoingMessage,
 }
 
 /// Trace data we keep for an incoming request until we send its final
@@ -96,6 +103,7 @@ pub(crate) enum OutgoingEnvelope {
 pub(crate) struct OutgoingMessageSender {
     next_server_request_id: AtomicI64,
     sender: mpsc::Sender<OutgoingEnvelope>,
+    observed_messages_tx: broadcast::Sender<ObservedOutgoingMessage>,
     request_id_to_callback: Mutex<HashMap<RequestId, PendingCallbackEntry>>,
     /// Incoming requests that are still waiting on a final response or error.
     /// We keep them here because this is where responses, errors, and
@@ -211,13 +219,21 @@ impl OutgoingMessageSender {
         sender: mpsc::Sender<OutgoingEnvelope>,
         analytics_events_client: AnalyticsEventsClient,
     ) -> Self {
+        let (observed_messages_tx, _observed_messages_rx) = broadcast::channel(1024);
         Self {
             next_server_request_id: AtomicI64::new(0),
             sender,
+            observed_messages_tx,
             request_id_to_callback: Mutex::new(HashMap::new()),
             request_contexts: Mutex::new(HashMap::new()),
             analytics_events_client,
         }
+    }
+
+    pub(crate) fn subscribe_outgoing_messages(
+        &self,
+    ) -> broadcast::Receiver<ObservedOutgoingMessage> {
+        self.observed_messages_tx.subscribe()
     }
 
     pub(crate) async fn register_request_context(&self, request_context: RequestContext) {
@@ -307,6 +323,7 @@ impl OutgoingMessageSender {
         }
 
         let outgoing_message = OutgoingMessage::Request(request.clone());
+        self.observe_outgoing_message(None, &outgoing_message);
         let send_result = match connection_ids {
             None => {
                 self.sender
@@ -576,6 +593,7 @@ impl OutgoingMessageSender {
         );
         let outgoing_message = OutgoingMessage::AppServerNotification(notification.clone());
         if connection_ids.is_empty() {
+            self.observe_outgoing_message(None, &outgoing_message);
             if let Err(err) = self
                 .sender
                 .send(OutgoingEnvelope::Broadcast {
@@ -588,6 +606,7 @@ impl OutgoingMessageSender {
             return;
         }
         for connection_id in connection_ids {
+            self.observe_outgoing_message(Some(*connection_id), &outgoing_message);
             if let Err(err) = self
                 .sender
                 .send(OutgoingEnvelope::ToConnection {
@@ -608,7 +627,8 @@ impl OutgoingMessageSender {
         notification: ServerNotification,
     ) {
         tracing::trace!("app-server event: {notification}");
-        let outgoing_message = OutgoingMessage::AppServerNotification(notification.clone());
+        let outgoing_message = OutgoingMessage::AppServerNotification(notification);
+        self.observe_outgoing_message(Some(connection_id), &outgoing_message);
         let (write_complete_tx, write_complete_rx) = oneshot::channel();
         if let Err(err) = self
             .sender
@@ -676,6 +696,7 @@ impl OutgoingMessageSender {
         message: OutgoingMessage,
         message_kind: &'static str,
     ) {
+        self.observe_outgoing_message(Some(connection_id), &message);
         let send_fut = self.sender.send(OutgoingEnvelope::ToConnection {
             connection_id,
             message,
@@ -690,6 +711,17 @@ impl OutgoingMessageSender {
         if let Err(err) = send_result {
             warn!("failed to send {message_kind} to client: {err:?}");
         }
+    }
+
+    fn observe_outgoing_message(
+        &self,
+        connection_id: Option<ConnectionId>,
+        message: &OutgoingMessage,
+    ) {
+        let _ = self.observed_messages_tx.send(ObservedOutgoingMessage {
+            _connection_id: connection_id,
+            message: message.clone(),
+        });
     }
 }
 

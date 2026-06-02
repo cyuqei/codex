@@ -799,6 +799,301 @@ client_request_definitions! {
         serialization: thread_id(params.thread_id),
         response: v2::ReviewStartResponse,
     },
+    DevflowAgentDetect => "devflowAgent/detect" {
+        params: v2::DevflowAgentDetectParams,
+        serialization: None,
+        response: v2::DevflowAgentDetectResponse,
+    },
+    DevflowAgentList => "devflowAgent/list" {
+        params: v2::DevflowAgentListParams,
+        serialization: None,
+        response: v2::DevflowAgentListResponse,
+    },
+    DevflowAgentRead => "devflowAgent/read" {
+        params: v2::DevflowAgentReadParams,
+        serialization: None,
+        response: v2::DevflowAgentReadResponse,
+    },
+    DevflowAgentCapabilitiesRead => "devflowAgent/capabilities" {
+        params: v2::DevflowAgentCapabilitiesReadParams,
+        serialization: None,
+        response: v2::DevflowAgentCapabilitiesReadResponse,
+    },
+    DevflowAgentDiagnose => "devflowAgent/diagnose" {
+        params: v2::DevflowAgentDiagnoseParams,
+        serialization: None,
+        response: v2::DevflowAgentDiagnoseResponse,
+    },
+    DevflowAgentStart => "devflowAgent/start" {
+        params: v2::DevflowAgentStartParams,
+        serialization: None,
+        response: v2::DevflowAgentStartResponse,
+    },
+    DevflowAgentStop => "devflowAgent/stop" {
+        params: v2::DevflowAgentStopParams,
+        serialization: None,
+        response: v2::DevflowAgentStopResponse,
+    },
+    DevflowAgentRestart => "devflowAgent/restart" {
+        params: v2::DevflowAgentRestartParams,
+        serialization: None,
+        response: v2::DevflowAgentRestartResponse,
+    },
+    DevflowProjectList => "devflowProject/list" {
+        params: v2::DevflowProjectListParams,
+        serialization: global("devflow"),
+        response: v2::DevflowProjectListResponse,
+    },
+    DevflowProjectRead => "devflowProject/read" {
+        params: v2::DevflowProjectReadParams,
+        serialization: global("devflow"),
+        response: v2::DevflowProjectReadResponse,
+    },
+    DevflowProjectOpen => "devflowProject/open" {
+        params: v2::DevflowProjectOpenParams,
+        serialization: global("devflow"),
+        response: v2::DevflowProjectOpenResponse,
+    },
+    DevflowProjectMemoryRead => "devflowProjectMemory/read" {
+        params: v2::DevflowProjectMemoryReadParams,
+        serialization: global("devflow"),
+        response: v2::DevflowProjectMemoryReadResponse,
+    },
+    DevflowProjectMemoryWrite => "devflowProjectMemory/write" {
+        params: v2::DevflowProjectMemoryWriteParams,
+        serialization: global("devflow"),
+        response: v2::DevflowProjectMemoryWriteResponse,
+    },
+    DevflowProjectDiagnose => "devflowProject/diagnose" {
+        params: v2::DevflowProjectDiagnoseParams,
+        serialization: global("devflow"),
+        response: v2::DevflowProjectDiagnoseResponse,
+    },
+    DevflowSupportBundleCreate => "devflowSupportBundle/create" {
+        params: v2::DevflowSupportBundleCreateParams,
+        serialization: global("devflow"),
+        response: v2::DevflowSupportBundleCreateResponse,
+    },
+    DevflowReleasePrepCreate => "devflowReleasePrep/create" {
+        params: v2::DevflowReleasePrepCreateParams,
+        serialization: global("devflow"),
+        response: v2::DevflowReleasePrepCreateResponse,
+    },
+    DevflowReleasePrepSubmit => "devflowReleasePrep/submit" {
+        params: v2::DevflowReleaseSubmitParams,
+        serialization: global("devflow"),
+        response: v2::DevflowReleaseSubmitResponse,
+    },
+    DevflowProjectTestCommandsList => "devflowProject/testCommands/list" {
+        params: v2::DevflowProjectTestCommandsListParams,
+        serialization: global("devflow"),
+        response: v2::DevflowProjectTestCommandsListResponse,
+    },
+    DevflowProjectTrust => "devflowProject/trust" {
+        params: v2::DevflowProjectTrustParams,
+        serialization: global("devflow"),
+        response: v2::DevflowProjectTrustResponse,
+    },
+    DevflowApprovalList => "devflowApproval/list" {
+        params: v2::DevflowApprovalListParams,
+        serialization: global("devflow"),
+        response: v2::DevflowApprovalListResponse,
+    },
+    DevflowApprovalRespond => "devflowApproval/respond" {
+        params: v2::DevflowApprovalRespondParams,
+        serialization: global("devflow"),
+        response: v2::DevflowApprovalRespondResponse,
+    },
+    DevflowApprovalPolicyRead => "devflowApproval/policy/read" {
+        params: v2::DevflowApprovalPolicyReadParams,
+        serialization: global("devflow"),
+        response: v2::DevflowApprovalPolicyReadResponse,
+    },
+    DevflowApprovalPolicyUpdate => "devflowApproval/policy/update" {
+        params: v2::DevflowApprovalPolicyUpdateParams,
+        serialization: global("devflow"),
+        response: v2::DevflowApprovalPolicyUpdateResponse,
+    },
+    DevflowTaskCreate => "devflowTask/create" {
+        params: v2::DevflowTaskCreateParams,
+        serialization: global("devflow"),
+        response: v2::DevflowTaskCreateResponse,
+    },
+    DevflowTaskPlan => "devflowTask/plan" {
+        params: v2::DevflowTaskPlanParams,
+        serialization: global("devflow"),
+        response: v2::DevflowTaskPlanResponse,
+    },
+    DevflowTaskDispatch => "devflowTask/dispatch" {
+        params: v2::DevflowTaskDispatchParams,
+        serialization: global("devflow"),
+        response: v2::DevflowTaskDispatchResponse,
+    },
+    DevflowTaskStart => "devflowTask/start" {
+        params: v2::DevflowTaskStartParams,
+        serialization: global("devflow"),
+        response: v2::DevflowTaskStartResponse,
+    },
+    DevflowTaskPause => "devflowTask/pause" {
+        params: v2::DevflowTaskPauseParams,
+        serialization: global("devflow"),
+        response: v2::DevflowTaskPauseResponse,
+    },
+    DevflowTaskResume => "devflowTask/resume" {
+        params: v2::DevflowTaskResumeParams,
+        serialization: global("devflow"),
+        response: v2::DevflowTaskResumeResponse,
+    },
+    DevflowTaskCancel => "devflowTask/cancel" {
+        params: v2::DevflowTaskCancelParams,
+        serialization: global("devflow"),
+        response: v2::DevflowTaskCancelResponse,
+    },
+    DevflowTaskRead => "devflowTask/read" {
+        params: v2::DevflowTaskReadParams,
+        serialization: global("devflow"),
+        response: v2::DevflowTaskReadResponse,
+    },
+    DevflowTaskList => "devflowTask/list" {
+        params: v2::DevflowTaskListParams,
+        serialization: global("devflow"),
+        response: v2::DevflowTaskListResponse,
+    },
+    DevflowTaskAssign => "devflowTask/assign" {
+        params: v2::DevflowTaskAssignParams,
+        serialization: global("devflow"),
+        response: v2::DevflowTaskAssignResponse,
+    },
+    DevflowTaskDependenciesUpdate => "devflowTask/dependencies/update" {
+        params: v2::DevflowTaskDependenciesUpdateParams,
+        serialization: global("devflow"),
+        response: v2::DevflowTaskDependenciesUpdateResponse,
+    },
+    DevflowWorktreeCreate => "devflowWorktree/create" {
+        params: v2::DevflowWorktreeCreateParams,
+        serialization: global("devflow"),
+        response: v2::DevflowWorktreeCreateResponse,
+    },
+    DevflowWorktreeList => "devflowWorktree/list" {
+        params: v2::DevflowWorktreeListParams,
+        serialization: global("devflow"),
+        response: v2::DevflowWorktreeListResponse,
+    },
+    DevflowWorktreeRead => "devflowWorktree/read" {
+        params: v2::DevflowWorktreeReadParams,
+        serialization: global("devflow"),
+        response: v2::DevflowWorktreeReadResponse,
+    },
+    DevflowWorktreeDiff => "devflowWorktree/diff" {
+        params: v2::DevflowWorktreeDiffParams,
+        serialization: global("devflow"),
+        response: v2::DevflowWorktreeDiffResponse,
+    },
+    DevflowWorktreeMerge => "devflowWorktree/merge" {
+        params: v2::DevflowWorktreeMergeParams,
+        serialization: global("devflow"),
+        response: v2::DevflowWorktreeMergeResponse,
+    },
+    DevflowWorktreeCleanup => "devflowWorktree/cleanup" {
+        params: v2::DevflowWorktreeCleanupParams,
+        serialization: global("devflow"),
+        response: v2::DevflowWorktreeCleanupResponse,
+    },
+    DevflowQualityGateList => "devflowQualityGate/list" {
+        params: v2::DevflowQualityGateListParams,
+        serialization: global("devflow"),
+        response: v2::DevflowQualityGateListResponse,
+    },
+    DevflowQualityGateRead => "devflowQualityGate/read" {
+        params: v2::DevflowQualityGateReadParams,
+        serialization: global("devflow"),
+        response: v2::DevflowQualityGateReadResponse,
+    },
+    DevflowQualityGateRun => "devflowQualityGate/run" {
+        params: v2::DevflowQualityGateRunParams,
+        serialization: global("devflow"),
+        response: v2::DevflowQualityGateRunResponse,
+    },
+    DevflowQualityGateRerun => "devflowQualityGate/rerun" {
+        params: v2::DevflowQualityGateRerunParams,
+        serialization: global("devflow"),
+        response: v2::DevflowQualityGateRerunResponse,
+    },
+    DevflowQualityGateWaive => "devflowQualityGate/waive" {
+        params: v2::DevflowQualityGateWaiveParams,
+        serialization: global("devflow"),
+        response: v2::DevflowQualityGateWaiveResponse,
+    },
+    DevflowPolicyPackList => "devflowPolicyPack/list" {
+        params: v2::DevflowPolicyPackListParams,
+        serialization: global("devflow"),
+        response: v2::DevflowPolicyPackListResponse,
+    },
+    DevflowPolicyPackRead => "devflowPolicyPack/read" {
+        params: v2::DevflowPolicyPackReadParams,
+        serialization: global("devflow"),
+        response: v2::DevflowPolicyPackReadResponse,
+    },
+    DevflowPolicyPackApply => "devflowPolicyPack/apply" {
+        params: v2::DevflowPolicyPackApplyParams,
+        serialization: global("devflow"),
+        response: v2::DevflowPolicyPackApplyResponse,
+    },
+    DevflowCapabilityPackList => "devflowCapabilityPack/list" {
+        params: v2::DevflowCapabilityPackListParams,
+        serialization: global("devflow"),
+        response: v2::DevflowCapabilityPackListResponse,
+    },
+    DevflowCapabilityPackRead => "devflowCapabilityPack/read" {
+        params: v2::DevflowCapabilityPackReadParams,
+        serialization: global("devflow"),
+        response: v2::DevflowCapabilityPackReadResponse,
+    },
+    DevflowCapabilityPackRun => "devflowCapabilityPack/run" {
+        params: v2::DevflowCapabilityPackRunParams,
+        serialization: global("devflow"),
+        response: v2::DevflowCapabilityPackRunResponse,
+    },
+    DevflowWatchdogRead => "devflowWatchdog/read" {
+        params: v2::DevflowWatchdogReadParams,
+        serialization: global("devflow"),
+        response: v2::DevflowWatchdogReadResponse,
+    },
+    DevflowWatchdogAlerts => "devflowWatchdog/alerts" {
+        params: v2::DevflowWatchdogAlertsParams,
+        serialization: global("devflow"),
+        response: v2::DevflowWatchdogAlertsResponse,
+    },
+    DevflowWatchdogReconcile => "devflowWatchdog/reconcile" {
+        params: v2::DevflowWatchdogReconcileParams,
+        serialization: global("devflow"),
+        response: v2::DevflowWatchdogReconcileResponse,
+    },
+    DevflowArtifactList => "devflowArtifact/list" {
+        params: v2::DevflowArtifactListParams,
+        serialization: global("devflow"),
+        response: v2::DevflowArtifactListResponse,
+    },
+    DevflowArtifactRead => "devflowArtifact/read" {
+        params: v2::DevflowArtifactReadParams,
+        serialization: global("devflow"),
+        response: v2::DevflowArtifactReadResponse,
+    },
+    DevflowArtifactOpen => "devflowArtifact/open" {
+        params: v2::DevflowArtifactOpenParams,
+        serialization: global("devflow"),
+        response: v2::DevflowArtifactOpenResponse,
+    },
+    DevflowArtifactExport => "devflowArtifact/export" {
+        params: v2::DevflowArtifactExportParams,
+        serialization: global("devflow"),
+        response: v2::DevflowArtifactExportResponse,
+    },
+    DevflowArtifactDeliver => "devflowArtifact/deliver" {
+        params: v2::DevflowArtifactDeliverParams,
+        serialization: global("devflow"),
+        response: v2::DevflowArtifactDeliverResponse,
+    },
 
     ModelList => "model/list" {
         params: v2::ModelListParams,
@@ -809,6 +1104,46 @@ client_request_definitions! {
         params: v2::ModelProviderCapabilitiesReadParams,
         serialization: None,
         response: v2::ModelProviderCapabilitiesReadResponse,
+    },
+    ProviderList => "provider/list" {
+        params: v2::ProviderListParams,
+        serialization: None,
+        response: v2::ProviderListResponse,
+    },
+    ProviderRead => "provider/read" {
+        params: v2::ProviderReadParams,
+        serialization: None,
+        response: v2::ProviderReadResponse,
+    },
+    ProviderCreate => "provider/create" {
+        params: v2::ProviderCreateParams,
+        serialization: global("config"),
+        response: v2::ProviderCreateResponse,
+    },
+    ProviderUpdate => "provider/update" {
+        params: v2::ProviderUpdateParams,
+        serialization: global("config"),
+        response: v2::ProviderUpdateResponse,
+    },
+    ProviderDelete => "provider/delete" {
+        params: v2::ProviderDeleteParams,
+        serialization: global("config"),
+        response: v2::ProviderDeleteResponse,
+    },
+    ProviderTestConnection => "provider/testConnection" {
+        params: v2::ProviderTestConnectionParams,
+        serialization: None,
+        response: v2::ProviderTestConnectionResponse,
+    },
+    ProviderPreferencesRead => "providerPreferences/read" {
+        params: v2::ProviderPreferencesReadParams,
+        serialization: global("config"),
+        response: v2::ProviderPreferencesReadResponse,
+    },
+    ProviderPreferencesUpdate => "providerPreferences/update" {
+        params: v2::ProviderPreferencesUpdateParams,
+        serialization: global("config"),
+        response: v2::ProviderPreferencesUpdateResponse,
     },
     ExperimentalFeatureList => "experimentalFeature/list" {
         params: v2::ExperimentalFeatureListParams,
@@ -1480,6 +1815,19 @@ pub struct FuzzyFileSearchSessionCompletedNotification {
 server_notification_definitions! {
     /// NEW NOTIFICATIONS
     Error => "error" (v2::ErrorNotification),
+    DevflowAgentStatusChanged => "devflowAgent/statusChanged" (v2::DevflowAgentStatusChangedNotification),
+    DevflowTaskStatusChanged => "devflowTask/statusChanged" (v2::DevflowTaskStatusChangedNotification),
+    DevflowRunStatusChanged => "devflowRun/statusChanged" (v2::DevflowRunStatusChangedNotification),
+    DevflowRunOutputDelta => "devflowRun/outputDelta" (v2::DevflowRunOutputDeltaNotification),
+    DevflowRunCommandStarted => "devflowRun/commandStarted" (v2::DevflowRunCommandStartedNotification),
+    DevflowRunCommandCompleted => "devflowRun/commandCompleted" (v2::DevflowRunCommandCompletedNotification),
+    DevflowRunDiffUpdated => "devflowRun/diffUpdated" (v2::DevflowRunDiffUpdatedNotification),
+    DevflowWorktreeDiffUpdated => "devflowWorktree/diffUpdated" (v2::DevflowWorktreeDiffUpdatedNotification),
+    DevflowArtifactCreated => "devflowArtifact/created" (v2::DevflowArtifactCreatedNotification),
+    DevflowWorktreeStatusChanged => "devflowWorktree/statusChanged" (v2::DevflowWorktreeStatusChangedNotification),
+    DevflowQualityGateCompleted => "devflowQualityGate/completed" (v2::DevflowQualityGateCompletedNotification),
+    DevflowWatchdogAlertCreated => "devflowWatchdog/alertCreated" (v2::DevflowWatchdogAlertCreatedNotification),
+    DevflowApprovalRequested => "devflowApproval/requested" (v2::DevflowApprovalRequestedNotification),
     ThreadStarted => "thread/started" (v2::ThreadStartedNotification),
     ThreadStatusChanged => "thread/status/changed" (v2::ThreadStatusChangedNotification),
     ThreadArchived => "thread/archived" (v2::ThreadArchivedNotification),
@@ -2644,7 +2992,8 @@ mod tests {
                 "params": {
                     "limit": null,
                     "cursor": null,
-                    "includeHidden": null
+                    "includeHidden": null,
+                    "providerId": null
                 }
             }),
             serde_json::to_value(&request)?,

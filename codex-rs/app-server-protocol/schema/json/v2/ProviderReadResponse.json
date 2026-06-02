@@ -1,0 +1,163 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Provider": {
+      "properties": {
+        "authStyle": {
+          "$ref": "#/definitions/ProviderAuthStyle"
+        },
+        "baseUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "builtinKind": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "envKey": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hasApiKey": {
+          "type": "boolean"
+        },
+        "headers": {
+          "items": {
+            "$ref": "#/definitions/ProviderHeaderSummary"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "isDefault": {
+          "type": "boolean"
+        },
+        "requestMaxRetries": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "requiresOpenaiAuth": {
+          "type": "boolean"
+        },
+        "source": {
+          "$ref": "#/definitions/ProviderSource"
+        },
+        "streamIdleTimeoutMs": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "streamMaxRetries": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "supportsWebsockets": {
+          "type": "boolean"
+        },
+        "websocketConnectTimeoutMs": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "wireApi": {
+          "$ref": "#/definitions/ProviderWireApi"
+        }
+      },
+      "required": [
+        "authStyle",
+        "displayName",
+        "hasApiKey",
+        "headers",
+        "id",
+        "isDefault",
+        "requiresOpenaiAuth",
+        "source",
+        "supportsWebsockets",
+        "wireApi"
+      ],
+      "type": "object"
+    },
+    "ProviderAuthStyle": {
+      "enum": [
+        "bearer",
+        "x_api_key"
+      ],
+      "type": "string"
+    },
+    "ProviderHeaderSummary": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "valueSource": {
+          "$ref": "#/definitions/ProviderHeaderValueSource"
+        }
+      },
+      "required": [
+        "name",
+        "value",
+        "valueSource"
+      ],
+      "type": "object"
+    },
+    "ProviderHeaderValueSource": {
+      "enum": [
+        "literal",
+        "env"
+      ],
+      "type": "string"
+    },
+    "ProviderSource": {
+      "enum": [
+        "builtin",
+        "custom"
+      ],
+      "type": "string"
+    },
+    "ProviderWireApi": {
+      "enum": [
+        "responses",
+        "anthropic_messages",
+        "chat_completions"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "provider": {
+      "$ref": "#/definitions/Provider"
+    }
+  },
+  "required": [
+    "provider"
+  ],
+  "title": "ProviderReadResponse",
+  "type": "object"
+}
