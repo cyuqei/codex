@@ -23,8 +23,6 @@ use codex_app_server_protocol::PluginListResponse;
 use codex_app_server_protocol::PluginReadParams;
 use codex_app_server_protocol::PluginReadResponse;
 use codex_app_server_protocol::PluginUninstallResponse;
-use codex_app_server_protocol::ProviderCreateParams;
-use codex_app_server_protocol::ProviderUpdateParams;
 use codex_app_server_protocol::RateLimitSnapshot;
 use codex_app_server_protocol::SkillsListResponse;
 use codex_app_server_protocol::ThreadGoalStatus;
@@ -48,43 +46,10 @@ use codex_protocol::config_types::CollaborationModeMask;
 use codex_protocol::config_types::Personality;
 use codex_protocol::models::ActivePermissionProfile;
 use codex_protocol::openai_models::ReasoningEffort;
+use codex_realtime_webrtc::RealtimeWebrtcEvent;
+use codex_realtime_webrtc::RealtimeWebrtcSessionHandle;
 
 use crate::history_cell::HistoryCell;
-
-#[cfg(feature = "realtime-webrtc")]
-pub(crate) use codex_realtime_webrtc::RealtimeWebrtcEvent;
-#[cfg(feature = "realtime-webrtc")]
-pub(crate) use codex_realtime_webrtc::RealtimeWebrtcSessionHandle;
-#[cfg(not(feature = "realtime-webrtc"))]
-#[allow(dead_code)]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) enum RealtimeWebrtcEvent {
-    Connected,
-    LocalAudioLevel(u16),
-    Closed,
-    Failed(String),
-}
-#[cfg(not(feature = "realtime-webrtc"))]
-pub(crate) struct RealtimeWebrtcSessionHandle;
-#[cfg(not(feature = "realtime-webrtc"))]
-impl std::fmt::Debug for RealtimeWebrtcSessionHandle {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("RealtimeWebrtcSessionHandle")
-            .finish_non_exhaustive()
-    }
-}
-#[cfg(not(feature = "realtime-webrtc"))]
-impl RealtimeWebrtcSessionHandle {
-    pub(crate) fn apply_answer_sdp(&self, _answer_sdp: String) -> Result<(), String> {
-        Err("realtime WebRTC is unavailable in this build".to_string())
-    }
-
-    pub(crate) fn close(&self) {}
-
-    pub(crate) fn local_audio_peak(&self) -> std::sync::Arc<std::sync::atomic::AtomicU16> {
-        std::sync::Arc::new(std::sync::atomic::AtomicU16::new(0))
-    }
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum RealtimeAudioDeviceKind {
@@ -348,12 +313,6 @@ pub(crate) enum AppEvent {
 
     /// Result of computing a `/diff` command.
     DiffResult(String),
-
-    /// Result of preparing a `/commit` workflow prompt.
-    CommitWorkflowPrepared(Result<String, String>),
-
-    /// Show a summary of the current resumable context.
-    ShowContextSaveSummary,
 
     /// Open the app link view in the bottom pane.
     OpenAppLink {
@@ -687,81 +646,6 @@ pub(crate) enum AppEvent {
         service_tier: Option<String>,
     },
 
-    /// Open the provider preferences popup.
-    OpenProviderPreferencesPopup,
-
-    /// Open the top-level settings popup.
-    OpenSettingsPopup,
-
-    /// Open the detail popup for a specific provider.
-    OpenProviderDetailPopup {
-        provider_id: String,
-    },
-
-    /// Open the model catalog for a specific provider.
-    OpenProviderModelsPopup {
-        provider_id: String,
-    },
-
-    /// Open the reasoning selection popup for a provider-specific default model.
-    OpenProviderReasoningPopup {
-        provider_id: String,
-        model: ModelPreset,
-    },
-
-    /// Open the service-tier popup for a provider-specific default model.
-    OpenProviderServiceTierPopup {
-        provider_id: String,
-        model: String,
-        effort: Option<ReasoningEffort>,
-    },
-
-    /// Open the create-provider prompt.
-    OpenProviderCreatePrompt,
-
-    /// Open the edit-provider prompt for a custom provider.
-    OpenProviderEditPrompt {
-        provider_id: String,
-    },
-
-    /// Open the delete confirmation for a custom provider.
-    OpenProviderDeleteConfirm {
-        provider_id: String,
-    },
-
-    /// Persist the selected default provider for future sessions.
-    PersistProviderPreferenceSelection {
-        provider_id: String,
-    },
-
-    /// Persist a provider and matching default model for future sessions.
-    PersistProviderModelPreferenceSelection {
-        provider_id: String,
-        model: String,
-        effort: Option<ReasoningEffort>,
-        service_tier: Option<ServiceTier>,
-    },
-
-    /// Run a provider connection test against a saved provider.
-    TestProviderConnection {
-        provider_id: String,
-    },
-
-    /// Submit the create-provider form.
-    SubmitProviderCreatePrompt {
-        params: ProviderCreateParams,
-    },
-
-    /// Submit the edit-provider form.
-    SubmitProviderEditPrompt {
-        params: ProviderUpdateParams,
-    },
-
-    /// Delete a custom provider.
-    DeleteProvider {
-        provider_id: String,
-    },
-
     /// Open the device picker for a realtime microphone or speaker.
     OpenRealtimeAudioDeviceSelection {
         kind: RealtimeAudioDeviceKind,
@@ -785,11 +669,9 @@ pub(crate) enum AppEvent {
     },
 
     /// Peer-connection lifecycle event from a TUI-owned realtime WebRTC session.
-    #[cfg_attr(not(feature = "realtime-webrtc"), allow(dead_code))]
     RealtimeWebrtcEvent(RealtimeWebrtcEvent),
 
     /// Local microphone level from a TUI-owned realtime WebRTC session.
-    #[cfg_attr(not(feature = "realtime-webrtc"), allow(dead_code))]
     RealtimeWebrtcLocalAudioLevel(u16),
 
     /// Open the reasoning selection popup after picking a model.
@@ -1017,14 +899,6 @@ pub(crate) enum AppEvent {
 
     /// Open the custom prompt option from the review popup.
     OpenReviewCustomPrompt,
-
-    /// Open the context save/restore workflow popup.
-    OpenContextWorkflowPopup,
-
-    /// Submit the edited `/commit` workflow prompt.
-    SubmitCommitWorkflowPrompt {
-        draft: String,
-    },
 
     /// Submit a user message with an explicit collaboration mask.
     SubmitUserMessageWithMode {

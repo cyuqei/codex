@@ -112,6 +112,7 @@ pub(super) fn snapshot(percent: f64) -> RateLimitSnapshot {
         }),
         secondary: None,
         credits: None,
+        individual_limit: None,
         plan_type: None,
         rate_limit_reached_type: None,
     }
@@ -585,7 +586,6 @@ pub(super) fn handle_exited_review_mode(chat: &mut ChatWidget) {
             item: AppServerThreadItem::ExitedReviewMode {
                 id: "review-end".to_string(),
                 review: String::new(),
-                review_output: None,
             },
         }),
         /*replay_kind*/ None,
