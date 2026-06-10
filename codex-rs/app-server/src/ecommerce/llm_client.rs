@@ -14,6 +14,8 @@ const INITIAL_BACKOFF_MS: u64 = 2_000;
 pub(crate) enum LlmProtocol {
     /// OpenAI-compatible chat completions API (POST /chat/completions)
     OpenAiCompat,
+    /// OpenAI Responses API (POST /responses)
+    OpenAiResponses,
     /// Anthropic messages API (POST /messages)
     Anthropic,
 }
@@ -29,18 +31,24 @@ pub(crate) struct LlmConfig {
 
 impl LlmConfig {
     /// Resolve configuration from multiple sources in priority order:
-    /// 1. Explicit env vars (LLM_API_KEY, LLM_BASE_URL, etc.) — highest priority
+    /// 1. Explicit generic env vars (LLM_*) — highest priority
     /// 2. ~/.codex/config.toml + auth.json — user's codex model provider config
-    /// 3. No hardcoded defaults — returns None if nothing is configured
+    /// 3. Anthropic-style fallback env vars (ANTHROPIC_*) when no codex config exists
     pub fn resolve() -> Option<Self> {
-        // Priority 1: explicit env overrides
-        if env::var("LLM_API_KEY").is_ok() || env::var("LLM_BASE_URL").is_ok() {
+        // Priority 1: explicit generic env overrides.
+        // These are intentionally the only env vars that override codex config so
+        // users can still rely on ~/.codex/config.toml for normal operation.
+        let has_llm_env = env::var("LLM_API_KEY").is_ok()
+            || env::var("LLM_BASE_URL").is_ok()
+            || env::var("DEFAULT_MODEL").is_ok()
+            || env::var("LLM_PROTOCOL").is_ok();
+        if has_llm_env {
             let api_key = env::var("LLM_API_KEY").ok();
             let base_url = env::var("LLM_BASE_URL")
                 .unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
             let protocol = Self::protocol_from_env();
             let default_model = env::var("DEFAULT_MODEL")
-                .unwrap_or_else(|_| "gpt-4o".to_string());
+                .unwrap_or_else(|_| "qwen3.7-max".to_string());
             return Some(Self {
                 api_key,
                 base_url,
@@ -54,16 +62,36 @@ impl LlmConfig {
             return Some(config);
         }
 
+        // Priority 3: fallback to Anthropic-style proxy envs when no codex config exists.
+        if env::var("ANTHROPIC_AUTH_TOKEN").is_ok() || env::var("ANTHROPIC_BASE_URL").is_ok() {
+            let api_key = env::var("ANTHROPIC_AUTH_TOKEN").ok();
+            let base_url = env::var("ANTHROPIC_BASE_URL")
+                .ok()
+                .map(|base| format!("{}/v1", base.trim_end_matches('/')))
+                .unwrap_or_else(|| "https://api.anthropic.com/v1".to_string());
+            let default_model = env::var("DEFAULT_MODEL")
+                .unwrap_or_else(|_| "qwen3.7-max".to_string());
+            return Some(Self {
+                api_key,
+                base_url,
+                protocol: LlmProtocol::Anthropic,
+                default_model,
+            });
+        }
+
         None
     }
 
     fn protocol_from_env() -> LlmProtocol {
         let protocol_str = env::var("LLM_PROTOCOL")
             .unwrap_or_else(|_| "openai_compat".to_string());
-        if protocol_str.eq_ignore_ascii_case("anthropic") {
-            LlmProtocol::Anthropic
-        } else {
-            LlmProtocol::OpenAiCompat
+        match protocol_str.as_str() {
+            s if s.eq_ignore_ascii_case("anthropic")
+                || s.eq_ignore_ascii_case("messages")
+                || s.eq_ignore_ascii_case("anthropic_messages") => LlmProtocol::Anthropic,
+            s if s.eq_ignore_ascii_case("responses")
+                || s.eq_ignore_ascii_case("openai_responses") => LlmProtocol::OpenAiResponses,
+            _ => LlmProtocol::OpenAiCompat,
         }
     }
 
@@ -96,7 +124,8 @@ impl LlmConfig {
             .unwrap_or("chat_completions")
         {
             "chat_completions" => LlmProtocol::OpenAiCompat,
-            "messages" => LlmProtocol::Anthropic,
+            "responses" => LlmProtocol::OpenAiResponses,
+            "messages" | "anthropic_messages" => LlmProtocol::Anthropic,
             _ => LlmProtocol::OpenAiCompat,
         };
 
@@ -168,15 +197,14 @@ impl LlmClient {
 
     pub async fn chat(
         &self,
-        model: &str,
+        _model: &str,
         system_prompt: &str,
         user_message: &str,
     ) -> Result<String, JSONRPCErrorError> {
-        let model = if model.is_empty() {
-            &self.config.default_model
-        } else {
-            model
-        };
+        // Use the active provider's configured model as the single source of truth.
+        // Ecommerce agents should follow the user's current Codex model selection
+        // instead of hardcoded per-step model literals.
+        let model = &self.config.default_model;
 
         let api_key = self.config.api_key.as_ref().ok_or_else(|| JSONRPCErrorError {
             code: -32001,
@@ -198,6 +226,10 @@ impl LlmClient {
                 }
                 LlmProtocol::OpenAiCompat => {
                     self.call_openai_compat_once(&client, model, system_prompt, user_message, api_key)
+                        .await
+                }
+                LlmProtocol::OpenAiResponses => {
+                    self.call_openai_responses_once(&client, model, system_prompt, user_message, api_key)
                         .await
                 }
             };
@@ -353,6 +385,73 @@ impl LlmClient {
             .and_then(|c| c.as_str())
             .unwrap_or("")
             .to_string();
+
+        Ok(content)
+    }
+
+    async fn call_openai_responses_once(
+        &self,
+        client: &reqwest::Client,
+        model: &str,
+        system_prompt: &str,
+        user_message: &str,
+        api_key: &str,
+    ) -> Result<String, JSONRPCErrorError> {
+        let body = json!({
+            "model": model,
+            "instructions": system_prompt,
+            "input": user_message,
+            "store": false,
+        });
+
+        let response = client
+            .post(format!("{}/responses", self.config.base_url.trim_end_matches('/')))
+            .header("Authorization", format!("Bearer {}", api_key))
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| JSONRPCErrorError {
+                code: -32002,
+                message: format!("OpenAI Responses request failed: {}", e),
+                data: None,
+            })?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let text = response.text().await.unwrap_or_default();
+            return Err(JSONRPCErrorError {
+                code: -32003,
+                message: format!("LLM API error {}: {}", status, text),
+                data: None,
+            });
+        }
+
+        let data: Value = response.json().await.map_err(|e| JSONRPCErrorError {
+            code: -32004,
+            message: format!("Failed to parse LLM response: {}", e),
+            data: None,
+        })?;
+
+        // OpenAI Responses API shape:
+        // output: [{ type: "message", content: [{ type: "output_text", text: "..." }] }]
+        let content = data
+            .get("output")
+            .and_then(|o| o.as_array())
+            .and_then(|arr| {
+                arr.iter().find_map(|item| {
+                    item.get("content")
+                        .and_then(|c| c.as_array())
+                        .and_then(|parts| {
+                            parts.iter().find_map(|part| {
+                                part.get("text")
+                                    .and_then(|t| t.as_str())
+                                    .map(|s| s.to_string())
+                            })
+                        })
+                })
+            })
+            .unwrap_or_default();
 
         Ok(content)
     }
