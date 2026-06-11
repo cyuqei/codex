@@ -249,6 +249,7 @@ impl AppServerSession {
                     cursor: None,
                     limit: None,
                     include_hidden: Some(true),
+                    provider_id: None,
                 },
             })
             .await

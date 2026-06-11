@@ -144,7 +144,20 @@ pub(super) fn server_notification_thread_target(
         }
         ServerNotification::Warning(notification) => notification.thread_id.as_deref(),
         ServerNotification::GuardianWarning(notification) => Some(notification.thread_id.as_str()),
-        ServerNotification::SkillsChanged(_)
+        ServerNotification::DevflowAgentStatusChanged(_)
+        | ServerNotification::DevflowTaskStatusChanged(_)
+        | ServerNotification::DevflowRunStatusChanged(_)
+        | ServerNotification::DevflowRunOutputDelta(_)
+        | ServerNotification::DevflowRunCommandStarted(_)
+        | ServerNotification::DevflowRunCommandCompleted(_)
+        | ServerNotification::DevflowRunDiffUpdated(_)
+        | ServerNotification::DevflowWorktreeDiffUpdated(_)
+        | ServerNotification::DevflowArtifactCreated(_)
+        | ServerNotification::DevflowWorktreeStatusChanged(_)
+        | ServerNotification::DevflowQualityGateCompleted(_)
+        | ServerNotification::DevflowWatchdogAlertCreated(_)
+        | ServerNotification::DevflowApprovalRequested(_)
+        | ServerNotification::SkillsChanged(_)
         | ServerNotification::McpServerStatusUpdated(_)
         | ServerNotification::McpServerOauthLoginCompleted(_)
         | ServerNotification::AccountUpdated(_)
